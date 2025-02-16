@@ -1,11 +1,11 @@
 // public/firebaseConfig.js
 const firebaseConfig = {
-  apiKey: "AIzaSyBMl2-dsWYFs_vVG_oKjBg6WCjl79QBR_Y",
-  authDomain: "kino-n-chill.firebaseapp.com",
-  projectId: "kino-n-chill",
-  storageBucket: "kino-n-chill.appspot.com",
-  messagingSenderId: "904976281790",
-  appId: "1:904976281790:web:eb2fbdd47862df668a6eef"
+  apiKey: "AIzaSyD-MwfoLKLZZ3Zy096ZEtP_syBH6xBhBWY",
+  authDomain: "afk-cinema.firebaseapp.com",
+  projectId: "afk-cinema",
+  storageBucket: "afk-cinema.firebasestorage.app",
+  messagingSenderId: "117851804753",
+  appId: "1:117851804753:web:4367690cba9f853ba79470",
 };
 
 // For the service worker
