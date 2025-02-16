@@ -171,7 +171,7 @@ const EmptyState = ({ mediaType }: { mediaType: string }) => (
     <p className="text-gray-400 mb-4">
       Start adding {mediaType === 'movie' ? 'movies' : 'TV shows'} to keep track
     </p>
-    <Link href={`/discover/${mediaType}`}>
+    <Link href={`/explore`}>
       <Button>Browse {mediaType === 'movie' ? 'Movies' : 'Shows'}</Button>
     </Link>
   </div>
