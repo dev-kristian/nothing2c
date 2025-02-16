@@ -9,7 +9,7 @@ import { ScreenSizeProvider } from '@/context/ScreenSizeContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Kino & Chill',
+  title: 'AFK Cinema',
   description: 'Track and share movies with friends',
   manifest: '/manifest.json',
   icons: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black',
-    'apple-mobile-web-app-title': 'Kino & Chill',
+    'apple-mobile-web-app-title': 'AFK Cinema',
   },
 }
 

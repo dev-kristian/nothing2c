@@ -113,7 +113,7 @@ export default function Navigation() {
               />
             </motion.div>
             <span className="text-2xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-              Kino & Chill
+              AFK Cinema
             </span>
           </Link>
 

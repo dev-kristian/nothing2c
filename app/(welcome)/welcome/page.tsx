@@ -58,7 +58,7 @@ function WelcomePage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Welcome to Kino & Chill!</h1>
+        <h1 className="text-2xl font-bold">Welcome to AFK Cinema!</h1>
         <p className="text-muted-foreground mt-2">
           Choose a username to get started
         </p>

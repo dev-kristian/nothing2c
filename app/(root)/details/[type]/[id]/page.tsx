@@ -1,4 +1,4 @@
-// C:\Users\Vivobook\Documents\dev-kristian\kinonchill\app\(root)\details\[type]\[id]\page.tsx
+// C:\Users\Vivobook\Documents\dev-kristian\afkcinemachill\app\(root)\details\[type]\[id]\page.tsx
 import React from 'react';
 import { notFound } from 'next/navigation';
 import CrewCarousel from '@/components/details/CrewCarousel';
