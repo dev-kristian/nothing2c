@@ -1,6 +1,6 @@
 {
-  "name": "Kino & Chill",
-  "short_name": "Kino & Chill",
+  "name": "AFK Cinema",
+  "short_name": "AFK Cinema",
   "display": "standalone",
   "start_url": "/",
   "theme_color": "#170014",
