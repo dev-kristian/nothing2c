@@ -27,14 +27,16 @@ export default function Home() {
               {userData ? (
                 <span>Welcome back, <span className="text-primary">{userData.username}</span></span>
               ) : (
-                "Welcome to Kino & Chill"
+                "Welcome to AFK Cinema"
               )}
             </h1>
             <p className="text-gray-400">Discover, track, and watch together</p>
           </div>
           
           {userData && userData.notification !== "unsupported" && (
+            <div className=''>
             <NotificationSubscription />
+            </div>
           )}
         </header>
 
