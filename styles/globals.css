@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 250 20% 7%;
+    --background-light: 240 10% 5.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 330 81% 60%;
+    --primary-hover: 330 81% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-hover: 240 5.9% 10%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 330 81% 60%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 330 81% 60%;
+    --chart-1: 330 81% 60%;
+    --chart-2: 280 65% 60%;
+    --chart-3: 230 70% 50%;
+    --chart-4: 180 60% 45%;
+    --chart-5: 30 80% 55%;
+    --radius: 0.75rem;
+  }
+  
+  body {
+    background-image: url('/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.90);
+    z-index: -1;
+  }
+}
+
+@layer components {
+  .btn-transparent {
+    @apply bg-transparent hover:bg-transparent text-white hover:text-pink-500 transition-colors duration-300;
+  }
+
+  .scroll-container {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: row;
+    scroll-snap-type: x mandatory;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .scroll-snap-align {
+    scroll-snap-align: start;
+  }
+  .text-gradient {
+    text-shadow: 0 0 5px rgba(242, 111, 205, 0.5), 0 0 10px rgba(226, 18, 212, 0.3);
+  }
+  .google-text {
+    background: linear-gradient(
+      to right,
+      #4285F4 0%,   /* Google Blue */
+      #EA4335 25%,  /* Google Red */
+      #FBBC05 50%,  /* Google Yellow */
+      #34A853 75%,  /* Google Green */
+      #4285F4 100%  /* Google Blue */
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% auto;
+    animation: shine 5s linear infinite;
+  }
+  
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  .signin-text {
+    background: linear-gradient(
+      to right,
+      white,
+      #ff69b4,  /* Hot Pink */
+      #ff1493,  /* Deep Pink */
+      #ff69b4,
+      white   /* Hot Pink */
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% auto;
+    animation: shine 3s linear infinite;
+  }
+  
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  html {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .text-gradient {
+    background: linear-gradient(to right, #e2cde7, #f549ea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .auth-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent;
+  }
+  
+  .animate-enter {
+    animation: enter 200ms ease-out;
+  }
+  
+  .animate-leave {
+    animation: leave 150ms ease-in forwards;
+  }
+  
+  @keyframes enter {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes leave {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+  }
+}

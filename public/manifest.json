@@ -1,0 +1,36 @@
+{
+  "name": "Kino & Chill",
+  "short_name": "Kino & Chill",
+  "display": "standalone",
+  "start_url": "/",
+  "theme_color": "#170014",
+  "background_color": "#170014",
+  "icons": [
+    {
+      "src": "/icons/popcorn.png",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-120x120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "gcm_sender_id": "904976281790"
+}
