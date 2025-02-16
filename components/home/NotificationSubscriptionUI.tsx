@@ -139,7 +139,7 @@ const NotificationSubscriptionUI: React.FC<NotificationSubscriptionUIProps> = ({
     if (isSupported && (isStandalone || !isIOS166OrHigher)) {
       return (
         <motion.div 
-          className="bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-lg w-full relative"
+          className="bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-lg w-full relative "
           initial="hidden"
           animate="visible"
           variants={fadeIn}
@@ -147,14 +147,14 @@ const NotificationSubscriptionUI: React.FC<NotificationSubscriptionUIProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Bell className="text-pink-500 mr-2" size={20} />
-              <h2 className="text-lg font-semibold text-white">Enable Notifications</h2>
+              <h2 className="text-lg font-semibold text-white mr-2">Enable Notifications</h2>
             </div>
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => setShowDetails(!showDetails)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white p-2"
               >
                 {showDetails ? 'Hide Details' : 'Show Details'}
               </Button>
@@ -162,11 +162,11 @@ const NotificationSubscriptionUI: React.FC<NotificationSubscriptionUIProps> = ({
             </div>
           </div>
           {showDetails && (
-            <p className="text-gray-300 text-sm mb-3">Get instant updates on new releases, polls, and exclusive content!</p>
+            <p className="text-gray-300 text-sm my-1">Get instant updates on new releases, polls, and exclusive content!</p>
           )}
           <Button 
             onClick={handleSubscribe}
-            className="w-full bg-gradient-to-r from-pink-700/50 to-purple-900/70 hover:from-pink-500/50 hover:to-purple-700/70 text-white text-sm transition-all duration-300"
+            className="w-full bg-gradient-to-r from-pink-700/50 to-purple-900/70 hover:from-pink-500/50 hover:to-purple-700/70 text-white text-sm transition-all duration-300 mt-2"
             size="sm"
           >
             Subscribe to Notifications
@@ -179,7 +179,7 @@ const NotificationSubscriptionUI: React.FC<NotificationSubscriptionUIProps> = ({
   };
 
   return (
-    <div className="mb-6 transition-all duration-300 ease-in-out">
+    <div className=" transition-all duration-300 ease-in-out pt-2">
       {renderContent()}
     </div>
   );
