@@ -5,9 +5,10 @@ import { User } from 'firebase/auth';
 export interface AuthState {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<User>;
+  signIn: () => Promise<User | undefined>; // Corrected return type
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
+  initialAuthChecked: boolean; // Add this line
 }
 
 export interface AuthFormData {
