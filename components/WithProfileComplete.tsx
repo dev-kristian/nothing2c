@@ -1,4 +1,4 @@
-// components/WithProfileCompleted.tsx
+// components/WithProfileCompleted.tsx (No Change Needed, but explanation below)
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -39,7 +39,7 @@ export function WithProfileCompleted<T extends object>(Component: React.Componen
     }
 
     if (!isProfileComplete) {
-      return null;
+      return null; // Or a redirect component if you prefer
     }
 
     return <Component {...props} />;

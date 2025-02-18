@@ -1,48 +1,28 @@
-// components/WithAuth.tsx
 'use client';
 
-import { useEffect } from 'react';
+import React from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 import Loading from '@/components/Loading';
 
 export function WithAuth<T extends object>(Component: React.ComponentType<T>) {
-  return function AuthenticatedComponent(props: T) {
-    const { user, loading } = useAuthContext();
+  return function WrappedComponent(props: T) {
+    const { user, loading, initialAuthChecked } = useAuthContext();
     const router = useRouter();
-    const pathname = usePathname();
 
-    useEffect(() => {
-      const checkUserSetup = async () => {
-        if (user) {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          const userData = userDoc.data();
-          
-          if (!userData?.setupCompleted && pathname !== '/welcome') {
-            router.push('/welcome');
-          } else if (userData?.setupCompleted && pathname === '/welcome') {
-            router.push('/');
-          }
-        } else if (!loading && pathname !== '/sign-in') {
-          router.push('/sign-in');
-        }
-      };
-
-      if (!loading) {
-        checkUserSetup();
-      }
-    }, [user, loading, router, pathname]);
-
-    if (loading) {
-      return <Loading message="Loading..." spinnerType="full" />;
+    // Show loading screen until initial auth check is complete.
+    if (!initialAuthChecked) {
+        return <Loading message="Authenticating..." spinnerType="full" />;
     }
 
-    if (!user && pathname !== '/sign-in') {
-      return null;
+    // If not authenticated, redirect to login (adjust path as needed).
+    if (!loading && !user) {
+       router.push('/login'); // Or any other appropriate route
+       return null; // Prevent rendering further down
     }
 
+
+    // If authenticated, render the wrapped component.
     return <Component {...props} />;
   };
 }
