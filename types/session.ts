@@ -3,6 +3,7 @@
 import { UserDate } from "./context";
 
 export interface Session {
+  finalDate?: any;
   id: string;
   createdAt: Date;
   createdBy: string;

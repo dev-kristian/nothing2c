@@ -95,10 +95,18 @@
 }
 
 @layer components {
-  /* Apple-style frosted glass components */
-  .frosted-glass {
-    @apply bg-white/20 dark:bg-black/20 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-lg;
-  }
+/* Apple-style frosted glass components */
+.frosted-glass {
+  @apply bg-white/60 dark:bg-black/60 
+         backdrop-blur-xl 
+         border border-white/30 dark:border-white/10 
+         shadow-lg
+         rounded-xl
+         transition-all duration-300 ease-in-out
+         hover:bg-white/70 dark:hover:bg-black/70
+         hover:shadow-xl;
+}
+
   
   .frosted-panel {
     @apply bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/30 dark:border-white/10 
@@ -193,12 +201,7 @@
 
 @layer utilities {
   /* Apple-style smooth scrolling */
-  .apple-scroll {
-    @apply scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700
-           scrollbar-track-transparent hover:scrollbar-thumb-gray-400
-           dark:hover:scrollbar-thumb-gray-600;
-    scroll-behavior: smooth;
-  }
+
   
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
