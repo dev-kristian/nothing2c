@@ -4,6 +4,7 @@ import { Bell, BellOff } from 'lucide-react';
 import { useUserData } from '@/context/UserDataContext';
 import { useCustomToast } from '@/hooks/useToast';
 import { requestForToken } from '@/lib/firebaseMessaging';
+import { getAuth } from 'firebase/auth';
 
 export default function NotificationSettings() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,21 +34,43 @@ export default function NotificationSettings() {
         return;
       }
 
+      // Get current user UID
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        showToast(
+          "Error",
+          "You must be logged in to manage notifications.",
+          "error"
+        );
+        setIsLoading(false);
+        return;
+      }
+
       if (enabled) {
         const permission = await window.Notification.requestPermission();
         if (permission === "granted") {
           const token = await requestForToken();
           if (token) {
             try {
-              // Subscribe to notifications
-              await fetch('/api/subscribe-to-topic', {
+              // Subscribe to user-specific topic only
+              const response = await fetch('/api/subscribe-to-topic', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ token }),
+                body: JSON.stringify({ 
+                  token,
+                  topic: `user_${user.uid}` // Only user-specific topic
+                }),
               });
-
+              
+              const data = await response.json();
+              if (!data.success) {
+                throw new Error(data.error || 'Failed to subscribe to notifications');
+              }
+      
               await updateNotificationStatus("allowed");
               showToast(
                 "Notifications Enabled",
@@ -76,13 +99,21 @@ export default function NotificationSettings() {
         try {
           const token = await requestForToken();
           if (token) {
-            await fetch('/api/unsubscribe-from-topic', {
+            const response = await fetch('/api/unsubscribe-from-topic', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ token }),
+              body: JSON.stringify({ 
+                token,
+                topic: `user_${user.uid}` // Only user-specific topic
+              }),
             });
+            
+            const data = await response.json();
+            if (!data.success) {
+              console.error("Error unsubscribing:", data.error);
+            }
           }
         } catch (error) {
           console.error("Error unsubscribing from notifications:", error);
