@@ -74,9 +74,16 @@ export interface SessionContextType {
   sessions: Session[];
 }
 
-export interface UserDate {
+// For Firestore
+export interface FirestoreUserDate {
   date: Timestamp;
-  hours: 'all' | Timestamp[];
+  hours: Timestamp[] | 'all';
+}
+
+// For client-side
+export interface UserDate {
+  date: string;
+  hours: string[] | 'all';
 }
 
 // Add for SearchContext

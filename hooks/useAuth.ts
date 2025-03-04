@@ -1,5 +1,5 @@
-// hooks/useAuth.ts (Modified)
-import { useEffect, useState, useCallback } from 'react'; // Import useCallback
+// hooks/useAuth.ts 
+import { useEffect, useState, useCallback } from 'react'; 
 import {
   onAuthStateChanged,
   User,
@@ -15,9 +15,8 @@ import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialAuthChecked, setInitialAuthChecked] = useState(false); // New state
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false); 
 
-  // Wrap signIn and signOut in useCallback for better performance and memoization.
   const signIn = useCallback(async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -73,11 +72,11 @@ export function useAuth() {
         setUser(null);
       }
       setLoading(false);
-      setInitialAuthChecked(true); // Mark initial auth check as complete
+      setInitialAuthChecked(true); 
     });
 
     return () => unsubscribe();
-  }, []); // Empty dependency array, runs only once on mount
+  }, []);
 
   return {
     user,
@@ -85,6 +84,6 @@ export function useAuth() {
     signIn,
     signOut,
     isAuthenticated: !!user,
-    initialAuthChecked // Expose initialAuthChecked
+    initialAuthChecked 
   };
 }

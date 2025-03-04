@@ -1,18 +1,24 @@
 // types/session.ts
 
+import { UserDate } from "./context";
+
 export interface Session {
+  id: string;
+  createdAt: Date;
+  createdBy: string;
+  createdByUid: string; 
+  userDates: {
+    [username: string]: UserDate[];
+  };
+  poll?: {
     id: string;
-    createdAt: Date;
-    createdBy: string;
-    userDates: {
-      [username: string]: {
-        date: string;
-        hours: string[] | 'all';
-      }[];
+    movieTitles: string[];
+    votes: {
+      [username: string]: string[];
     };
-    poll?: Poll;
-    status: 'active' | 'inactive';
-  }
+  };
+  status: 'active' | 'completed';
+}
   
   export interface Poll {
     id: string;

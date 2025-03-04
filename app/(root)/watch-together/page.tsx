@@ -51,7 +51,7 @@ const SessionsPage = () => {
         </h1>
         
         {!showNewSession && (
-          <Link href="/sessions?new=true">
+          <Link href="/watch-together?new=true">
             <Button className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
               <Plus className="w-4 h-4" />
               <span>New Session</span>
@@ -120,7 +120,7 @@ const SessionsPage = () => {
                 variants={itemVariants}
                 className="bg-gradient-to-br from-gray-900 to-gray-800/50 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-800/50 hover:border-gray-700/50"
               >
-                <Link href={`/sessions/${session.id}`}>
+                <Link href={`/watch-together/${session.id}`}>
                   <div className="flex justify-between items-start">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">

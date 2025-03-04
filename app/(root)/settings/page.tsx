@@ -41,7 +41,7 @@ export default function SettingsPage() {
   )?.component || settingsCategories[0].component;
 
   return (
-    <div className="container-6xl mx-auto px-2 md:px-4 pt-16">
+    <div className="container-6xl mx-auto px-2 md:px-4 ">
       <div className="mb-6">
         <AnimatedTitle>
           {(className) => (

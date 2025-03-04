@@ -3,7 +3,7 @@ import { getToken, onMessage, MessagePayload } from "firebase/messaging";
 import { getMessagingInstance } from "./firebase";
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
+const RETRY_DELAY = 1000;
 
 export const requestForToken = async (retryCount = 0): Promise<string | null> => {
   const messaging = await getMessagingInstance();
@@ -19,13 +19,12 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
     if (currentToken) {
       console.log('Token:', currentToken);
       
-      // Send a "warm-up" notification
       await fetch('/api/send-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: currentToken,
-          silent: true, // This should be handled in your backend to send a silent notification
+          silent: true, 
         }),
       });
 
