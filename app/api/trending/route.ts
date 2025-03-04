@@ -1,10 +1,11 @@
+// api/trending.ts
 import { NextRequest, NextResponse } from 'next/server'
 
 const TMDB_API_KEY = process.env.NEXT_PRIVATE_TMDB_API_KEY
 
 export async function POST(request: NextRequest) {
   try {
-    const { mediaType, timeWindow, page } = await request.json()
+    const { mediaType, page, timeWindow = 'week' } = await request.json()
 
     if (!mediaType || (mediaType !== 'movie' && mediaType !== 'tv')) {
       return NextResponse.json({ error: 'Invalid mediaType parameter' }, { status: 400 })

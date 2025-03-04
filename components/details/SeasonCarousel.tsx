@@ -92,7 +92,7 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+        <h2 className="text-3xl font-bold text-white">
           Seasons
         </h2>
         <div className="flex space-x-4 p-2">

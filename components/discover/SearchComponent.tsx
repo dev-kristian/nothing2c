@@ -1,0 +1,486 @@
+'use client'
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Loader2, X, Filter, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useUserData } from '@/context/UserDataContext';
+
+interface SearchComponentProps {
+  className?: string;
+}
+
+// TMDB genres
+const genres = [
+  { id: 28, name: "Action" },
+  { id: 12, name: "Adventure" },
+  { id: 16, name: "Animation" },
+  { id: 35, name: "Comedy" },
+  { id: 80, name: "Crime" },
+  { id: 99, name: "Documentary" },
+  { id: 18, name: "Drama" },
+  { id: 10751, name: "Family" },
+  { id: 14, name: "Fantasy" },
+  { id: 36, name: "History" },
+  { id: 27, name: "Horror" },
+  { id: 10402, name: "Music" },
+  { id: 9648, name: "Mystery" },
+  { id: 10749, name: "Romance" },
+  { id: 878, name: "Science Fiction" },
+  { id: 10770, name: "TV Movie" },
+  { id: 53, name: "Thriller" },
+  { id: 10752, name: "War" },
+  { id: 37, name: "Western" }
+];
+
+// Generate years (current year down to 1900)
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
+
+const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedType, setSelectedType] = useState('multi');
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
+  const [includeAdult, setIncludeAdult] = useState(false);
+  
+  const inputRef = useRef<HTMLInputElement>(null);
+  const advancedSearchRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { userData } = useUserData();
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim() && !selectedGenre && !selectedYear) return;
+
+    setIsLoading(true);
+
+    try {
+      // Build search params
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append('query', searchQuery.trim());
+      if (selectedType) params.append('type', selectedType);
+      if (selectedYear) params.append('year', selectedYear);
+      if (selectedGenre) params.append('genre', selectedGenre.toString());
+      params.append('include_adult', includeAdult.toString());
+      
+      const response = await fetch(`/api/search?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Search failed with status: ${response.status}`);
+      }
+      
+      // Build the search URL for the client-side navigation
+      let searchPath = '/search';
+      if (searchQuery.trim()) {
+        searchPath += `/${encodeURIComponent(searchQuery)}`;
+      } else {
+        searchPath += '/discover';
+      }
+      
+      // Add advanced params as query string
+      const advancedParams = new URLSearchParams();
+      if (selectedType !== 'multi') advancedParams.append('type', selectedType);
+      if (selectedYear) advancedParams.append('year', selectedYear);
+      if (selectedGenre) advancedParams.append('genre', selectedGenre.toString());
+      if (includeAdult) advancedParams.append('adult', 'true');
+      
+      const queryString = advancedParams.toString();
+      if (queryString) {
+        searchPath += `?${queryString}`;
+      }
+      
+      router.push(searchPath);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const resetAdvancedFilters = () => {
+    setSelectedType('multi');
+    setSelectedYear(null);
+    setSelectedGenre(null);
+    setIncludeAdult(false);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        advancedSearchRef.current && 
+        !advancedSearchRef.current.contains(event.target as Node) &&
+        !(event.target as Element).closest('[data-advanced-toggle]')
+      ) {
+        setShowAdvanced(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <form onSubmit={handleSearch} className={`${className} w-full px-2 sm:px-4 md:px-6`}>
+      <div className="container mx-auto flex flex-col items-center">
+        {/* Welcome and Title Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7 }}
+          className="text-center w-full mb-3 sm:mb-4 md:mb-6"
+        >
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-foreground/70 text-xs sm:text-sm font-medium mb-1"
+          >
+            {userData ? (
+              <>
+                Hi, <span className="text-primary font-semibold">{userData.username}</span>. Ready to
+                discover?
+              </>
+            ) : (
+              "Welcome to AFK Cinema"
+            )}
+          </motion.p>
+  
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.1,
+              duration: 0.5,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
+          >
+            <span className="text-foreground">Explore </span>
+            <span className="text-gradient font-semibold">Movies</span>
+            <span className="text-foreground"> and </span>
+            <span className="text-gradient font-semibold">TV Shows</span>
+          </motion.div>
+        </motion.div>
+  
+        <motion.div
+          className="relative w-full max-w-2xl mx-auto"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.2,
+            duration: 0.6,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        >
+          {/* Apple-style search bar */}
+          <div
+            className={`
+              frosted-glass rounded-full shadow-lg overflow-hidden
+              transition-all duration-300 ease-out
+              ${isFocused ? 'ring-1 ring-primary/50 shadow-xl' : ''}
+            `}
+          >
+            <div className="flex items-center p-1 sm:p-1.5 md:p-2">
+              {/* Search icon */}
+              <div className="flex-shrink-0 pl-2 sm:pl-3">
+                <Search
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors duration-300 ${
+                    isFocused ? 'text-primary' : 'text-foreground/50'
+                  }`}
+                />
+              </div>
+              
+              {/* Input field */}
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder="Search movies, TV shows..."
+                aria-label="Search for movies, TV shows, or people"
+                disabled={isLoading}
+                className="flex-grow bg-transparent text-foreground placeholder-foreground/50 border-none 
+                          py-1.5 sm:py-2 px-1.5 sm:px-2 md:px-3 text-xs sm:text-sm md:text-base focus:outline-none focus:ring-0"
+              />
+              
+              {/* Clear button */}
+              <AnimatePresence>
+                {searchQuery && (
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={handleClearSearch}
+                    className="flex-shrink-0 p-1 sm:p-1.5 text-foreground/50 hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+              
+              {/* Divider */}
+              <div className="h-5 sm:h-6 w-px bg-foreground/10 mx-0.5 sm:mx-1"></div>
+              
+              {/* Advanced search toggle */}
+              <button
+                type="button"
+                data-advanced-toggle
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className={`
+                  flex-shrink-0 p-1 sm:p-1.5 rounded-lg transition-colors
+                  ${showAdvanced 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-foreground/50 hover:text-foreground hover:bg-foreground/10'
+                  }
+                `}
+                aria-label="Advanced search options"
+                aria-expanded={showAdvanced}
+              >
+                <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              
+              {/* Divider */}
+              <div className="h-5 sm:h-6 w-px bg-foreground/10 mx-0.5 sm:mx-1"></div>
+              
+              {/* Search button */}
+              <motion.button
+                type="submit"
+                disabled={isLoading || (!searchQuery.trim() && !selectedGenre && !selectedYear)}
+                aria-label={isLoading ? "Searching" : "Search"}
+                className={`
+                  flex-shrink-0 bg-primary hover:bg-primary-hover text-primary-foreground 
+                  transition-all duration-300 rounded-2xl py-1 sm:py-1.5 px-2 sm:px-3 md:px-4 mx-0.5 sm:mx-1
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                      <span className="text-2xs sm:text-xs md:text-sm">Searching</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-2xs sm:text-xs md:text-sm">Search</span>
+                    </>
+                  )}
+                </div>
+              </motion.button>
+            </div>
+          </div>
+  
+          {/* Advanced search panel */}
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                ref={advancedSearchRef}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute z-10 mt-2 w-full frosted-glass rounded-2xl sm:rounded-3xl shadow-lg p-3 sm:p-4"
+              >
+                <div className="flex justify-between items-center mb-2 sm:mb-3">
+                  <h3 className="text-xs sm:text-sm font-medium">Advanced Search</h3>
+                  <button 
+                    type="button"
+                    onClick={resetAdvancedFilters}
+                    className="text-2xs sm:text-xs text-primary hover:text-primary-hover transition-colors"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                  {/* Content type selector */}
+                  <div className="space-y-1">
+                    <label className="text-2xs sm:text-xs text-foreground/70">Content Type</label>
+                    <div className="relative">
+                      <select
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-full rounded-lg bg-background/50 border border-foreground/10 
+                                  text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="multi">All (Movies, TV, People)</option>
+                        <option value="movie">Movies Only</option>
+                        <option value="tv">TV Shows Only</option>
+                        <option value="person">People Only</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
+                    </div>
+                  </div>
+                  
+                  {/* Year selector */}
+                  <div className="space-y-1">
+                    <label className="text-2xs sm:text-xs text-foreground/70">Release Year</label>
+                    <div className="relative">
+                      <select
+                        value={selectedYear || ''}
+                        onChange={(e) => setSelectedYear(e.target.value || null)}
+                        className="w-full rounded-lg bg-background/50 border border-foreground/10 
+                                  text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="">Any Year</option>
+                        {years.map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
+                    </div>
+                  </div>
+                  
+                  {/* Genre selector - only show for movies and TV */}
+                  {selectedType !== 'person' && (
+                    <div className="space-y-1">
+                      <label className="text-2xs sm:text-xs text-foreground/70">Genre</label>
+                      <div className="relative">
+                        <select
+                          value={selectedGenre || ''}
+                          onChange={(e) => setSelectedGenre(e.target.value ? parseInt(e.target.value) : null)}
+                          className="w-full rounded-lg bg-background/50 border border-foreground/10 
+                                    text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="">Any Genre</option>
+                          {genres.map(genre => (
+                            <option key={genre.id} value={genre.id}>{genre.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Adult content toggle */}
+                  <div>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={includeAdult} 
+                        onChange={() => setIncludeAdult(!includeAdult)}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-9 sm:w-11 h-5 sm:h-6 bg-foreground/20 peer-focus:outline-none rounded-full peer 
+                                    peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
+                                    peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
+                                    after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                    after:h-4 sm:after:h-5 after:w-4 sm:after:w-5 after:transition-all peer-checked:bg-primary">
+                      </div>
+                      <span className="ms-2 sm:ms-3 text-xs sm:text-sm font-medium">Include adult content</span>
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Active filters summary */}
+                {(selectedType !== 'multi' || selectedYear || selectedGenre || includeAdult) && (
+                  <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-foreground/10">
+                    <h4 className="text-2xs sm:text-xs text-foreground/70 mb-1.5 sm:mb-2">Active Filters:</h4>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                      {selectedType !== 'multi' && (
+                        <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
+                          {selectedType === 'movie' ? 'Movies' : selectedType === 'tv' ? 'TV Shows' : 'People'}
+                          <button 
+                            type="button" 
+                            onClick={() => setSelectedType('multi')}
+                            className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                          >
+                            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      {selectedYear && (
+                        <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
+                          Year: {selectedYear}
+                          <button 
+                            type="button" 
+                            onClick={() => setSelectedYear(null)}
+                            className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                          >
+                            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          </button>
+                          </div>
+                    )}
+                    
+                    {selectedGenre && (
+                      <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
+                        {genres.find(g => g.id === selectedGenre)?.name}
+                        <button 
+                          type="button" 
+                          onClick={() => setSelectedGenre(null)}
+                          className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                        >
+                          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {includeAdult && (
+                      <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
+                        Adult Content
+                        <button 
+                          type="button" 
+                          onClick={() => setIncludeAdult(false)}
+                          className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                        >
+                          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="mt-2 text-center text-2xs sm:text-xs text-foreground/40 hidden sm:block">
+          <span>Press </span>
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-foreground/10 font-mono text-foreground/70">
+            ⌘K
+          </kbd>
+          <span> or </span>
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-foreground/10 font-mono text-foreground/70">
+            Ctrl+K
+          </kbd>
+          <span> to search</span>
+        </div>
+      </motion.div>
+    </div>
+  </form>
+);
+};
+
+export default SearchComponent;

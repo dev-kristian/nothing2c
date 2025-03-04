@@ -19,7 +19,7 @@ export const useUserData = () => {
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { userData, updateNotificationStatus } = useUserDataHook();
-  const { watchlistItems, addToWatchlist, removeFromWatchlist } = useWatchlist(); // Get watchlistItems
+  const { watchlistItems, addToWatchlist, removeFromWatchlist } = useWatchlist(); 
   const { friends, friendRequests, isLoadingFriends, isLoadingRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend } =
     useFriends(userData?.username);
 
