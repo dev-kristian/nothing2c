@@ -13,7 +13,7 @@ import Loader from '@/components/Loader';
 import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
 import { useCustomToast } from '@/hooks/useToast';
-import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator';
+import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/AuthContext';
 

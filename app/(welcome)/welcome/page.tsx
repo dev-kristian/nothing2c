@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { validateUsername } from '@/lib/userUtils';
-import { WithProfileUncompleted } from '@/components/WithProfileUncompleted';
+import { WithProfileUncompleted } from '@/components/auth/WithProfileUncompleted';
 
 function WelcomePage() {
   const [username, setUsername] = useState('');

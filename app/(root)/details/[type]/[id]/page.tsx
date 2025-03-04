@@ -1,10 +1,12 @@
-// C:\Users\Vivobook\Documents\dev-kristian\afkcinemachill\app\(root)\details\[type]\[id]\page.tsx
+// app/(root)/details/[type]/[id]/page.tsx
 import React from 'react';
 import { notFound } from 'next/navigation';
 import CrewCarousel from '@/components/details/CrewCarousel';
-import { DetailsData, VideoData } from '@/types';
+import { DetailsData, VideoData, Review, Media } from '@/types';
 import DetailPageWrapper from '@/components/details/DetailPageWrapper';
 import SeasonCarousel from '@/components/details/SeasonCarousel';
+import ReviewsSection from '@/components/details/ReviewsSection'; 
+import SimilarContent from '@/components/details/SimilarContent';
 
 interface DetailPageProps {
   params: {
@@ -99,14 +101,61 @@ async function getSeasonDetails(type: string, id: string, seasonNumber: number) 
   return await response.json();
 }
 
+// New function to fetch reviews
+async function getReviews(type: string, id: string): Promise<Review[]> {
+    const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
+    const reviewsUrl = `https://api.themoviedb.org/3/${type}/${id}/reviews`;
+
+    const response = await fetch(reviewsUrl, {
+        headers: {
+            'Authorization': `Bearer ${bearerToken}`,
+            'accept': 'application/json'
+        },
+        next: { revalidate: 3600 }
+    });
+
+    if (!response.ok) {
+        // Don't throw an error for reviews; just return an empty array
+        console.error(`Failed to fetch reviews: ${response.status}`);
+        return [];
+    }
+
+    const data = await response.json();
+    return data.results || []; // Ensure results exists
+}
+
+async function getSimilar(type: string, id: string): Promise<Media[]> {
+  const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
+  const url = `https://api.themoviedb.org/3/${type}/${id}/similar`;
+
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${bearerToken}`,
+      'accept': 'application/json'
+    },
+    next: { revalidate: 3600 }
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+  return data.results || [];
+}
+
 export default async function DetailPage({ params }: DetailPageProps) {
   let details: DetailsData;
   let videos: VideoData[];
+  let reviews: Review[];
+  let similar: Media[];
 
   try {
-    [details, videos] = await Promise.all([
+    [details, videos, reviews, similar] = await Promise.all([
       getDetails(params.type, params.id),
-      getVideos(params.type, params.id)
+      getVideos(params.type, params.id),
+      getReviews(params.type, params.id),
+      getSimilar(params.type, params.id)
     ]);
   } catch (error) {
     console.error('Error fetching details:', error);
@@ -126,12 +175,8 @@ export default async function DetailPage({ params }: DetailPageProps) {
   }
 
   return (
-    <div >
-      <DetailPageWrapper
-        details={details}
-        videos={videos}
-      />
-      
+    <div>
+      <DetailPageWrapper details={details} videos={videos} />
       <div className="pt-4 w-full px-2 md:px-8">
         {params.type === 'tv' && details.seasons && (
           <SeasonCarousel 
@@ -140,13 +185,14 @@ export default async function DetailPage({ params }: DetailPageProps) {
             fetchSeasonDetails={fetchSeasonDetails}
           />
         )}
-        
         <CrewCarousel 
           cast={details.credits.cast} 
           crew={details.credits.crew}
           isLoading={false} 
           error={null} 
         />
+        <ReviewsSection reviews={reviews} />
+        <SimilarContent similar={similar} mediaType={params.type as 'movie' | 'tv'} />
       </div>
     </div>
   );

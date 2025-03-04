@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createUserWithEmailAndPassword, sendEmailVerification, AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import AuthForm from '@/components/AuthForm';
+import AuthForm from '@/components/auth/AuthForm';
 import { useCustomToast } from '@/hooks/useToast';
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";

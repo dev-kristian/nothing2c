@@ -30,16 +30,6 @@ export interface MediaState {
   hasMore: boolean;
 }
 
-export interface TrendingContextType {
-  trendingState: MediaState;
-  mediaType: 'movie' | 'tv';
-  timeWindow: 'day' | 'week';
-  isInitialLoading: boolean;
-  setMediaType: (type: 'movie' | 'tv') => void;
-  setTimeWindow: (window: 'day' | 'week') => void;
-  fetchTrending: () => Promise<void>;
-}
-
 export interface TopWatchlistContextType {
   topWatchlistItems: {
     movie: TopWatchlistItem[];
