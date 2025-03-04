@@ -1,94 +1,36 @@
-import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
+// components/TrendingSection.tsx
+import React, { useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaPoster from '../MediaPoster';
 import Spinner from '../Spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaTypeToggle from '../MediaTypeToggle';
-import { Media } from '@/types/media';
-
-interface TrendingApiResponse {
-  results: Media[];
-  total_pages: number;
-}
+import { useTrending } from '@/hooks/discover/useTrending'; // Import the hook
 
 const TrendingSection: React.FC = () => {
-  const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
-  const [data, setData] = useState<Media[]>([]);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-
-  const cache = useRef<Record<'movie' | 'tv', { data: Media[]; page: number; hasMore: boolean }>>({
-    movie: { data: [], page: 1, hasMore: true },
-    tv: { data: [], page: 1, hasMore: true },
-  });
-
-  const uniqueItems = useMemo(() => {
-    const seen = new Set<string>();
-    return data.filter((item) => {
-      const key = `${item.id}-${item.media_type}`;
-      return seen.has(key) ? false : seen.add(key);
-    });
-  }, [data]);
+  const {
+    data,
+    isLoading,
+    isInitialLoading,
+    error,
+    hasMore,
+    loadMore,
+    mediaType,
+    setMediaType,
+  } = useTrending();
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchTrending = useCallback(
-    async (resetPage: boolean = false) => {
-      if (isLoading || (!resetPage && !hasMore)) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      const currentPage = resetPage ? 1 : page;
-
-      try {
-        const response = await fetch('/api/trending', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mediaType, page: currentPage }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch trending data');
-        }
-
-        const result: TrendingApiResponse = await response.json();
-
-        const newData = resetPage ? result.results : [...data, ...result.results];
-
-        setData(newData);
-        setPage(currentPage + 1);
-        setHasMore(currentPage < result.total_pages);
-
-        cache.current[mediaType] = {
-          data: newData,
-          page: currentPage + 1,
-          hasMore: currentPage < result.total_pages,
-        };
-      } catch (err) {
-        setError('An error occurred while fetching trending data. Please try again.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-        setIsInitialLoading(false);
-      }
-    },
-    [isLoading, hasMore, mediaType, page, data]
-  );
-
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const target = entries[0];
-      if (target.isIntersecting && !isLoading && hasMore) {
-        fetchTrending(false);
+      if (target.isIntersecting && hasMore) {
+        loadMore();
       }
     },
-    [isLoading, hasMore, fetchTrending]
+    [hasMore, loadMore]
   );
 
   useEffect(() => {
@@ -113,27 +55,6 @@ const TrendingSection: React.FC = () => {
     };
   }, [handleObserver]);
 
-  useEffect(() => {
-    const cachedData = cache.current[mediaType];
-    if (cachedData.data.length > 0) {
-      setData(cachedData.data);
-      setPage(cachedData.page);
-      setHasMore(cachedData.hasMore);
-      setIsInitialLoading(false);
-    } else {
-      setData([]);
-      setPage(1);
-      setHasMore(true);
-      setError(null);
-
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
-      }
-
-      setIsInitialLoading(true);
-      fetchTrending(true);
-    }
-  }, [mediaType, fetchTrending]);
 
   if (isInitialLoading) {
     return (
@@ -154,14 +75,15 @@ const TrendingSection: React.FC = () => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="flex items-center">
             {error}
-            <motion.button
+            {/* Consider a way to retry the *initial* fetch if it fails */}
+            {/* <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => fetchTrending(true)}
+              onClick={() => refetch()} // Assuming SWR provides a refetch
               className="ml-2 text-primary hover:text-primary-hover transition-colors"
             >
               Try again
-            </motion.button>
+            </motion.button> */}
           </AlertDescription>
         </Alert>
       </motion.div>
@@ -211,16 +133,16 @@ const TrendingSection: React.FC = () => {
           >
             Trending
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-foreground/60 text-sm max-w-2xl mb-4 md:mb-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Discover what&apos;s capturing the world&apos;s attention right now. 
+            Discover what's capturing the world's attention right now.
           </motion.p>
         </div>
-        
+
         <motion.div
           className="flex flex-wrap gap-4 justify-center md:justify-end"
           initial={{ opacity: 0, x: 20 }}
@@ -233,7 +155,7 @@ const TrendingSection: React.FC = () => {
           />
         </motion.div>
       </motion.div>
-  
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -241,7 +163,7 @@ const TrendingSection: React.FC = () => {
         className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
       >
         <AnimatePresence mode="popLayout">
-          {uniqueItems.map((item) => (
+          {data.map((item) => (
             <motion.div
               key={`${item.id}-${item.media_type}`}
               variants={itemVariants}
@@ -255,7 +177,7 @@ const TrendingSection: React.FC = () => {
           ))}
         </AnimatePresence>
       </motion.div>
-  
+
       {isLoading && (
         <motion.div
           className="flex justify-center items-center my-8"
@@ -266,8 +188,8 @@ const TrendingSection: React.FC = () => {
           <Spinner size={200} />
         </motion.div>
       )}
-  
-      {uniqueItems.length === 0 && !isLoading && (
+
+      {data.length === 0 && !isLoading && (
         <motion.div
           className="text-center text-muted-foreground my-12 space-y-4 frosted-glass p-8 rounded-2xl"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -278,11 +200,10 @@ const TrendingSection: React.FC = () => {
           <p className="text-sm">Try adjusting your search or filter</p>
         </motion.div>
       )}
-  
+
       <div ref={loadMoreTriggerRef} className="h-20" />
     </div>
   );
-  
 };
 
 export default TrendingSection;

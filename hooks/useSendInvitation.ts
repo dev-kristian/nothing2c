@@ -2,47 +2,57 @@
 
 import { useState } from 'react';
 import { useUserData } from '@/context/UserDataContext';
+import useSWRMutation from 'swr/mutation';
+
+interface SendInvitationArgs {
+  title: string;
+  body: string;
+  icon: string;
+  clickAction: string;
+}
+
+async function sendInvitationFetcher(url: string, { arg }: { arg: SendInvitationArgs }) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(arg),
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || 'Failed to send invitation');
+    }
+    return data;
+}
+
 
 export const useSendInvitation = () => {
   const { userData } = useUserData();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { trigger, isMutating, error } = useSWRMutation('/api/send-notification', sendInvitationFetcher);
 
   const sendInvitation = async () => {
     if (!userData) {
-      setError("User data is not available");
-      return;
+      // No need to set a separate error state; SWR handles it.  Just throw.
+      throw new Error("User data is not available");
     }
 
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: `${userData.username} invites you!`,
-          body: `${userData.username} invites you to a movie night!`,
-          icon: '/icon-192x192.png',
-          clickAction: 'https://localhost:3000/',
-        }),
+      await trigger({
+        title: `${userData.username} invites you!`,
+        body: `${userData.username} invites you to a movie night!`,
+        icon: '/icon-192x192.png',
+        clickAction: 'https://localhost:3000/', // Consider making this configurable
       });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to send invitation');
-      }
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      //SWR will store the error for us. No need to use a local state.
+      console.error('Error sending invitation:', err);
+       // Optionally re-throw, depending on how you want to handle it higher up.
+       throw err;
     }
   };
 
-  return { sendInvitation, isLoading, error };
+  return { sendInvitation, isLoading: isMutating, error: error?.message };
 };

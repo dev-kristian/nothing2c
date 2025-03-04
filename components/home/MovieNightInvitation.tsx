@@ -7,9 +7,9 @@ import { useUserData } from '@/context/UserDataContext';
 import { useSession } from '@/context/SessionContext';
 import { useSendInvitation } from '@/hooks/useSendInvitation';
 import MovieNightCalendar from './MovieNightCalendar';
-import { DateTimeSelection,TopWatchlistItem } from '@/types';
+import { DateTimeSelection, TopWatchlistItem, Friend } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCalendar, FiFilm, FiSend, FiX } from 'react-icons/fi';
+import { FiCalendar, FiFilm, FiSend, FiX, FiUsers } from 'react-icons/fi';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTopWatchlist } from '@/context/TopWatchlistContext';
 import Image from 'next/image';
@@ -79,10 +79,34 @@ const SelectedMovieItem = memo(({
 ));
 SelectedMovieItem.displayName = "SelectedMovieItem";
 
+const FriendSelectionItem = memo(({ friend, isSelected, onToggle }: { 
+  friend: Friend; 
+  isSelected: boolean;
+  onToggle: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className={`flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer ${
+      isSelected ? 'bg-gradient-to-r from-pink-900/50 to-gray-800 border border-pink-500/30' : 'bg-gray-800 hover:bg-gray-700'
+    }`}
+    onClick={onToggle}
+  >
+    <div className="flex items-center">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mr-3">
+        {friend.username.charAt(0).toUpperCase()}
+      </div>
+      <span>{friend.username}</span>
+    </div>
+    <Checkbox checked={isSelected} onCheckedChange={() => onToggle()} />
+  </motion.div>
+));
+FriendSelectionItem.displayName = "FriendSelectionItem";
+
 export default function MovieNightInvitation() {
   const router = useRouter();
   const { showToast } = useCustomToast();
-  const { userData, isLoading: userLoading } = useUserData();
+  const { userData, isLoading: userLoading, friends, isLoadingFriends } = useUserData();
   const { createSession, createPoll } = useSession();
   const { sendInvitation, error: invitationError } = useSendInvitation();
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
@@ -91,6 +115,7 @@ export default function MovieNightInvitation() {
   const [inputMovieTitle, setInputMovieTitle] = useState('');
   const { topWatchlistItems } = useTopWatchlist();
   const [suggestions, setSuggestions] = useState<TopWatchlistItem[]>([]);
+  const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
   const inputContainerRef = useRef<HTMLDivElement>(null);
 
   const handleDatesSelected = useCallback((dates: DateTimeSelection[]) => {
@@ -99,14 +124,25 @@ export default function MovieNightInvitation() {
 
   useOutsideClickHandler(inputContainerRef, setSuggestions);
 
+  const toggleFriendSelection = useCallback((friend: Friend) => {
+    setSelectedFriends(prev => {
+      const isSelected = prev.some(f => f.uid === friend.uid);
+      if (isSelected) {
+        return prev.filter(f => f.uid !== friend.uid);
+      } else {
+        return [...prev, friend];
+      }
+    });
+  }, []);
+
   const completeSession = useCallback(async () => {
     if (userLoading || !userData) {
-      showToast("Error","User data not available. Please try again.","error",);
+      showToast("Error", "User data not available. Please try again.", "error");
       return;
     }
 
     try {
-      const newSession = await createSession(selectedDates);
+      const newSession = await createSession(selectedDates, selectedFriends);
       
       if (movieTitles.length > 0 && newSession) {
         await createPoll(newSession.id, movieTitles.map(movie => movie.title || ''));
@@ -117,21 +153,24 @@ export default function MovieNightInvitation() {
         if (invitationError) throw new Error(invitationError);
       }
 
-      showToast("Session Created","Your movie night session has been created successfully!","success");
+      showToast("Session Created", "Your movie night session has been created successfully!", "success");
 
       setSelectedDates([]);
       setMovieTitles([]);
+      setSelectedFriends([]);
       router.push(`/watch-together/${newSession.id}`);
 
     } catch (error) {
       console.error('Error completing session:', error);
-      showToast("Error","Failed to complete the session. Please try again.","error",);
+      showToast("Error", "Failed to complete the session. Please try again.", "error");
     }
-  }, [userLoading, userData, selectedDates, movieTitles, sendNotification, 
+  }, [userLoading, userData, selectedDates, movieTitles, selectedFriends, sendNotification, 
     showToast, createSession, createPoll, sendInvitation, invitationError, router]);
-    const handleCancel = useCallback(() => {
-      router.push('/watch-together');
-    }, [router]);
+
+  const handleCancel = useCallback(() => {
+    router.push('/watch-together');
+  }, [router]);
+
   const handleAddMovie = useCallback(() => {
     handleAddMovieTitle(inputMovieTitle, movieTitles, setMovieTitles, setInputMovieTitle);
   }, [inputMovieTitle, movieTitles]);
@@ -224,6 +263,36 @@ export default function MovieNightInvitation() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* New Friend Selection Section */}
+      <div className="bg-transparent md:p-4 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4 flex items-center">
+          <FiUsers className="mr-2" /> Invite Friends
+        </h3>
+        
+        {isLoadingFriends ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-pulse flex space-x-4">
+              <div className="h-12 bg-gray-700 rounded w-full"></div>
+            </div>
+          </div>
+        ) : friends && friends.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {friends.map(friend => (
+              <FriendSelectionItem
+                key={friend.uid}
+                friend={friend}
+                isSelected={selectedFriends.some(f => f.uid === friend.uid)}
+                onToggle={() => toggleFriendSelection(friend)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-gray-400">
+            <p>You don't have any friends yet. Add friends to invite them to movie nights!</p>
+          </div>
+        )}
+      </div>
   
       <div className="bg-transparent p-2 md:p-4">
         <div className="flex items-center space-x-2">
@@ -232,8 +301,8 @@ export default function MovieNightInvitation() {
             checked={sendNotification}
             onCheckedChange={(checked) => setSendNotification(checked as boolean)}
           />
-          <label htmlFor="sendNotification" className="text-sm font-medium">
-            Send notification to all users
+                    <label htmlFor="sendNotification" className="text-sm font-medium">
+            Send notification to invited users
           </label>
         </div>
       </div>
@@ -271,20 +340,33 @@ export default function MovieNightInvitation() {
           </Tooltip>
         </TooltipProvider>
       </div>
-      </motion.div>
-), [inputMovieTitle, suggestions, movieTitles, sendNotification, 
-  handleMovieInputChange, handleAddMovie, completeSession, 
-  selectedDates, handleDatesSelected, handleCancel]); 
+    </motion.div>
+  ), [
+    inputMovieTitle, 
+    suggestions, 
+    movieTitles, 
+    sendNotification, 
+    handleMovieInputChange, 
+    handleAddMovie, 
+    completeSession, 
+    selectedDates, 
+    handleDatesSelected, 
+    handleCancel,
+    friends,
+    isLoadingFriends,
+    selectedFriends,
+    toggleFriendSelection
+  ]); 
 
-    return (
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 rounded-3xl shadow-2xl mx-auto border border-white/10 backdrop-blur-lg">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {sessionCreationContent}
-        </motion.div>
-      </div>
-    );
-  }
+  return (
+    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 rounded-3xl shadow-2xl mx-auto border border-white/10 backdrop-blur-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {sessionCreationContent}
+      </motion.div>
+    </div>
+  );
+}

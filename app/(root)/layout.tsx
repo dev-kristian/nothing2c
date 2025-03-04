@@ -12,6 +12,8 @@ import { Toaster } from '@/components/ui/toaster'
 import Loading from '@/components/Loading'
 import { WithProfileCompleted } from '@/components/auth/WithProfileComplete'
 import { ThemeScript } from '@/components/ThemeScript'
+import { SWRConfig } from 'swr';
+import swrConfig from '@/lib/swr-config';
 
 function RootLayout({
   children,
@@ -19,6 +21,7 @@ function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    <SWRConfig value={swrConfig}>
     <UserDataProvider>
       <TopWatchlistProvider>
         <SearchProvider>
@@ -46,6 +49,7 @@ function RootLayout({
         </SearchProvider>
       </TopWatchlistProvider>
     </UserDataProvider>
+    </SWRConfig>
   )
 }
 

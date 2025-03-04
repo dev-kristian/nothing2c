@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -23,10 +23,13 @@ const SessionsPage = () => {
   const showNewSession = searchParams.get('new') === 'true';
   const [filter, setFilter] = useState('all');
 
-  const filteredSessions = sessions.filter(session => {
-    if (filter === 'all') return true;
-    return session.status === filter;
-  });
+  // Memoize filtered sessions to prevent unnecessary recalculations
+  const filteredSessions = useMemo(() => {
+    return sessions.filter(session => {
+      if (filter === 'all') return true;
+      return session.status === filter;
+    });
+  }, [sessions, filter]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -170,4 +173,4 @@ const SessionsPage = () => {
   );
 };
 
-export default SessionsPage;
+export default React.memo(SessionsPage);

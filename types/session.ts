@@ -6,10 +6,17 @@ export interface Session {
   id: string;
   createdAt: Date;
   createdBy: string;
-  createdByUid: string; 
+  createdByUid: string;
   userDates: {
     [username: string]: UserDate[];
   };
+  participants: {
+    [uid: string]: {
+      username: string;
+      status: 'invited' | 'accepted' | 'declined';
+    };
+  };
+  participantIds: string[]; // Add this field
   poll?: {
     id: string;
     movieTitles: string[];

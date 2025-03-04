@@ -1,6 +1,10 @@
+// hooks/user/useFriends.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
 import { Friend, FriendRequest } from '@/types';
+import useSWR from 'swr';
+import { unstable_serialize } from 'swr'; // Import unstable_serialize
+
 
 interface UseFriendsReturn {
   friends: Friend[];
@@ -15,47 +19,33 @@ interface UseFriendsReturn {
 
 export const useFriends = (currentUsername?: string): UseFriendsReturn => {
   const { user } = useAuthContext();
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [isLoadingFriends, setIsLoadingFriends] = useState(true);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
 
-  const loadFriendRequests = useCallback(async () => {
-    if (!user?.uid) return;
-    setIsLoadingRequests(true);
-    try {
-      const response = await fetch(`/api/friends/requests?userId=${user.uid}`);
-      if (!response.ok) throw new Error('Failed to fetch friend requests');
-      const data = await response.json();
-      setFriendRequests(data.requests);
-    } catch (error) {
-      console.error('Error loading friend requests:', error);
-    } finally {
-      setIsLoadingRequests(false);
-    }
-  }, [user?.uid]);
+  const friendsKey = user?.uid ? `/api/friends/list?userId=${user.uid}` : null;
+  const {
+    data: friendsData,
+    error: friendsError,
+    isLoading: isLoadingFriends,
+    mutate: mutateFriends, // Use mutate to revalidate and update
+  } = useSWR<{ friends: Friend[] }>(friendsKey);
 
-  const loadFriends = useCallback(async () => {
-    if (!user?.uid) return;
-    setIsLoadingFriends(true);
-    try {
-      const response = await fetch(`/api/friends/list?userId=${user.uid}`);
-      if (!response.ok) throw new Error('Failed to fetch friends list');
-      const data = await response.json();
-      setFriends(data.friends);
-    } catch (error) {
-      console.error('Error loading friends:', error);
-    } finally {
-      setIsLoadingFriends(false);
-    }
-  }, [user?.uid]);
+  const friendRequestsKey = user?.uid ? `/api/friends/requests?userId=${user.uid}` : null;
+  const {
+    data: friendRequestsData,
+    error: friendRequestsError,
+    isLoading: isLoadingRequests,
+    mutate: mutateFriendRequests, // Use mutate to revalidate and update
+  } = useSWR<{ requests: FriendRequest[] }>(friendRequestsKey);
 
-  useEffect(() => {
-    if (user?.uid) {
-      loadFriendRequests();
-      loadFriends();
-    }
-  }, [user?.uid, loadFriendRequests, loadFriends]);
+    const friends = friendsData?.friends || [];
+    const friendRequests = friendRequestsData?.requests || [];
+
+
+  // useEffect(() => { //No more need for the use effect since we manage cache and states using swr.
+  //   if (user?.uid) {
+  //     loadFriendRequests();
+  //     loadFriends();
+  //   }
+  // }, [user?.uid, loadFriendRequests, loadFriends]);
 
   const sendFriendRequest = async (targetUser: { uid: string; username: string }) => {
     if (!user?.uid || !currentUsername)
@@ -70,6 +60,8 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
         })
       });
       if (!response.ok) throw new Error('Failed to send friend request');
+      // You *could* optimistically update here, but it's usually best to revalidate:
+      mutateFriends(); // Revalidate friends list (could be affected)
     } catch (error) {
       console.error('Error sending friend request:', error);
       throw error;
@@ -92,13 +84,10 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
       });
       if (!response.ok) throw new Error('Failed to accept friend request');
 
-      // Update local state
-      setFriendRequests(prev => prev.filter(req => req.id !== request.id));
-      const newFriend: Friend = {
-        uid: request.fromUid,
-        username: request.fromUsername
-      };
-      setFriends(prev => [...prev, newFriend]);
+      // No need to manually update state. Use mutate.
+      await mutateFriendRequests(); // Remove from requests
+      await mutateFriends();      // Add to friends
+
     } catch (error) {
       console.error('Error accepting friend request:', error);
       throw error;
@@ -117,8 +106,9 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
         })
       });
       if (!response.ok) throw new Error('Failed to reject friend request');
-      // Update local state
-      setFriendRequests(prev => prev.filter(req => req.id !== request.id));
+
+      await mutateFriendRequests(); // Remove from requests
+
     } catch (error) {
       console.error('Error rejecting friend request:', error);
       throw error;
@@ -137,7 +127,8 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
         })
       });
       if (!response.ok) throw new Error('Failed to remove friend');
-      setFriends(prev => prev.filter(f => f.uid !== friend.uid));
+      await mutateFriends(); // Remove from friends
+
     } catch (error) {
       console.error('Error removing friend:', error);
       throw error;
