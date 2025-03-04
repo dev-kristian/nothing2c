@@ -65,12 +65,13 @@ export interface FirestoreWatchlistItem {
 
 // Add for SessionContext
 export interface SessionContextType {
-  createSession: (dates: DateTimeSelection[]) => Promise<Session>;
+  createSession: (dates: DateTimeSelection[], selectedFriends: Friend[]) => Promise<Session>;
   createPoll: (sessionId: string, movieTitles: string[]) => Promise<void>;
   updateUserDates: (sessionId: string, dates: DateTimeSelection[]) => Promise<void>;
   toggleVote: (sessionId: string, movieTitle: string) => Promise<void>;
   addMovieToPoll: (sessionId: string, movieTitle: string) => Promise<void>;
   removeMovieFromPoll: (sessionId: string, movieTitle: string) => Promise<void>;
+  updateParticipantStatus: (sessionId: string, status: 'accepted' | 'declined') => Promise<void>;
   sessions: Session[];
 }
 
