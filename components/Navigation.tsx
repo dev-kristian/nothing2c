@@ -67,8 +67,8 @@ export default function Navigation() {
       animate={{ y: 0 }}
       className={`fixed w-full z-50 py-1 h-[var(--navbar-height)] transition-all duration-500 ${
         scrolled
-          ? 'bg-background/60 dark:bg-background/40 backdrop-blur-xl shadow-lg'
-          : 'bg-background/30 dark:bg-background/20 backdrop-blur-md'
+          ? 'bg-background/60 dark:bg-background/30 backdrop-blur-xl shadow-lg'
+          : 'bg-background/30 dark:bg-background/60 backdrop-blur-md'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4">

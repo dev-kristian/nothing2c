@@ -1,4 +1,6 @@
-import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
+'use client'
+
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -9,11 +11,13 @@ import { useSendInvitation } from '@/hooks/useSendInvitation';
 import MovieNightCalendar from './MovieNightCalendar';
 import { DateTimeSelection, TopWatchlistItem, Friend } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCalendar, FiFilm, FiSend, FiX, FiUsers } from 'react-icons/fi';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTopWatchlist } from '@/context/TopWatchlistContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Calendar, Film, Users, X, Plus, Send, Check, AlertTriangle, Search, Tv } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   handleAddMovieTitle,
   removeMovieTitle,
@@ -22,64 +26,103 @@ import {
   useOutsideClickHandler
 } from '@/utils/movieNightInvitationUtils';
 
-const SuggestionItem = memo(({ movie, onClick }: { 
-  movie: TopWatchlistItem; 
+// Suggestion item component with Apple-style design
+const SuggestionItem = React.memo(({ item, onClick }: { 
+  item: TopWatchlistItem; 
   onClick: () => void 
 }) => (
-  <li
-    className="px-4 py-2 hover:bg-gray-700 cursor-pointer flex items-center"
+  <motion.li
+    initial={{ opacity: 0, y: -5 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: 5 }}
+    className="px-3 py-2 hover:bg-foreground/10 cursor-pointer flex items-center rounded-lg transition-colors duration-200"
     onClick={onClick}
   >
-    <Image 
-      src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-      alt={movie.title || ''}
-      width={32}
-      height={48}
-      className="object-cover mr-2"
-      loading="lazy"
-    />
-    <span>{movie.title}</span>
-  </li>
+    {item.poster_path ? (
+      <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm">
+        <Image 
+          src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+          alt={item.title || ''}
+          width={32}
+          height={48}
+          className="object-cover w-full h-full"
+          loading="lazy"
+        />
+      </div>
+    ) : (
+      <div className="w-8 h-12 bg-foreground/10 rounded-md mr-3 flex items-center justify-center">
+        {item.media_type === 'tv' ? (
+          <Tv className="w-4 h-4 text-foreground/40" />
+        ) : (
+          <Film className="w-4 h-4 text-foreground/40" />
+        )}
+      </div>
+    )}
+    <div className="flex flex-col">
+      <span className="text-sm font-medium">{item.title}</span>
+      <span className="text-xs text-foreground/60">
+        {item.media_type === 'tv' ? 'TV Show' : 'Movie'}
+      </span>
+    </div>
+  </motion.li>
 ));
 SuggestionItem.displayName = "SuggestionItem"; 
 
-const SelectedMovieItem = memo(({ 
-  movie, 
+// Selected item (movie or TV show) with Apple-style design
+const SelectedMediaItem = React.memo(({ 
+  item, 
   onRemove 
 }: { 
-  movie: TopWatchlistItem; 
+  item: TopWatchlistItem; 
   onRemove: () => void 
 }) => (
-  <motion.li
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: 20 }}
-    className="flex items-center justify-between bg-gradient-to-r from-gray-800 to-pink-900/50 p-2 rounded-xl"
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    className="flex items-center justify-between frosted-glass p-2 rounded-xl"
   >
-    <div className="flex items-center">
-      <Image 
-        src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-        alt={movie.title || ''}
-        width={32}
-        height={48}
-        className="object-cover mr-2"
-        loading="lazy"
-      />
-      <span className="text-gray-300 truncate">{movie.title}</span>
+    <div className="flex items-center overflow-hidden">
+      {item.poster_path ? (
+        <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm flex-shrink-0">
+          <Image 
+            src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+            alt={item.title || ''}
+            width={32}
+            height={48}
+            className="object-cover w-full h-full"
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="w-8 h-12 bg-foreground/10 rounded-md mr-3 flex items-center justify-center flex-shrink-0">
+          {item.media_type === 'tv' ? (
+            <Tv className="w-4 h-4 text-foreground/40" />
+          ) : (
+            <Film className="w-4 h-4 text-foreground/40" />
+          )}
+        </div>
+      )}
+      <div className="flex flex-col overflow-hidden">
+        <span className="text-sm font-medium truncate">{item.title}</span>
+        <span className="text-xs text-foreground/60">
+          {item.media_type === 'tv' ? 'TV Show' : 'Movie'}
+        </span>
+      </div>
     </div>
-    <Button
-      variant="ghost"
-      size="sm"
+    <button
       onClick={onRemove}
-      className="text-gray-400 hover:text-white"
+      className="ml-2 p-1 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors duration-200 flex-shrink-0"
+      aria-label="Remove item"
     >
-      <FiX />
-    </Button>
-  </motion.li>
+      <X className="w-3 h-3" />
+    </button>
+  </motion.div>
 ));
-SelectedMovieItem.displayName = "SelectedMovieItem";
+SelectedMediaItem.displayName = "SelectedMediaItem";
 
-const FriendSelectionItem = memo(({ friend, isSelected, onToggle }: { 
+// Friend selection item with Apple-style design
+const FriendSelectionItem = React.memo(({ friend, isSelected, onToggle }: { 
   friend: Friend; 
   isSelected: boolean;
   onToggle: () => void;
@@ -87,21 +130,54 @@ const FriendSelectionItem = memo(({ friend, isSelected, onToggle }: {
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    className={`flex items-center justify-between p-3 rounded-lg mb-2 cursor-pointer ${
-      isSelected ? 'bg-gradient-to-r from-pink-900/50 to-gray-800 border border-pink-500/30' : 'bg-gray-800 hover:bg-gray-700'
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.99 }}
+    className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-300 ${
+      isSelected 
+        ? 'frosted-glass border border-primary/30 shadow-sm' 
+        : 'bg-foreground/5 hover:bg-foreground/10'
     }`}
     onClick={onToggle}
   >
     <div className="flex items-center">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center mr-3">
-        {friend.username.charAt(0).toUpperCase()}
-      </div>
-      <span>{friend.username}</span>
+      <Avatar className="h-8 w-8 mr-3">
+        <AvatarImage src={friend.photoURL || ''} alt={friend.username} />
+        <AvatarFallback className="bg-primary/20 text-primary">
+          {friend.username.charAt(0).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <span className="font-medium text-sm">{friend.username}</span>
     </div>
-    <Checkbox checked={isSelected} onCheckedChange={() => onToggle()} />
+    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 ${
+      isSelected ? 'bg-primary text-white' : 'bg-foreground/10'
+    }`}>
+      {isSelected && <Check className="w-3 h-3" />}
+    </div>
   </motion.div>
 ));
 FriendSelectionItem.displayName = "FriendSelectionItem";
+
+// Section header component
+const SectionHeader = React.memo(({ 
+  icon, 
+  title, 
+  subtitle 
+}: { 
+  icon: React.ReactNode; 
+  title: string;
+  subtitle?: string;
+}) => (
+  <div className="mb-4">
+    <div className="flex items-center gap-2 mb-1">
+      <div className="text-primary">{icon}</div>
+      <h3 className="font-semibold tracking-tight">{title}</h3>
+    </div>
+    {subtitle && (
+      <p className="text-xs text-foreground/60 ml-7">{subtitle}</p>
+    )}
+  </div>
+));
+SectionHeader.displayName = "SectionHeader";
 
 export default function MovieNightInvitation() {
   const router = useRouter();
@@ -111,12 +187,14 @@ export default function MovieNightInvitation() {
   const { sendInvitation, error: invitationError } = useSendInvitation();
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
   const [sendNotification, setSendNotification] = useState(true);
-  const [movieTitles, setMovieTitles] = useState<TopWatchlistItem[]>([]);
-  const [inputMovieTitle, setInputMovieTitle] = useState('');
+  const [mediaTitles, setMediaTitles] = useState<TopWatchlistItem[]>([]);
+  const [inputMediaTitle, setInputMediaTitle] = useState('');
   const { topWatchlistItems } = useTopWatchlist();
   const [suggestions, setSuggestions] = useState<TopWatchlistItem[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
+  const [friendSearchQuery, setFriendSearchQuery] = useState('');
   const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleDatesSelected = useCallback((dates: DateTimeSelection[]) => {
     setSelectedDates(dates);
@@ -142,10 +220,11 @@ export default function MovieNightInvitation() {
     }
   
     try {
+      setIsCreating(true);
       const newSession = await createSession(selectedDates, selectedFriends);
       
-      if (movieTitles.length > 0 && newSession) {
-        await createPoll(newSession.id, movieTitles.map(movie => movie.title || ''));
+      if (mediaTitles.length > 0 && newSession) {
+        await createPoll(newSession.id, mediaTitles.map(item => item.title || ''));
       }
   
       if (sendNotification && selectedFriends.length > 0) {
@@ -153,219 +232,357 @@ export default function MovieNightInvitation() {
         if (invitationError) throw new Error(invitationError);
       }
   
-      showToast("Session Created", "Your movie night session has been created successfully!", "success");
+      showToast("Session Created", "Your watch party session has been created successfully!", "success");
   
       setSelectedDates([]);
-      setMovieTitles([]);
+      setMediaTitles([]);
       setSelectedFriends([]);
       router.push(`/watch-together/${newSession.id}`);
   
     } catch (error) {
       console.error('Error completing session:', error);
       showToast("Error", "Failed to complete the session. Please try again.", "error");
+    } finally {
+      setIsCreating(false);
     }
-  }, [userLoading, userData, selectedDates, movieTitles, selectedFriends, sendNotification, 
-    showToast, createSession, createPoll, sendInvitation, invitationError, router]);
+  }, [
+    userLoading, 
+    userData, 
+    selectedDates, 
+    mediaTitles, 
+    selectedFriends, 
+    sendNotification, 
+    showToast, 
+    createSession, 
+    createPoll, 
+    sendInvitation, 
+    invitationError, 
+    router
+  ]);
+
   const handleCancel = useCallback(() => {
     router.push('/watch-together');
   }, [router]);
 
-  const handleAddMovie = useCallback(() => {
-    handleAddMovieTitle(inputMovieTitle, movieTitles, setMovieTitles, setInputMovieTitle);
-  }, [inputMovieTitle, movieTitles]);
+  const handleAddMedia = useCallback(() => {
+    handleAddMovieTitle(inputMediaTitle, mediaTitles, setMediaTitles, setInputMediaTitle);
+  }, [inputMediaTitle, mediaTitles]);
 
-  const handleMovieInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    handleInputChange(e, setInputMovieTitle, topWatchlistItems, setSuggestions);
+  const handleMediaInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange(e, setInputMediaTitle, topWatchlistItems, setSuggestions);
   }, [topWatchlistItems]);
 
-  const sessionCreationContent = useMemo(() => (
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputMediaTitle.trim()) {
+      e.preventDefault();
+      handleAddMedia();
+    }
+  }, [inputMediaTitle, handleAddMedia]);
+
+  // Filter friends based on search query
+  const filteredFriends = useMemo(() => {
+    if (!friends) return [];
+    if (!friendSearchQuery.trim()) return friends;
+    
+    return friends.filter(friend => 
+      friend.username.toLowerCase().includes(friendSearchQuery.toLowerCase())
+    );
+  }, [friends, friendSearchQuery]);
+
+  return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-4"
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="frosted-panel p-4 sm:p-6 md:p-8"
     >
-      <div className="bg-transparent md:p-4 rounded-lg flex flex-col lg:flex-row lg:space-x-4">
-        <div className="lg:w-2/3 mb-4 lg:mb-0">
-          <h3 className="text-xl font-semibold mb-4 flex items-center">
-            <FiCalendar className="mr-2" /> Select Date(s) (Optional)
-          </h3>
-          <MovieNightCalendar 
-            selectedDates={selectedDates} 
-            onDatesSelected={handleDatesSelected}
+      {/* Header */}
+      <div className="text-center mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-semibold tracking-tight mb-2">Create Watch Party</h2>
+        <p className="text-sm text-foreground/60">
+          Plan your perfect movie or TV show night with friends
+        </p>
+      </div>
+
+      {/* Main content */}
+      <div className="space-y-6 md:space-y-8">
+        {/* Calendar section */}
+        <section>
+          <SectionHeader 
+            icon={<Calendar className="w-5 h-5" />} 
+            title="Select Date & Time" 
+            subtitle="Choose when you'd like to watch together"
           />
-        </div>
-        
-        <div className="lg:w-1/3">
-          <h3 className="text-xl font-semibold mb-4 flex items-center">
-            <FiFilm className="mr-2" /> Create Movie Poll (Optional)
-          </h3>
-          <div ref={inputContainerRef} className="flex flex-col space-y-2 mb-4 relative">
-            <div className="flex flex-row items-center">
-              <Input 
-                value={inputMovieTitle} 
-                onChange={handleMovieInputChange}
-                placeholder="Enter movie title"
-                className="flex-grow"
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={handleAddMovie}
-                      className="bg-transparent hover:bg-transparent text-primary/70 md:text-white hover:text-primary/50 shadow-none"
-                    >
-                      Add Movie
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className='bg-primary/50'>
-                    <p>Add movie to the poll</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            {suggestions.length > 0 && (
-              <ul className="absolute z-10 bg-gradient-to-b from-gray-800 to-pink-900 w-full mt-1 rounded-md shadow-lg top-full max-h-60 overflow-y-auto">
-                {suggestions.map((movie) => (
-                  <SuggestionItem
-                    key={movie.id}
-                    movie={movie}
-                    onClick={() => handleSuggestionClick(
-                      movie,
-                      setInputMovieTitle,
-                      movieTitles,
-                      setMovieTitles,
-                      setSuggestions
-                    )}
-                  />
-                ))}
-              </ul>
-            )}
+          <div className="rounded-xl overflow-hidden">
+            <MovieNightCalendar 
+              selectedDates={selectedDates} 
+              onDatesSelected={handleDatesSelected}
+            />
           </div>
-          <AnimatePresence>
-            {movieTitles.length > 0 && (
-              <motion.ul
+          <div className="mt-2 text-xs text-foreground/60 flex items-center">
+            <Badge variant="outline" className="mr-2 bg-primary/10 text-primary border-primary/20">
+              {selectedDates.length}
+            </Badge>
+            {selectedDates.length === 0 
+              ? "No dates selected" 
+              : `${selectedDates.length} date${selectedDates.length > 1 ? 's' : ''} selected`
+            }
+          </div>
+        </section>
+
+        {/* Media poll section */}
+        <section>
+          <SectionHeader 
+            icon={<div className="flex"><Film className="w-5 h-5" /><Tv className="w-5 h-5 -ml-1" /></div>} 
+            title="Create Watch Poll" 
+            subtitle="Add movies or TV shows for your friends to vote on"
+          />
+          
+          <div className="space-y-4">
+            <div ref={inputContainerRef} className="relative">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-grow">
+                  <Input 
+                    value={inputMediaTitle} 
+                    onChange={handleMediaInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search or enter title (movie or TV show)"
+                    className="apple-input pr-10"
+                  />
+                  <button 
+                    onClick={handleAddMedia}
+                    disabled={!inputMediaTitle.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-foreground/10 hover:bg-foreground/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Add to poll"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <AnimatePresence>
+                {suggestions.length > 0 && (
+                  <motion.ul
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute z-10 w-full mt-1 rounded-xl frosted-glass border border-white/20 dark:border-white/10 shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    {suggestions.map((item) => (
+                      <SuggestionItem
+                        key={item.id}
+                        item={item}
+                        onClick={() => handleSuggestionClick(
+                          item,
+                          setInputMediaTitle,
+                          mediaTitles,
+                          setMediaTitles,
+                          setSuggestions
+                        )}
+                      />
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            <AnimatePresence>
+              {mediaTitles.length > 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                >
+                  {mediaTitles.map((item, index) => (
+                    <SelectedMediaItem
+                      key={item.id || index}
+                      item={item}
+                      onRemove={() => removeMovieTitle(index, mediaTitles, setMediaTitles)}
+                    />
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-6 frosted-glass rounded-xl"
+                >
+                  <div className="flex justify-center items-center gap-1">
+                    <Film className="w-6 h-6 text-foreground/30" />
+                    <Tv className="w-6 h-6 text-foreground/30" />
+                  </div>
+                  <p className="text-sm text-foreground/50 mt-2">No titles added to poll yet</p>
+                  <p className="text-xs text-foreground/40 mt-1">Search or enter movie/TV show titles above</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
+        
+        {/* Friends section */}
+        <section>
+          <SectionHeader 
+            icon={<Users className="w-5 h-5" />} 
+            title="Invite Friends" 
+            subtitle="Select friends to join your watch party"
+          />
+          
+          {/* Friend search input */}
+          {friends && friends.length > 6 && (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
+              <Input
+                placeholder="Search friends..."
+                value={friendSearchQuery}
+                onChange={(e) => setFriendSearchQuery(e.target.value)}
+                className="apple-input pl-10"
+              />
+            </div>
+          )}
+          
+          <AnimatePresence mode="wait">
+            {isLoadingFriends ? (
+              <motion.div
+                key="loading"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 gap-2 mt-4"
+                className="flex justify-center py-8"
               >
-                {movieTitles.map((movie, index) => (
-                  <SelectedMovieItem
-                    key={movie.id}
-                    movie={movie}
-                    onRemove={() => removeMovieTitle(index, movieTitles, setMovieTitles)}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="relative w-8 h-8">
+                    <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin"></div>
+                  </div>
+                  <p className="text-xs text-foreground/60">Loading friends...</p>
+                </div>
+              </motion.div>
+            ) : filteredFriends && filteredFriends.length > 0 ? (
+              <motion.div
+                key="friends-list"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1"
+              >
+                {filteredFriends.map(friend => (
+                  <FriendSelectionItem
+                    key={friend.uid}
+                    friend={friend}
+                    isSelected={selectedFriends.some(f => f.uid === friend.uid)}
+                    onToggle={() => toggleFriendSelection(friend)}
                   />
                 ))}
-              </motion.ul>
+              </motion.div>
+            ) : friends && friends.length > 0 && friendSearchQuery ? (
+              <motion.div
+                key="no-search-results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-6 frosted-glass rounded-xl"
+              >
+                <Search className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-foreground/50">No friends match your search</p>
+                <p className="text-xs text-foreground/40 mt-1">Try a different search term</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="no-friends"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-8 frosted-glass rounded-xl"
+              >
+                <Users className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-foreground/50">No friends found</p>
+                <p className="text-xs text-foreground/40 mt-1">Add friends to invite them to watch parties</p>
+              </motion.div>
             )}
           </AnimatePresence>
-        </div>
+          
+          {friends && friends.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="sendNotification"
+                  checked={sendNotification}
+                  onCheckedChange={(checked) => setSendNotification(checked as boolean)}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <label htmlFor="sendNotification" className="text-xs text-foreground/70 cursor-pointer">
+                  Send notifications to invited friends
+                </label>
+              </div>
+              
+              <div className="text-xs text-foreground/60">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  {selectedFriends.length}
+                </Badge> of {filteredFriends.length} friends selected
+              </div>
+            </div>
+          )}
+        </section>
+        
+        {/* Warning if no friends selected */}
+        <AnimatePresence>
+          {selectedFriends.length === 0 && friends && friends.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3"
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-xs text-amber-500">
+                  No friends selected. You can still create a session for yourself.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* New Friend Selection Section */}
-      <div className="bg-transparent md:p-4 rounded-lg">
-        <h3 className="text-xl font-semibold mb-4 flex items-center">
-          <FiUsers className="mr-2" /> Invite Friends
-        </h3>
+      {/* Footer actions */}
+      <div className="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <Button
+          onClick={handleCancel}
+          variant="ghost"
+          className="w-full sm:w-auto text-foreground/70 hover:text-foreground hover:bg-foreground/10"
+        >
+          Cancel
+        </Button>
         
-        {isLoadingFriends ? (
-          <div className="flex justify-center py-4">
-            <div className="animate-pulse flex space-x-4">
-              <div className="h-12 bg-gray-700 rounded w-full"></div>
-            </div>
-          </div>
-        ) : friends && friends.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {friends.map(friend => (
-              <FriendSelectionItem
-                key={friend.uid}
-                friend={friend}
-                isSelected={selectedFriends.some(f => f.uid === friend.uid)}
-                onToggle={() => toggleFriendSelection(friend)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-gray-400">
-            <p>You don't have any friends yet. Add friends to invite them to movie nights!</p>
-          </div>
-        )}
-      </div>
-  
-      <div className="bg-transparent p-2 md:p-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="sendNotification"
-            checked={sendNotification}
-            onCheckedChange={(checked) => setSendNotification(checked as boolean)}
-          />
-                    <label htmlFor="sendNotification" className="text-sm font-medium">
-            Send notification to invited users
-          </label>
-        </div>
-      </div>
-  
-      <div className="flex justify-between items-center mt-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-            <Button 
-                onClick={handleCancel}
-                className="py-6 text-lg font-semibold bg-transparent hover:bg-transparent text-white hover:text-primary/70 transition-all duration-300"
+              <Button
+                onClick={completeSession}
+                disabled={isCreating}
+                className="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-6 flex items-center justify-center gap-2"
               >
-                Cancel
+                {isCreating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Create Session</span>
+                  </>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Cancel session creation</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-  
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                onClick={completeSession} 
-                className="py-6 text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 hover:bg-gradient-to-r hover:from-purple-300 hover:to-pink-500 shadow-none transition-all duration-300"
-              >
-                <FiSend className="mr-2 text-primary/50" /> Start Session
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Create the movie night session</p>
+              <p>Create your watch party session</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
     </motion.div>
-  ), [
-    inputMovieTitle, 
-    suggestions, 
-    movieTitles, 
-    sendNotification, 
-    handleMovieInputChange, 
-    handleAddMovie, 
-    completeSession, 
-    selectedDates, 
-    handleDatesSelected, 
-    handleCancel,
-    friends,
-    isLoadingFriends,
-    selectedFriends,
-    toggleFriendSelection
-  ]); 
-
-  return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 rounded-3xl shadow-2xl mx-auto border border-white/10 backdrop-blur-lg">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {sessionCreationContent}
-      </motion.div>
-    </div>
   );
 }

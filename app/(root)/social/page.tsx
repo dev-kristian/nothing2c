@@ -161,10 +161,10 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] transition-colors duration-300">
+    <div className="min-h-screen  transition-colors duration-300">
       {/* Top Navigation Bar - Apple Style */}
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-white/70 dark:bg-black/70 border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+        <div className=" frosted-glass mx-auto px-6 h-16 flex items-center justify-between">
           <h1 className="text-2xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
             People
           </h1>
@@ -350,7 +350,7 @@ export default function FriendsPage() {
                 ))
               ) : friends.length > 0 ? (
                 friends.map((friend) => (
-                  <div key={friend.uid} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={friend.uid} className="frosted-glass rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-white text-xl font-medium">
                         {friend.username.charAt(0).toUpperCase()}

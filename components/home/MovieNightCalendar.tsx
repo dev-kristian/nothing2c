@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { format, addMonths, subMonths, isSameDay, parseISO, isBefore, startOfDay } from 'date-fns';
+import React, { useState, useCallback, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Clock, Check, X } from 'lucide-react';
+import { format, addMonths, subMonths, isSameDay, parseISO, isBefore, startOfDay, isToday } from 'date-fns';
 import { DatePopularity, DateTimeSelection } from '@/types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MovieNightCalendarProps {
   selectedDates: DateTimeSelection[];
@@ -13,7 +13,6 @@ interface MovieNightCalendarProps {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function MovieNightCalendar({
@@ -26,6 +25,15 @@ export default function MovieNightCalendar({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showHourPicker, setShowHourPicker] = useState(false);
+  const [animation, setAnimation] = useState<'left' | 'right' | null>(null);
+
+  // Reset animation after it completes
+  useEffect(() => {
+    if (animation) {
+      const timer = setTimeout(() => setAnimation(null), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [animation]);
 
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -93,11 +101,39 @@ export default function MovieNightCalendar({
     onDatesSelected(newSelectedDates);
   }, [selectedDate, selectedDates, onDatesSelected]);
 
+  const handleSelectAllHours = useCallback(() => {
+    if (!selectedDate) return;
+    
+    const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
+    let newSelectedDates: DateTimeSelection[];
+    
+    if (existingSelection) {
+      newSelectedDates = selectedDates.map(d => 
+        isSameDay(new Date(d.date), selectedDate) 
+          ? { ...d, hours: 'all' } 
+          : d
+      );
+    } else {
+      newSelectedDates = [...selectedDates, { date: selectedDate, hours: 'all' }];
+    }
+    
+    onDatesSelected(newSelectedDates);
+  }, [selectedDate, selectedDates, onDatesSelected]);
+
+  const handleClearSelection = useCallback(() => {
+    if (!selectedDate) return;
+    
+    onDatesSelected(selectedDates.filter(d => !isSameDay(new Date(d.date), selectedDate)));
+    setShowHourPicker(false);
+  }, [selectedDate, selectedDates, onDatesSelected]);
+
   const handlePrevMonth = useCallback(() => {
+    setAnimation('left');
     setCurrentDate(prev => subMonths(prev, 1));
   }, []);
 
   const handleNextMonth = useCallback(() => {
+    setAnimation('right');
     setCurrentDate(prev => addMonths(prev, 1));
   }, []);
 
@@ -108,13 +144,13 @@ export default function MovieNightCalendar({
     const today = startOfDay(new Date());
 
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<div key={`empty-${i}`} className="w-12 h-12" />);
+      days.push(<div key={`empty-${i}`} className="w-10 h-10" />);
     }
 
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
       const isPastDate = isBefore(date, today);
-      const popularity = datePopularity.find(d => isSameDay(parseISO(d.date), date));
+      const isCurrentDay = isToday(date);
       const isActiveUserSelected = selectedDates.some(d => isSameDay(new Date(d.date), date));
       
       const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => 
@@ -123,32 +159,37 @@ export default function MovieNightCalendar({
 
       const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
 
-      let className = 'h-10 w-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center relative text-base font-medium transition-all duration-200 ';
+      // Determine cell styling based on state
+      let dayClasses = 'h-10 w-10 lg:w-12 lg:h-12 rounded-l-xl rounded-b-xl flex items-center justify-center relative text-base font-medium transition-all duration-200 ';
+      
       if (isPastDate) {
-        className += 'bg-gray-800/30 text-gray-500 cursor-not-allowed';
+        dayClasses += "opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-600";
       } else if (isActiveUserSelected) {
-        className += 'bg-gradient-to-br from-primary to-pink-600 text-white shadow-lg';
+        dayClasses += "bg-primary text-white shadow-md";
       } else if (otherUsersSelected.length > 0) {
-        className += 'bg-pink-900/30 border-2 border-pink-500/50 text-pink-300 hover:bg-pink-900/50';
+        dayClasses += "bg-white/10 dark:bg-white/5 border border-primary/40 text-primary";
+      } else if (isCurrentDay) {
+        dayClasses += "bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium";
       } else {
-        className += `hover:bg-pink-900/30 text-gray-300 ${popularity ? `bg-pink-900/${Math.min(popularity.count * 10, 90)}` : 'bg-gray-800/20'}`;
+        dayClasses += "hover:bg-gray-100/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300";
       }
       
       days.push(
-        <button
+        <motion.button
           key={i}
           onClick={() => !isPastDate && handleDateClick(i)}
-          className={className}
-          title={popularity ? `Selected by: ${popularity.users.join(', ')}` : ''}
+          className={dayClasses}
           disabled={isPastDate}
+          whileHover={!isPastDate ? { scale: 1.1 } : {}}
+          whileTap={!isPastDate ? { scale: 0.95 } : {}}
         >
           {i}
           {totalUsersSelected > 0 && !isPastDate && (
-            <span className="absolute top-0 right-0 text-[10px] font-semibold bg-white text-black rounded-tr-md rounded-bl-md w-4 h-4 flex items-center justify-center shadow-sm">
+            <span className="absolute top-0 right-0 text-xs bg-white text-black rounded-bl-md w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-end lg:justify-center">
               {totalUsersSelected}
             </span>
           )}
-        </button>
+        </motion.button>
       );
     }
 
@@ -160,12 +201,17 @@ export default function MovieNightCalendar({
   
     const selectedDateTimes = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
-  
-    return (
-      <div className="grid grid-cols-4 gap-2">
-        {HOURS.map(hour => {
+    const isAllHoursSelected = selectedDateTimes?.hours === 'all';
+    
+    // Group hours by AM/PM
+    const amHours = HOURS.slice(0, 12);
+    const pmHours = HOURS.slice(12);
+    
+    const renderHourGroup = (hours: number[]) => (
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+        {hours.map(hour => {
           const hourPopularity = popularityForDate?.hours[hour];
-          const isActiveUserSelected = selectedDateTimes?.hours === 'all' || 
+          const isActiveUserSelected = isAllHoursSelected || 
             (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
   
           const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => 
@@ -176,90 +222,192 @@ export default function MovieNightCalendar({
           );
   
           const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
-  
-          let className = 'h-10 w-10 rounded-lg flex items-center justify-center relative text-sm font-medium transition-all duration-200 ';
+          
+          // Format hour display
+          const hourDisplay = hour === 0 ? '12am' : 
+                             hour < 12 ? `${hour}am` : 
+                             hour === 12 ? '12pm' : 
+                             `${hour-12}pm`;
+          
+          // Hour styling based on selection state
+          let hourClasses = "h-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all duration-200 ";
+          
           if (isActiveUserSelected) {
-            className += 'bg-gradient-to-br from-primary to-pink-600 text-white shadow-lg';
+            hourClasses += "bg-primary text-white shadow-md";
           } else if (otherUsersSelected.length > 0) {
-            className += 'bg-pink-900/30 border-2 border-pink-500/50 text-pink-300 hover:bg-pink-900/50';
+            hourClasses += "bg-white/10 dark:bg-white/5 border border-primary/40 text-primary";
           } else {
-            className += `hover:bg-pink-900/30 text-gray-300 ${hourPopularity ? `bg-pink-900/${Math.min(hourPopularity.count * 10, 90)}` : 'bg-gray-800/20'}`;
+            hourClasses += "bg-gray-100/80 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300";
           }
-  
+          
           return (
-            <button
+            <motion.button
               key={hour}
               onClick={() => handleHourClick(hour)}
-              className={className}
+              className={hourClasses}
               title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {hour.toString().padStart(2, '0')}
-              {totalUsersSelected > 0 && (
-                <span className="absolute top-0 right-0 text-[10px] font-semibold bg-white text-black rounded-tr-md rounded-bl-md w-4 h-4 flex items-center justify-center shadow-sm">
-                  {totalUsersSelected}
-                </span>
-              )}
-            </button>
+              {hourDisplay}
+            </motion.button>
           );
         })}
+      </div>
+    );
+  
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">Morning</h4>
+          {renderHourGroup(amHours)}
+        </div>
+        <div>
+          <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">Afternoon & Evening</h4>
+          {renderHourGroup(pmHours)}
+        </div>
       </div>
     );
   }, [selectedDate, selectedDates, datePopularity, userDates, activeUsername, handleHourClick]);
 
   return (
-    <div className="mt-2 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-2">
-      <div className="bg-gray-900/60 backdrop-blur-sm p-2 md:p-4 rounded-2xl shadow-xl flex-grow border border-gray-800">
-        <div className="flex justify-between items-center mb-6">
-          <Button 
-            onClick={handlePrevMonth} 
-            variant="ghost" 
-            className="text-pink-400 hover:bg-pink-900/30 hover:text-pink-300 rounded-xl p-3 transition-all"
+    <div className="mt-4 flex flex-col lg:flex-row gap-4">
+      {/* Calendar Panel */}
+      <motion.div 
+        className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-4 flex-grow"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <motion.button 
+            onClick={handlePrevMonth}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ChevronLeft className="w-6 h-6" />
-          </Button>
-          <h3 className="text-xl font-semibold text-transparent bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text">
-            {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h3>
-          <Button 
-            onClick={handleNextMonth} 
-            variant="ghost" 
-            className="text-pink-400 hover:bg-pink-900/30 hover:text-pink-300 rounded-xl p-3 transition-all"
+            <ChevronLeft className="w-5 h-5" />
+          </motion.button>
+          
+          <AnimatePresence mode="wait">
+            <motion.h3 
+              key={`${currentDate.getMonth()}-${currentDate.getFullYear()}`}
+              className="text-base font-medium bg-gray-600 dark:bg-white bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: animation === 'left' ? 20 : -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: animation === 'left' ? -20 : 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {format(currentDate, 'MMMM yyyy')}
+            </motion.h3>
+          </AnimatePresence>
+          
+          <motion.button 
+            onClick={handleNextMonth}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ChevronRight className="w-6 h-6" />
-          </Button>
+            <ChevronRight className="w-5 h-5" />
+          </motion.button>
         </div>
-        <div className="grid grid-cols-7 gap-2 mb-4">
+        
+        <div className="grid grid-cols-7 gap-1 pb-4">
           {DAYS.map(day => (
-            <div key={day} className="text-center font-medium text-pink-400/80 text-sm uppercase tracking-wide">
+            <div key={day} className="pl-4 text-xs font-medium text-gray-500 dark:text-gray-400">
               {day}
             </div>
           ))}
-          {renderCalendar()}
         </div>
-        <div className="text-sm text-gray-400 flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-primary/80" />
-            <span>Your selection</span>
-            <div className="w-3 h-3 rounded-full border-2 border-white/70 ml-4" />
-            <span>Others&apos; selections</span>
-          </div>
-        {selectedDate && (
-          <Button 
-            onClick={() => setShowHourPicker(!showHourPicker)} 
-            className="mt-4 bg-pink-900/20 hover:bg-pink-900/30 text-white w-full py-6 rounded-xl transition-all duration-300 border border-pink-800/50 shadow-sm"
+        
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={`${currentDate.getMonth()}-${currentDate.getFullYear()}`}
+            className="grid grid-cols-7 gap-1"
+            initial={{ opacity: 0, x: animation === 'left' ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: animation === 'left' ? -20 : 20 }}
+            transition={{ duration: 0.3 }}
           >
-            <Clock className="mr-3 h-5 w-5 text-white" />
-            {showHourPicker ? 'Collapse' : 'Select Hours'} for {format(selectedDate, 'MMM d')}
-          </Button>
-        )}
-      </div>
-      {selectedDate && showHourPicker && (
-        <div className="bg-gray-900/60 backdrop-blur-sm p-2 rounded-2xl shadow-xl border border-gray-800 lg:min-w-[200px]">
-          <h3 className="text-lg font-semibold mb-6 text-transparent bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text">
-            Available Hours
-          </h3>
-          {renderHours()}
-
+            {renderCalendar()}
+          </motion.div>
+        </AnimatePresence>
+        
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <span>Your selection</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full border border-primary/40" />
+            <span>Others' selections</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-blue-500/20" />
+            <span>Today</span>
+          </div>
         </div>
+        
+        {selectedDate && (
+          <motion.button 
+            onClick={() => setShowHourPicker(!showHourPicker)} 
+            className="mt-4 py-2 px-4 rounded-xl text-sm font-medium bg-primary/90 hover:bg-primary text-white w-full flex items-center justify-center transition-all shadow-sm"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            {showHourPicker ? 'Hide Hours' : 'Select Hours'} for {format(selectedDate, 'MMM d')}
+          </motion.button>
+        )}
+      </motion.div>
+      
+      {/* Hour Selection Panel */}
+      {selectedDate && showHourPicker && (
+        <motion.div 
+          className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-4 lg:w-[400px]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-medium bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+              Available Hours
+            </h3>
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              {format(selectedDate, 'MMM d')}
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            {renderHours()}
+          </div>
+          
+          <div className="flex gap-2 mt-4">
+            <motion.button
+              onClick={handleSelectAllHours}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Check className="w-3 h-3 mr-1" />
+              All Hours
+            </motion.button>
+            
+            <motion.button
+              onClick={handleClearSelection}
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <X className="w-3 h-3 mr-1" />
+              Clear
+            </motion.button>
+          </div>
+        </motion.div>
       )}
     </div>
   );

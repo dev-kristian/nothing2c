@@ -46,6 +46,7 @@ export interface UserProfile {
 
 // Friend-related types
 export interface Friend {
+  photoURL: string;
   uid: string;
   username: string;
   email?: string;
