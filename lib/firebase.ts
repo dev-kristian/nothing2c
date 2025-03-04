@@ -14,7 +14,6 @@ if (!getApps().length) {
 }
 
 export const auth = getAuth(app);
-// Set persistence to local to avoid third-party cookie issues
 setPersistence(auth, browserLocalPersistence);
 
 export const db = getFirestore(app);

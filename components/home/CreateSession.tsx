@@ -17,16 +17,16 @@ export function CreateSession() {
       </div>
 
       <Button
-        onClick={() => router.push('/sessions?new=true')}
+        onClick={() => router.push('/watch-together?new=true')}
         className="group relative px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-full w-full sm:w-auto"  /* Responsive button width */
       >
         <motion.span
-          className="flex items-center justify-center space-x-2" // Center content
+          className="flex items-center justify-center space-x-2"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           <FiCalendar className="w-4 h-4" />
-          <span>New Session</span>
+          <span>New Watch Party</span>
         </motion.span>
       </Button>
     </div>

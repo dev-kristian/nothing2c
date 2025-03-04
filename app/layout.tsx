@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
 import { ScreenSizeProvider } from '@/context/ScreenSizeContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -35,13 +36,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} text-foreground `}>
-        <ScreenSizeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ScreenSizeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} text-foreground`}>
+        <ThemeProvider>
+          <ScreenSizeProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ScreenSizeProvider>
+        </ThemeProvider>
         <Analytics/>
       </body>
     </html>

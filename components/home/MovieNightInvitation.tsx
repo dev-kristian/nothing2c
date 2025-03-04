@@ -121,7 +121,7 @@ export default function MovieNightInvitation() {
 
       setSelectedDates([]);
       setMovieTitles([]);
-      router.push(`/sessions/${newSession.id}`);
+      router.push(`/watch-together/${newSession.id}`);
 
     } catch (error) {
       console.error('Error completing session:', error);
@@ -130,7 +130,7 @@ export default function MovieNightInvitation() {
   }, [userLoading, userData, selectedDates, movieTitles, sendNotification, 
     showToast, createSession, createPoll, sendInvitation, invitationError, router]);
     const handleCancel = useCallback(() => {
-      router.push('/sessions');
+      router.push('/watch-together');
     }, [router]);
   const handleAddMovie = useCallback(() => {
     handleAddMovieTitle(inputMovieTitle, movieTitles, setMovieTitles, setInputMovieTitle);

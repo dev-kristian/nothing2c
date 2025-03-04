@@ -7,6 +7,7 @@ import {
   collection, 
   doc,
   query, 
+  where,
   orderBy,
   setDoc,
   updateDoc,
@@ -16,7 +17,7 @@ import {
   deleteField,
   onSnapshot 
 } from 'firebase/firestore';
-import { DateTimeSelection, Session, SessionContextType, UserDate  } from '@/types';
+import { DateTimeSelection, Session, SessionContextType, UserDate } from '@/types';
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
@@ -30,7 +31,7 @@ export const useSession = () => {
 
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthContext();
-  const { userData } = useUserData();
+  const { userData, friends, isLoadingFriends } = useUserData();
   const [sessions, setSessions] = useState<Session[]>([]);
 
   const createSession = useCallback(async (dates: DateTimeSelection[]): Promise<Session> => {
@@ -44,6 +45,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       await setDoc(newSessionRef, {
         createdAt: serverTimestamp(),
         createdBy: userData.username,
+        createdByUid: user.uid,
         userDates: {
           [userData.username]: dates.map(({ date, hours }) => ({
             date: Timestamp.fromDate(date),
@@ -61,6 +63,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: newSessionRef.id,
         createdAt: tempDate,
         createdBy: userData.username,
+        createdByUid: user.uid,
         userDates: {
           [userData.username]: dates.map(({ date, hours }) => ({
             date: date.toISOString(),
@@ -80,53 +83,97 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [user, userData]);
 
   useEffect(() => {
-    if (!user || !userData) return;
+    if (!user || !userData || !friends || isLoadingFriends) return;
 
     const sessionsRef = collection(db, 'sessions');
-    const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+    const relevantUids = [user.uid, ...friends.map(friend => friend.uid)];
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const sessionsList: Session[] = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        
-        const createdAt = data.createdAt?.toDate() || new Date();
-      
-        const userDates = Object.entries(data.userDates || {}).map(([username, dates]) => {
-          const userDates = (dates as UserDate[]).map(({ date, hours }) => {
-            const dateISO = date?.toDate()?.toISOString() || new Date().toISOString();
-            const processedHours = hours === 'all' ? 'all' : 
-              (hours as Timestamp[])?.map(ts => ts?.toDate()?.toISOString()) || [];
+    // Firestore 'in' query supports up to 10 values, so split into chunks if necessary
+    const chunkSize = 10;
+    const uidChunks = [];
+    for (let i = 0; i < relevantUids.length; i += chunkSize) {
+      uidChunks.push(relevantUids.slice(i, i + chunkSize));
+    }
+
+    const unsubscribeList: (() => void)[] = [];
+
+    uidChunks.forEach(chunk => {
+      const q = query(
+        sessionsRef,
+        where('createdByUid', 'in', chunk),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const sessionsList: Session[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
           
-            return {
-              date: dateISO,
-              hours: processedHours
-            };
+          const createdAt = data.createdAt?.toDate() || new Date();
+        
+          const userDates = Object.entries(data.userDates || {}).map(([username, dates]) => {
+            const userDates = (dates as any[]).map(({ date, hours }) => {
+              const dateISO = date instanceof Timestamp 
+                ? date.toDate().toISOString() 
+                : typeof date === 'string' 
+                  ? date 
+                  : new Date().toISOString();
+              
+              let processedHours: string[] | 'all' = 'all';
+              if (hours !== 'all') {
+                processedHours = Array.isArray(hours) 
+                  ? hours.map(h => {
+                      if (h instanceof Timestamp) {
+                        return h.toDate().toISOString();
+                      }
+                      return typeof h === 'string' ? h : new Date().toISOString();
+                    })
+                  : [];
+              }
+            
+              return {
+                date: dateISO,
+                hours: processedHours
+              };
+            });
+
+            return [username, userDates];
           });
-      
-          return [username, userDates];
+
+          return {
+            id: doc.id,
+            createdAt,
+            createdBy: data.createdBy || 'unknown',
+            createdByUid: data.createdByUid || '',
+            userDates: Object.fromEntries(userDates),
+            poll: data.poll ? {
+              id: data.poll.id,
+              movieTitles: data.poll.movieTitles || [],
+              votes: data.poll.votes || {}
+            } : undefined,
+            status: data.status || 'active'
+          };
         });
-      
-        return {
-          id: doc.id,
-          createdAt,
-          createdBy: data.createdBy || 'unknown',
-          userDates: Object.fromEntries(userDates),
-          poll: data.poll ? {
-            id: data.poll.id,
-            movieTitles: data.poll.movieTitles || [],
-            votes: data.poll.votes || {}
-          } : undefined,
-          status: data.status || 'active'
-        };
+
+        // Merge sessions from all chunks, ensuring no duplicates
+        setSessions(prev => {
+          const allSessions = [...prev, ...sessionsList];
+          const uniqueSessions = Array.from(
+            new Map(allSessions.map(session => [session.id, session])).values()
+          );
+          return uniqueSessions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        });
+      }, (error) => {
+        console.error("Error fetching sessions: ", error);
       });
 
-      setSessions(sessionsList);
+      unsubscribeList.push(unsubscribe);
     });
 
+    // Cleanup all subscriptions
     return () => {
-      unsubscribe();
+      unsubscribeList.forEach(unsubscribe => unsubscribe());
     };
-  }, [user, userData]);
+  }, [user, userData, friends, isLoadingFriends]);
 
   const updateUserDates = useCallback(async (sessionId: string, dates: DateTimeSelection[]) => {
     if (!user || !userData) throw new Error('User must be logged in to update dates');

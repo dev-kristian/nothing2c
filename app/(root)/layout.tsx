@@ -1,4 +1,4 @@
-// app\(root)\layout.tsx
+// app/(root)/layout.tsx
 'use client'
 
 import React, { Suspense } from 'react'
@@ -11,6 +11,7 @@ import { SessionProvider } from '@/context/SessionContext'
 import { Toaster } from '@/components/ui/toaster'
 import Loading from '@/components/Loading'
 import { WithProfileCompleted } from '@/components/auth/WithProfileComplete'
+import { ThemeScript } from '@/components/ThemeScript'
 
 function RootLayout({
   children,
@@ -21,30 +22,30 @@ function RootLayout({
     <UserDataProvider>
       <TopWatchlistProvider>
         <SearchProvider>
-            <SessionProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navigation />
-                <main className="flex-grow"> {/* Add flex-grow here */}
-                  <Suspense fallback={
-                    <div className="w-full h-full flex items-center justify-center ">
-                      <Loading
-                        message="Preparing your experience"
-                        spinnerType="full"
-                      />
-                    </div>
-                  }>
-                    <div className="mt-[var(--navbar-height)]"> {/* Add margin-top */}
-                      {children}
-                    </div>
-                  </Suspense>
-                  <Toaster />
-                </main>
-              </div>
-            </SessionProvider>
+          <SessionProvider>
+            <ThemeScript />
+            <div className="flex flex-col min-h-screen">
+              <Navigation />
+              <main className="flex-grow">
+                <Suspense fallback={
+                  <div className="w-full h-full flex items-center justify-center ">
+                    <Loading
+                      message="Preparing your experience"
+                      spinnerType="full"
+                    />
+                  </div>
+                }>
+                  <div className="mt-[var(--navbar-height)]">
+                    {children}
+                  </div>
+                </Suspense>
+                <Toaster />
+              </main>
+            </div>
+          </SessionProvider>
         </SearchProvider>
       </TopWatchlistProvider>
     </UserDataProvider>
-
   )
 }
 
