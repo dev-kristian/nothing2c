@@ -1,6 +1,7 @@
 // lib/firebaseMessaging.ts
 import { getToken, onMessage, MessagePayload } from "firebase/messaging";
 import { getMessagingInstance } from "./firebase";
+import { getAuth } from "firebase/auth";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
@@ -16,17 +17,25 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
     const currentToken = await getToken(messaging, { 
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY 
     });
+    
     if (currentToken) {
       console.log('Token:', currentToken);
       
-      await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: currentToken,
-          silent: true, 
-        }),
-      });
+      // Get current user UID
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (user) {
+        // Subscribe to user-specific topic
+        await fetch('/api/subscribe-to-topic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: currentToken,
+            topic: `user_${user.uid}`,
+          }),
+        });
+      }
 
       return currentToken;
     } else {
@@ -46,6 +55,7 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
     return null;
   }
 };
+
 
 export const onMessageListener = async (callback: (payload: MessagePayload) => void) => {
   const messaging = await getMessagingInstance();

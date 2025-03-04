@@ -1,5 +1,4 @@
-//app\api\subscribe-to-topic\route.ts
-
+// app/api/subscribe-to-topic/route.ts
 import { NextResponse } from 'next/server';
 import admin from 'firebase-admin';
 
@@ -15,11 +14,37 @@ if (!admin.apps.length) {
 
 export async function POST(request: Request) {
   try {
-    const { token } = await request.json();
-    await admin.messaging().subscribeToTopic(token, 'all');
-    return NextResponse.json({ success: true, message: 'Subscribed to "all" topic' });
+    const body = await request.json();
+    const { token } = body;
+    
+    if (!token) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Token is required' 
+      }, { status: 400 });
+    }
+    
+    // Get user ID from the request or from authentication
+    let topic = body.topic;
+    
+    // Safety check: Only allow user-specific topics
+    if (!topic || !topic.startsWith('user_')) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid topic format. Only user-specific topics are allowed.' 
+      }, { status: 400 });
+    }
+    
+    await admin.messaging().subscribeToTopic([token], topic);
+    return NextResponse.json({ 
+      success: true, 
+      message: `Subscribed to "${topic}" topic` 
+    });
   } catch (error) {
     console.error('Error subscribing to topic:', error);
-    return NextResponse.json({ success: false, error: 'Failed to subscribe to topic' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to subscribe to topic' 
+    }, { status: 500 });
   }
 }

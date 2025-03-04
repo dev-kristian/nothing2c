@@ -140,33 +140,32 @@ export default function MovieNightInvitation() {
       showToast("Error", "User data not available. Please try again.", "error");
       return;
     }
-
+  
     try {
       const newSession = await createSession(selectedDates, selectedFriends);
       
       if (movieTitles.length > 0 && newSession) {
         await createPoll(newSession.id, movieTitles.map(movie => movie.title || ''));
       }
-
-      if (sendNotification) {
-        await sendInvitation();
+  
+      if (sendNotification && selectedFriends.length > 0) {
+        await sendInvitation(selectedFriends, newSession.id);
         if (invitationError) throw new Error(invitationError);
       }
-
+  
       showToast("Session Created", "Your movie night session has been created successfully!", "success");
-
+  
       setSelectedDates([]);
       setMovieTitles([]);
       setSelectedFriends([]);
       router.push(`/watch-together/${newSession.id}`);
-
+  
     } catch (error) {
       console.error('Error completing session:', error);
       showToast("Error", "Failed to complete the session. Please try again.", "error");
     }
   }, [userLoading, userData, selectedDates, movieTitles, selectedFriends, sendNotification, 
     showToast, createSession, createPoll, sendInvitation, invitationError, router]);
-
   const handleCancel = useCallback(() => {
     router.push('/watch-together');
   }, [router]);

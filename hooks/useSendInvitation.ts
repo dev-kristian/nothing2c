@@ -1,14 +1,16 @@
 // hooks/useSendInvitation.ts
-
 import { useState } from 'react';
 import { useUserData } from '@/context/UserDataContext';
 import useSWRMutation from 'swr/mutation';
+import { Friend } from '@/types';
 
 interface SendInvitationArgs {
   title: string;
   body: string;
   icon: string;
   clickAction: string;
+  recipients: string[]; // Array of user UIDs
+  sessionId: string;    // Add session ID for deep linking
 }
 
 async function sendInvitationFetcher(url: string, { arg }: { arg: SendInvitationArgs }) {
@@ -28,14 +30,12 @@ async function sendInvitationFetcher(url: string, { arg }: { arg: SendInvitation
     return data;
 }
 
-
 export const useSendInvitation = () => {
   const { userData } = useUserData();
   const { trigger, isMutating, error } = useSWRMutation('/api/send-notification', sendInvitationFetcher);
 
-  const sendInvitation = async () => {
+  const sendInvitation = async (selectedFriends: Friend[], sessionId: string) => {
     if (!userData) {
-      // No need to set a separate error state; SWR handles it.  Just throw.
       throw new Error("User data is not available");
     }
 
@@ -44,13 +44,13 @@ export const useSendInvitation = () => {
         title: `${userData.username} invites you!`,
         body: `${userData.username} invites you to a movie night!`,
         icon: '/icon-192x192.png',
-        clickAction: 'https://localhost:3000/', // Consider making this configurable
+        clickAction: `https://localhost:3000/watch-together/${sessionId}`,
+        recipients: selectedFriends.map(friend => friend.uid),
+        sessionId
       });
     } catch (err) {
-      //SWR will store the error for us. No need to use a local state.
       console.error('Error sending invitation:', err);
-       // Optionally re-throw, depending on how you want to handle it higher up.
-       throw err;
+      throw err;
     }
   };
 
