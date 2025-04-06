@@ -62,7 +62,7 @@ export default function AppearanceSettings() {
                   key={option.id}
                   className={`
                     relative overflow-hidden rounded-xl transition-all
-                    ${isActive ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : 'hover:ring-1 hover:ring-accent/50'}
+                    ${isActive ? 'ring-2 ring-pink ring-offset-2 ring-offset-background' : 'hover:ring-1 hover:ring-pink/50'}
                   `}
                   onClick={() => setTheme(option.id as 'light' | 'dark' | 'system')}
                 >
@@ -81,7 +81,7 @@ export default function AppearanceSettings() {
                     
                     {/* Selected indicator */}
                     {isActive && (
-                      <div className="absolute top-2 right-2 bg-accent rounded-full p-1">
+                      <div className="absolute top-2 right-2 bg-pink rounded-full p-1">
                         <Check className="h-3 w-3 text-white" />
                       </div>
                     )}
@@ -90,7 +90,7 @@ export default function AppearanceSettings() {
                   {/* Label area */}
                   <div className="p-4 bg-background">
                     <div className="flex items-center space-x-2">
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-accent' : ''}`} />
+                      <Icon className={`h-4 w-4 ${isActive ? 'text-pink' : ''}`} />
                       <h4 className="font-medium">{option.label}</h4>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
@@ -98,7 +98,7 @@ export default function AppearanceSettings() {
                   
                   {/* Interactive overlay */}
                   <motion.div 
-                    className="absolute inset-0 bg-accent/5 opacity-0 cursor-pointer"
+                    className="absolute inset-0 bg-pink/5 opacity-0 cursor-pointer"
                     whileHover={{ opacity: 1 }}
                     whileTap={{ scale: 0.98 }}
                     transition={{ duration: 0.2 }}

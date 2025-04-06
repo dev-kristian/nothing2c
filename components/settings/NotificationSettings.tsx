@@ -152,12 +152,12 @@ export default function NotificationSettings() {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Notification Settings</h2>
       
-      <div className="bg-background/50 border border-accent/10 rounded-lg p-4">
+      <div className="bg-background/50 border border-pink/10 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               {userData?.notification === "allowed" ? (
-                <Bell className="h-5 w-5 text-accent" />
+                <Bell className="h-5 w-5 text-pink" />
               ) : (
                 <BellOff className="h-5 w-5 text-foreground/70" />
               )}
@@ -174,7 +174,7 @@ export default function NotificationSettings() {
             checked={userData?.notification === "allowed"}
             onCheckedChange={handleToggleNotifications}
             disabled={isLoading || !isSupported}
-            className="data-[state=checked]:bg-accent"
+            className="data-[state=checked]:bg-pink"
           />
         </div>
 
