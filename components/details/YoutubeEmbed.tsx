@@ -1,5 +1,5 @@
-// components/YouTubeEmbed.tsx
-import React from 'react';
+// components/details/YoutubeEmbed.tsx
+import React, { useEffect } from 'react';
 
 interface YouTubeEmbedProps {
   videoId: string;
@@ -7,29 +7,37 @@ interface YouTubeEmbedProps {
 }
 
 const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({ videoId, onClose }) => {
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []); 
+
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+    <div
+      className="fixed inset-0 bg-black bg-opacity-75 flex flex-col" 
       onClick={onClose}
     >
-      <div 
-        className="relative w-full h-full max-w-[95vw] max-h-[95vh] md:max-w-[80vw] md:max-h-[80vh] rounded-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button 
-          className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 transition-colors duration-300 z-10"
-          onClick={onClose}
+      <div className="h-16 flex-shrink-0" aria-hidden="true"></div>
+
+      <div className="flex-grow flex items-center justify-center p-4 overflow-auto">
+        <div
+          className="relative w-full max-w-[95vw] md:max-w-[80vw] bg-black rounded-3xl overflow-hidden shadow-xl aspect-video max-h-full" 
+          onClick={(e) => e.stopPropagation()} 
         >
-          ×
-        </button>
         <iframe
-          className="w-full h-full"
-          src={`https://www.youtube.com/embed/${videoId}`}
+          className="absolute top-0 left-0 w-full h-full border-0"
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`} 
           title="YouTube video player"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
+          loading="lazy" 
         ></iframe>
-      </div>
+        </div> 
+      </div> 
     </div>
   );
 };

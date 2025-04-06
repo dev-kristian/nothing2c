@@ -5,22 +5,21 @@ import { WelcomeHero } from '@/components/home/WelcomeHero';
 import { WatchlistSection } from '@/components/home/WatchlistSection';
 import { CommunitySection } from '@/components/home/CommunitySection';
 import { QuickActions } from '@/components/home/QuickActions';
-import { UpcomingReleases } from '@/components/home/UpcomingReleases';
-import { Bookmark, Users, Calendar } from 'lucide-react';
+import { Bookmark, Users } from 'lucide-react';
 
 interface TabButtonProps {
   active: boolean;
   onClick: () => void;
-  icon: 'bookmark' | 'users' | 'calendar';
+  icon: 'bookmark' | 'users'; // Removed 'calendar'
   label: string;
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'watchlist' | 'community' | 'upcoming'>('watchlist');
+  const [activeTab, setActiveTab] = useState<'watchlist' | 'community'>('watchlist');
 
   return (
     <div className="min-h-screen w-full pb-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 md:space-y-8">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 md:space-y-8">
         <section>
           <WelcomeHero />
         </section>
@@ -44,19 +43,12 @@ export default function Home() {
                 icon="users"
                 label="Community"
               />
-              <TabButton 
-                active={activeTab === 'upcoming'} 
-                onClick={() => setActiveTab('upcoming')}
-                icon="calendar"
-                label="Upcoming"
-              />
             </div>
           </div>
           
           <div className="min-h-[300px] animate-enter">
             {activeTab === 'watchlist' && <WatchlistSection />}
             {activeTab === 'community' && <CommunitySection />}
-            {activeTab === 'upcoming' && <UpcomingReleases />}
           </div>
         </section>
       </div>
@@ -65,10 +57,10 @@ export default function Home() {
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => {
-  const iconComponents: Record<TabButtonProps['icon'], JSX.Element> = {
+  // Simplified type for iconComponents
+  const iconComponents: Record<'bookmark' | 'users', JSX.Element> = { 
     bookmark: <Bookmark size={16} />,
     users: <Users size={16} />,
-    calendar: <Calendar size={16} />,
   };
 
   return (

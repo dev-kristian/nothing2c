@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUserData } from '@/context/UserDataContext';
-import { useScreenSize } from '@/context/ScreenSizeContext';
 import { Clock, X, Loader2, AlertTriangle, ChevronDown, Search, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import MediaPoster from '@/components/MediaPoster';
@@ -20,7 +19,6 @@ const MemoizedMediaPoster = React.memo(MediaPoster);
 
 export function WatchlistSection() {
   const { watchlistItems } = useUserData();
-  const { isMobile, isTablet, isDesktop } = useScreenSize();
 
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,20 +26,10 @@ export function WatchlistSection() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
-  // Initial batch sizes based on screen size
-  const initialBatchSize = useMemo(() => {
-    if (isMobile) return 4;
-    if (isTablet) return 6;
-    return 8; // desktop and larger
-  }, [isMobile, isTablet]);
 
-  // Number of items to load per batch
-  const batchSize = useMemo(() => {
-    if (isMobile) return 4;
-    if (isTablet) return 6;
-    return 8;
-  }, [isMobile, isTablet]);
+  // Define batch sizes - simplified as grid handles visual layout
+  const initialBatchSize = 8;
+  const batchSize = 8;
 
   const [visibleItems, setVisibleItems] = useState(initialBatchSize);
   
@@ -50,11 +38,8 @@ export function WatchlistSection() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const gridCols = useMemo(() => {
-    return isMobile ? 'grid-cols-2' :
-           isTablet ? 'grid-cols-3' :
-           isDesktop ? 'grid-cols-4' : 'grid-cols-4';
-  }, [isMobile, isTablet, isDesktop]);
+  // Grid columns defined directly with Tailwind responsive classes
+  const gridCols = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -262,7 +247,7 @@ export function WatchlistSection() {
 
       {displayItems.length > 0 ? (
         <div className="transition-opacity duration-300 ease-in-out">
-          <div className={`grid ${gridCols} gap-4 md:gap-6`}>
+          <div className={`grid ${gridCols} gap-4 md:gap-6`}> {/* Use the gridCols variable */}
             {displayItems.map((media, index) => (
               <div key={`${media.id}-${index}`} className="hover-lift">
                 <MemoizedMediaPoster media={media} />

@@ -31,14 +31,16 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const mediaType = media.media_type as 'movie' | 'tv';
+  // Treat 'upcoming' as 'movie' for internal logic like watchlist and icons
+  const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv';
 
   useEffect(() => {
-    if (watchlistItems && mediaType) {
-      const isItemInWatchlist = watchlistItems[mediaType]?.some(item => item.id === media.id);
+    // Use internalMediaType for watchlist check
+    if (watchlistItems && internalMediaType) { 
+      const isItemInWatchlist = watchlistItems[internalMediaType]?.some(item => item.id === media.id);
       setIsInWatchlist(isItemInWatchlist);
     }
-  }, [watchlistItems, mediaType, media.id]);
+  }, [watchlistItems, internalMediaType, media.id]); // Use internalMediaType in dependency array
 
   const handleToggleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,13 +50,16 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
     
     setIsLoading(true);
     try {
-      if (isInWatchlist) {
-        await removeFromWatchlist(media.id, mediaType);
+      // Use internalMediaType for watchlist actions
+      if (isInWatchlist) { 
+        await removeFromWatchlist(media.id, internalMediaType);
       } else {
         await addToWatchlist({
           ...media,
+          // Ensure media_type is 'movie' or 'tv' when adding
+          media_type: internalMediaType, 
           addedAt: new Date().toISOString()
-        }, mediaType);
+        }, internalMediaType);
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);
@@ -64,7 +69,8 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   };
 
   const handleCardClick = () => {
-    router.push(`/details/${media.media_type}/${media.id}`);
+    // Use internalMediaType for navigation link as upcoming are movies
+    router.push(`/details/${internalMediaType}/${media.id}`); 
   };
 
   const handleImageError = () => {
@@ -110,7 +116,8 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-black/30 flex items-center justify-center">
-              {mediaType === 'movie' ? (
+              {/* Use internalMediaType for icon */}
+              {internalMediaType === 'movie' ? ( 
                 <Film className="w-8 h-8 text-white/40" />
               ) : (
                 <Tv className="w-8 h-8 text-white/40" />
@@ -134,7 +141,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   return (
     <div className="group relative">
       {showRank && typeof index === 'number' && (
-        <div className="absolute -top-3 -left-3 z-10">
+        <div className="absolute -top-3 -left-3 ">
           <Badge className="bg-gradient-to-r from-pink to-purple text-white shadow-glow px-3 py-1 rounded-full">
             #{index + 1}
           </Badge>
@@ -174,7 +181,8 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 flex flex-col items-center justify-center p-4">
-              {mediaType === 'movie' ? (
+              {/* Use internalMediaType for icon */}
+              {internalMediaType === 'movie' ? ( 
                 <Film className="w-10 h-10 text-white/40 mb-2" />
               ) : (
                 <Tv className="w-10 h-10 text-white/40 mb-2" />
@@ -237,10 +245,12 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
       </motion.div>
 
       {/* Media Type Indicator */}
-      {showMediaType && media.media_type && (
+      {/* Media Type Indicator - Show based on original media_type if needed, or internal */}
+      {showMediaType && internalMediaType && ( 
         <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1">
           <span className="text-xs font-medium text-white uppercase tracking-wide">
-            {media.media_type === 'movie' ? 'Movie' : 'TV'}
+            {/* Display 'Movie' or 'TV' based on internal type */}
+            {internalMediaType === 'movie' ? 'Movie' : 'TV'} 
           </span>
         </div>
       )}

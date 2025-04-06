@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFriendsWatchlist } from '@/context/FriendsWatchlistContext';
-import { useScreenSize } from '@/context/ScreenSizeContext';
 import { Users, Heart, Popcorn, TrendingUp, Film, Tv } from 'lucide-react';
 import Link from 'next/link';
 import MediaTypeToggle from '@/components/MediaTypeToggle';
@@ -63,14 +62,12 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
 
 export function CommunitySection() {
   const { friendsWatchlistItems, isLoading } = useFriendsWatchlist();
-  const { isMobile, isTablet } = useScreenSize();
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
   const [visibleItems, setVisibleItems] = useState(12);
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
-  const gridCols = useMemo(() => {
-    return isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-3' : 'grid-cols-3';
-  }, [isMobile, isTablet]);
+  // Grid columns defined directly with Tailwind responsive classes
+  const gridCols = "grid-cols-2 md:grid-cols-3";
 
   const items = friendsWatchlistItems[mediaType].slice(0, visibleItems);
 
@@ -123,12 +120,47 @@ export function CommunitySection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+      {/* Main content area: Stats first, then posters */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Community Stats Section - Responsive Grid for Stat Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> {/* Default: 1 col, lg: 2 cols */}
+          {/* Stat Card 1: Top Genres */}
+          <GenreStats mediaType={mediaType} />
+          
+          {/* Stat Card 2: General Stats */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Popcorn className="w-5 h-5 text-pink" />
+              <h3 className="text-lg font-semibold">Community Stats</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Film className="w-4 h-4 text-foreground/60" />
+                <div>
+                  <div className="text-sm font-medium">
+                    {friendsWatchlistItems.movie.length}
+                  </div>
+                  <div className="text-xs text-foreground/60">Movies</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Tv className="w-4 h-4 text-foreground/60" />
+                <div>
+                  <div className="text-sm font-medium">
+                    {friendsWatchlistItems.tv.length}
+                  </div>
+                  <div className="text-xs text-foreground/60">TV Shows</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div> {/* End of responsive grid for stat cards */}
+
         {/* Friends Watchlist Section */}
         <div className="space-y-6">
           {items.length > 0 ? (
             <div className="transition-opacity duration-300 ease-in-out space-y-6">
-              <div className={`grid ${gridCols} gap-4 md:gap-6 min-h-[200px]`}>
+              <div className={`grid ${gridCols} gap-4 md:gap-6 min-h-[200px]`}> {/* Use the gridCols variable */}
                 {items.map((media, index) => (
                   <div key={`${media.id}-${index}`} className="hover-lift relative">
                     <MemoizedMediaPoster media={media} />
@@ -164,38 +196,6 @@ export function CommunitySection() {
               </Link>
             </div>
           )}
-        </div>
-
-        {/* Community Stats Section */}
-        <div className="space-y-6">
-          <GenreStats mediaType={mediaType} />
-          
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Popcorn className="w-5 h-5 text-pink" />
-              <h3 className="text-lg font-semibold">Community Stats</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Film className="w-4 h-4 text-foreground/60" />
-                <div>
-                  <div className="text-sm font-medium">
-                    {friendsWatchlistItems.movie.length}
-                  </div>
-                  <div className="text-xs text-foreground/60">Movies</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Tv className="w-4 h-4 text-foreground/60" />
-                <div>
-                  <div className="text-sm font-medium">
-                    {friendsWatchlistItems.tv.length}
-                  </div>
-                  <div className="text-xs text-foreground/60">TV Shows</div>
-                </div>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
     </div>

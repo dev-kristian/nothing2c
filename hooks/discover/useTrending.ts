@@ -1,10 +1,13 @@
 // hooks/useTrending.ts
 import { useCallback, useMemo, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useSearchParams } from 'next/navigation';
 import useSWRInfinite from 'swr/infinite';
 import { Media } from '@/types/media';
 
-interface TrendingApiResponse {
+// Define a union type for the possible media types
+export type DiscoverMediaType = 'movie' | 'tv' | 'upcoming';
+
+interface ApiResponse {
   results: Media[];
   total_pages: number;
 }
@@ -16,55 +19,77 @@ interface UseTrendingReturn {
   error: string | null;
   hasMore: boolean;
   loadMore: () => void;
-  mediaType: 'movie' | 'tv';
-  setMediaType: (type: 'movie' | 'tv') => void;
-  refetch: () => void; 
+  mediaType: DiscoverMediaType;
+  setMediaType: (type: DiscoverMediaType) => void;
+  refetch: () => void;
 }
 
-const fetcher = async (url: string, mediaType: 'movie' | 'tv', page: number): Promise<TrendingApiResponse> => {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mediaType, page }),
-  });
+const fetcher = async (url: string, mediaType: DiscoverMediaType, page: number): Promise<ApiResponse> => {
+  // Use the correct API endpoint based on mediaType
+  const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
+  
+  let requestOptions: RequestInit = {};
+  let finalUrl = url; // Use the endpoint passed in the key
+
+  if (mediaType === 'upcoming') {
+    // Upcoming uses GET and page as a query param
+    finalUrl = `${endpoint}?page=${page}`; // Construct URL with query param
+    requestOptions = {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // No body for GET
+    };
+  } else {
+    // Trending uses POST with mediaType and page in the body
+    requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mediaType, page }),
+    };
+    finalUrl = endpoint; // Use the base trending endpoint
+  }
+
+  const response = await fetch(finalUrl, requestOptions);
 
   if (!response.ok) {
-    throw new Error('Failed to fetch trending data');
+    const errorData = await response.text(); // Get more error details
+    throw new Error(`Failed to fetch data from ${endpoint}: ${response.statusText} - ${errorData}`);
   }
 
   return await response.json();
 };
 
 export const useTrending = (): UseTrendingReturn => {
-  const searchParams = useSearchParams(); // Get search params
-  const initialType = searchParams.get('type'); // Get 'type' param
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get('type');
 
-  // Determine initial media type based on URL param, default to 'movie'
-  const getInitialMediaType = (): 'movie' | 'tv' => {
-    if (initialType === 'movie' || initialType === 'tv') {
+  // Determine initial media type, including 'upcoming'
+  const getInitialMediaType = (): DiscoverMediaType => {
+    if (initialType === 'movie' || initialType === 'tv' || initialType === 'upcoming') {
       return initialType;
     }
-    return 'movie';
+    return 'movie'; // Default to 'movie'
   };
 
-  const [mediaType, setMediaTypeState] = useState<'movie' | 'tv'>(getInitialMediaType);
+  const [mediaType, setMediaTypeState] = useState<DiscoverMediaType>(getInitialMediaType);
 
-  // Update state if searchParams change after initial load
+  // Update state if searchParams change
   useEffect(() => {
     const currentUrlType = searchParams.get('type');
-    if (currentUrlType === 'movie' || currentUrlType === 'tv') {
+    if (currentUrlType === 'movie' || currentUrlType === 'tv' || currentUrlType === 'upcoming') {
       if (currentUrlType !== mediaType) {
         setMediaTypeState(currentUrlType);
       }
     }
-    // Only run when searchParams change
   }, [searchParams, mediaType]);
 
-
-  const getKey = (pageIndex: number, previousPageData: TrendingApiResponse | null) => {
-    // Ensure mediaType is included in the key so SWR refetches when it changes
+  const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
+    // Stop fetching if the previous page had no results
     if (previousPageData && !previousPageData.results.length) return null;
-    return [`/api/trending`, mediaType, pageIndex + 1]; // Include mediaType in the key
+    
+    // Key includes the API endpoint and mediaType to ensure correct fetching and caching
+    const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
+    return [endpoint, mediaType, pageIndex + 1]; 
   };
 
   const {
@@ -74,9 +99,11 @@ export const useTrending = (): UseTrendingReturn => {
     setSize,
     isLoading,
     isValidating,
-    mutate, 
-  } = useSWRInfinite<TrendingApiResponse, Error>(getKey, ([url, mediaType, page]) => fetcher(url, mediaType, page), {
-      revalidateFirstPage: false, 
+    mutate,
+  } = useSWRInfinite<ApiResponse, Error>(getKey, ([url, type, page]) => fetcher(url, type, page), {
+    revalidateFirstPage: false,
+    // Keep previous data visible while loading new mediaType
+    keepPreviousData: true, 
   });
 
   const isLoadingInitialData = !apiResponses && !error;
@@ -108,12 +135,20 @@ export const useTrending = (): UseTrendingReturn => {
   const hasMore = !isReachingEnd;
 
   const errorMessage = error
-    ? 'An error occurred while fetching trending data. Please try again.'
+    ? `An error occurred: ${error.message}` // Provide more specific error
     : null;
 
-    const refetch = useCallback(() => {
-        mutate();
-    }, [mutate]);
+  const refetch = useCallback(() => {
+    // Reset size to 1 and trigger revalidation
+    setSize(1).then(() => mutate()); 
+  }, [mutate, setSize]);
+
+  // Function to handle media type change, resetting pagination
+  const handleSetMediaType = useCallback((type: DiscoverMediaType) => {
+    setMediaTypeState(type);
+    // Reset SWR state by setting size to 1 when type changes
+    setSize(1); 
+  }, [setMediaTypeState, setSize]);
 
   return {
     data: uniqueItems,
@@ -123,7 +158,7 @@ export const useTrending = (): UseTrendingReturn => {
     hasMore,
     loadMore,
     mediaType,
-    setMediaType: setMediaTypeState, // Rename internal state setter
+    setMediaType: handleSetMediaType, // Use the new handler
     refetch,
   };
 };

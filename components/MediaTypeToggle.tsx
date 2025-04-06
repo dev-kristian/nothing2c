@@ -3,20 +3,23 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Film, Tv } from 'lucide-react';
+import { Film, Tv, Calendar } from 'lucide-react'; // Add Calendar
+import { DiscoverMediaType } from '@/hooks/discover/useTrending'; // Import the type
 
 interface MediaTypeToggleProps {
-  mediaType: 'movie' | 'tv';
-  onMediaTypeChange: (type: 'movie' | 'tv') => void;
+  mediaType: DiscoverMediaType; // Use the imported type
+  onMediaTypeChange: (type: DiscoverMediaType) => void; // Use the imported type
   size?: 'default' | 'sm';
-  compact?: boolean; // Added compact prop
+  compact?: boolean; 
+  showUpcoming?: boolean; // Add prop to control upcoming visibility
 }
 
 export default function MediaTypeToggle({ 
   mediaType, 
   onMediaTypeChange,
   size = 'default',
-  compact = false // Default to false
+  compact = false,
+  showUpcoming = false // Default to false
 }: MediaTypeToggleProps) {
   const isSmall = size === 'sm' || compact; // Use either size='sm' or compact=true
   
@@ -49,6 +52,19 @@ export default function MediaTypeToggle({
         <span className={compact ? 'hidden sm:inline' : ''}>TV Shows</span>
         {compact && <span className="sm:hidden">TV</span>}
       </ToggleButton>
+
+      {showUpcoming && (
+        <ToggleButton 
+          active={mediaType === 'upcoming'}
+          onClick={() => onMediaTypeChange('upcoming')}
+          size={size}
+          compact={compact}
+        >
+          <Calendar className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} ${compact ? 'mr-1' : 'mr-1.5'}`} />
+          <span className={compact ? 'hidden sm:inline' : ''}>Upcoming</span>
+          {compact && <span className="sm:hidden">Up</span>}
+        </ToggleButton>
+      )}
     </div>
   );
 }

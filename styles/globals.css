@@ -62,23 +62,16 @@
   }
   
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
-  }
-  
-  /* Apple-style background with dynamic light/dark mode */
-  .light body {
-    background-image: url('/background-light.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-  }
-  
-  .dark body {
+    /* Removed transition-colors to potentially reduce flash perception */
+    @apply bg-background text-foreground;
+    /* Apply single background image */
     background-image: url('/background-dark.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
   }
+  
+  /* Removed theme-specific body background rules */
   
   /* Overlay for better text readability */
   body::before {
@@ -90,7 +83,8 @@
     bottom: 0;
     @apply bg-background/95 backdrop-blur-sm;
     z-index: -1;
-    transition: background-color 0.3s ease;
+    /* Removed transition to potentially reduce flash perception */
+    /* transition: background-color 0.3s ease; */
   }
 }
 

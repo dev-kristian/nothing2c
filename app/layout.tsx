@@ -4,8 +4,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
-import { ScreenSizeProvider } from '@/context/ScreenSizeContext'
-import { ThemeProvider } from '@/context/ThemeContext'
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { Toaster } from "@/components/ui/toaster" // Import the Toaster component
 
 const inter = Inter({ subsets: ['latin'] })
@@ -38,15 +37,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/* The `suppressHydrationWarning` prop is required by next-themes when using `attribute="class"` */}
       <body className={`${inter.className} text-foreground`}>
-        <ThemeProvider>
-          <ScreenSizeProvider>
-            <AuthProvider>
-              {children}
-              <Toaster /> {/* Render the Toaster component */}
-            </AuthProvider>
-          </ScreenSizeProvider>
-        </ThemeProvider>
+        <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            {children}
+            <Toaster /> {/* Render the Toaster component */}
+          </AuthProvider>
+        </NextThemesProvider>
         <Analytics/>
       </body>
     </html>

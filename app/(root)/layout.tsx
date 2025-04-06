@@ -5,7 +5,6 @@ import { getUserProfileStatus } from '@/lib/server-auth-utils'; // Use the serve
 import { ClientProviders } from '@/components/providers/ClientProviders'; // Use the new client wrapper
 import Navigation from '@/components/Navigation';
 import Loading from '@/components/Loading'; // Keep Loading for Suspense fallback
-import { ThemeScript } from '@/components/ThemeScript';
 
 // Layout is now an async Server Component
 export default async function RootLayout({
@@ -32,11 +31,10 @@ export default async function RootLayout({
   // console.log('[Root Layout] Rendering for authenticated user with complete profile.');
   return (
     <>
-      {/* ThemeScript likely needs to be high up, possibly even in the root app/layout.tsx if it affects the whole app */}
-      <ThemeScript />
       <div className="flex flex-col h-screen">
         <Navigation /> {/* Navigation might need to be a Client Component if it uses hooks */}
-        <main className="flex-grow overflow-y-auto">
+        {/* Removed overflow-y-auto from main */}
+        <main className="flex-grow">
           {/* Suspense wraps the client-rendered parts */}
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center mt-[var(--navbar-height)]">

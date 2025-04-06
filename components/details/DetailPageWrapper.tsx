@@ -6,10 +6,10 @@ import { format } from 'date-fns';
 import { useUserData } from '@/context/UserDataContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Plus, Check, Film } from 'lucide-react';
-import YouTubeEmbed from './YoutubeEmbed';
-import FlickyEmbed from './HostEmbed';
-import DetailInfo from './DetailInfo';
-import { Button } from '@/components/ui/button';
+import YouTubeEmbed from './YoutubeEmbed'
+import HostEmbed from './HostEmbed' // Use original name for clarity
+import DetailInfo from './DetailInfo'
+import { Button } from '@/components/ui/button'
 
 interface DetailPageWrapperProps {
   details: DetailsData;
@@ -41,7 +41,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   };
 
   return (
-    <div className="relative min-h-screen bg-black text-white pt-6">
+    <div className="relative min-h-screen bg-background text-foreground pt-6">
       {/* Backdrop Image with Gradient */}
       <div className="absolute inset-0 ">
         <Image
@@ -52,8 +52,12 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+        {/* Light theme gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background/90 dark:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/70 dark:hidden" />
+        {/* Dark theme gradient */}
+        <div className="absolute inset-0 hidden bg-gradient-to-b from-black/90 via-black/70 to-black/90 dark:block" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-black via-black/80 to-black/70 dark:block" />
       </div>
 
       {/* Main Content */}
@@ -68,7 +72,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
             >
               {/* Poster */}
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl 
-                            bg-white/5 backdrop-blur-sm">
+                            bg-card backdrop-blur-sm">
                 {details.poster_path ? (
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}
@@ -80,7 +84,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Film className="w-1/4 h-1/4 text-white/20" />
+                    <Film className="w-1/4 h-1/4 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -89,33 +93,30 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
               <div className="space-y-2">
                 {trailer && (
                   <Button 
+                    variant="secondary"
                     onClick={() => setShowTrailer(true)}
-                    className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm
-                             text-white border-0 h-12 rounded-xl"
+                    className="w-full h-12 rounded-xl"
                   >
                     <Play className="w-5 h-5 mr-2" />
                     Watch Trailer
                   </Button>
                 )}
 
-                {isMovie && (
-                  <Button 
-                    onClick={() => setShowFlickyEmbed(true)}
-                    className="w-full bg-pink hover:bg-pink/90 text-white 
-                             border-0 h-12 rounded-xl"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Watch Now
-                  </Button>
-                )}
+                {/* Show Watch Now Button for both Movies and TV Shows */}
+                <Button
+                  onClick={() => setShowFlickyEmbed(!showFlickyEmbed)} // Toggle visibility
+                  className="w-full bg-pink hover:bg-pink/90 text-white
+                           border-0 h-12 rounded-xl"
+                  aria-expanded={showFlickyEmbed}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  {showFlickyEmbed ? 'Hide Player' : 'Watch Now'}
+                </Button>
 
-                <Button 
+                <Button
+                  variant={isInWatchlist ? "outline" : "secondary"}
                   onClick={handleWatchlistClick}
-                  className={`w-full h-12 rounded-xl border-2 ${
-                    isInWatchlist 
-                      ? 'bg-white/5 hover:bg-white/10 border-white/20' 
-                      : 'bg-white/10 hover:bg-white/20 border-transparent'
-                  }`}
+                  className="w-full h-12 rounded-xl"
                 >
                   {isInWatchlist ? (
                     <>
@@ -132,60 +133,62 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
               </div>
             </motion.div>
 
-            {/* Right Column - Details */}
+            {/* Right Column - Conditionally renders Details or Player */}
             <div className="w-full lg:w-3/4 pb-8">
-              <DetailInfo
-                title={title!}
-                releaseYear={releaseYear}
-                genres={details.genres.map(g => g.name).join(', ')}
-                voteAverage={details.vote_average}
-                voteCount={details.vote_count}
-                tagline={details.tagline}
-                overview={details.overview}
-                isMovie={isMovie}
-                runtime={isMovie ? details.runtime ?? 0 : details.episode_run_time?.[0] ?? 0}
-                language={details.spoken_languages?.[0]?.english_name || 'N/A'}
-                releaseDate={formattedReleaseDate}
-                seasons={!isMovie ? details.number_of_seasons : undefined}
-                episodes={!isMovie ? details.number_of_episodes : undefined}
-                budget={isMovie ? details.budget : undefined}
-                revenue={isMovie ? details.revenue : undefined}
-                status={details.status}
-              />
+              {/* Conditionally render DetailInfo or HostEmbed */}
+              {!showFlickyEmbed ? (
+                <DetailInfo
+                  title={title!}
+                  releaseYear={releaseYear}
+                  genres={details.genres.map(g => g.name).join(', ')}
+                  voteAverage={details.vote_average}
+                  voteCount={details.vote_count}
+                  tagline={details.tagline}
+                  overview={details.overview}
+                  isMovie={isMovie}
+                  runtime={isMovie ? details.runtime ?? 0 : details.episode_run_time?.[0] ?? 0}
+                  language={details.spoken_languages?.[0]?.english_name || 'N/A'}
+                  releaseDate={formattedReleaseDate}
+                  seasons={!isMovie ? details.number_of_seasons : undefined}
+                  episodes={!isMovie ? details.number_of_episodes : undefined}
+                  budget={isMovie ? details.budget : undefined}
+                  revenue={isMovie ? details.revenue : undefined}
+                  status={details.status}
+                />
+              ) : (
+                // Render HostEmbed for both Movies and TV Shows
+                <HostEmbed
+                  tmdbId={details.id}
+                  // Pass initial season/episode and the seasons array for TV shows
+                  initialData={!isMovie ? {
+                    season: 1,
+                    episode: 1,
+                    totalSeasons: details.number_of_seasons,
+                    seasons: details.seasons // Pass the seasons array
+                  } : undefined}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Overlays */}
+      {/* Modal Overlay for Trailer */}
       <AnimatePresence>
         {showTrailer && trailer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0  bg-black/90 backdrop-blur-xl"
+            className="fixed inset-0 z-50 bg-background/90 dark:bg-black/90 backdrop-blur-xl" // Ensure trailer modal is on top
           >
-            <YouTubeEmbed 
-              videoId={trailer.key} 
-              onClose={() => setShowTrailer(false)} 
+            <YouTubeEmbed
+              videoId={trailer.key}
+              onClose={() => setShowTrailer(false)}
             />
           </motion.div>
         )}
-
-        {showFlickyEmbed && isMovie && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-10 bg-black/90 backdrop-blur-xl"
-          >
-            <FlickyEmbed 
-              tmdbId={details.id} 
-              onClose={() => setShowFlickyEmbed(false)} 
-            />
-          </motion.div>
-        )}
+        {/* Removed HostEmbed from AnimatePresence */}
       </AnimatePresence>
     </div>
   );
