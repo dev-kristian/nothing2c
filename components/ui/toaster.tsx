@@ -29,7 +29,8 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport />
+      {/* Add a high z-index to ensure viewport is on top */}
+      <ToastViewport className="z-[9999]" /> 
     </ToastProvider>
   )
 }

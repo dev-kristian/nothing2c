@@ -11,6 +11,7 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import { Session } from '@/types';
+import { FirestoreUserDate } from '@/types/context';
 
 export const useSessionSubscription = () => {
   const { user } = useAuthContext();
@@ -23,49 +24,23 @@ export const useSessionSubscription = () => {
     if (isSubscribed.current) return; // Prevent duplicate subscriptions
   
     const sessionsRef = collection(db, 'sessions');
-    const unsubscribeList: (() => void)[] = [];
-  
+    
     // Single query using participantIds
-    const combinedQuery = query(
+    const sessionsQuery = query(
       sessionsRef,
       where('participantIds', 'array-contains', user.uid),
       orderBy('createdAt', 'desc')
     );
-  
-    isSubscribed.current = true; // Mark as subscribed before setting up listener
-    const unsubscribe = onSnapshot(combinedQuery, (querySnapshot) => {
-      processSessionsSnapshot(querySnapshot);
-    }, (error) => {
-      console.error("Error fetching sessions:", error);
-      isSubscribed.current = false; // Reset on error
-    });
-  
-    unsubscribeList.push(unsubscribe);
-  
-    // Query 2: Sessions where user is a participant (using a participantIds array)
-    const participantQuery = query(
-      sessionsRef,
-      where('participantIds', 'array-contains', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-  
-    const participantUnsubscribe = onSnapshot(participantQuery, (querySnapshot) => {
-      processSessionsSnapshot(querySnapshot);
-    }, (error) => {
-      console.error("Error fetching participant sessions:", error);
-    });
-  
-    unsubscribeList.push(participantUnsubscribe);
-  
-    // Helper function to process session snapshots
-    function processSessionsSnapshot(querySnapshot: any) {
-      const sessionsList: Session[] = querySnapshot.docs.map((doc: { data: () => any; id: any; }) => {
+    
+    // Set up the listener
+    const unsubscribe = onSnapshot(sessionsQuery, (querySnapshot) => {
+      const sessionsList: Session[] = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         
         const createdAt = data.createdAt?.toDate() || new Date();
       
         const userDates = Object.entries(data.userDates || {}).map(([username, dates]) => {
-          const userDates = (dates as any[]).map(({ date, hours }) => {
+          const userDates = (dates as FirestoreUserDate[]).map(({ date, hours }) => {
             const dateISO = date instanceof Timestamp 
               ? date.toDate().toISOString() 
               : typeof date === 'string' 
@@ -101,6 +76,9 @@ export const useSessionSubscription = () => {
           }
         };
         
+        // Include participantIds from the data or create a default array
+        const participantIds = data.participantIds || Object.keys(participants);
+        
         return {
           id: doc.id,
           createdAt,
@@ -108,6 +86,7 @@ export const useSessionSubscription = () => {
           createdByUid: data.createdByUid || '',
           userDates: Object.fromEntries(userDates),
           participants,
+          participantIds, // Added this line to include participantIds
           poll: data.poll ? {
             id: data.poll.id,
             movieTitles: data.poll.movieTitles || [],
@@ -116,20 +95,22 @@ export const useSessionSubscription = () => {
           status: data.status || 'active'
         };
       });
+      
+      // Sort sessions by creation date (newest first)
+      sessionsList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
+      setSessions(sessionsList);
+    }, (error) => {
+      console.error("Error fetching sessions:", error);
+      isSubscribed.current = false; // Reset on error
+    });
   
-      // Merge sessions, ensuring no duplicates
-      setSessions(prev => {
-        const allSessions = [...prev, ...sessionsList];
-        const uniqueSessions = Array.from(
-          new Map(allSessions.map(session => [session.id, session])).values()
-        );
-        return uniqueSessions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      });
-    }
-  
+    // Mark as subscribed after setting up the listener
+    isSubscribed.current = true;
+    
     // Cleanup
     return () => {
-      unsubscribeList.forEach(unsubscribe => unsubscribe());
+      unsubscribe();
       isSubscribed.current = false;
     };
   }, [user, userData]);

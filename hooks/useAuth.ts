@@ -1,5 +1,5 @@
 // hooks/useAuth.ts 
-import { useEffect, useState, useCallback } from 'react'; 
+import { useEffect, useState, useCallback } from 'react';
 import {
   onAuthStateChanged,
   User,
@@ -11,11 +11,14 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+// No longer need useCustomToast here
+import { handleAuthError } from '@/lib/utils'; // Import the error handler utility
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
+  // Remove useCustomToast usage
   const [loading, setLoading] = useState(true);
-  const [initialAuthChecked, setInitialAuthChecked] = useState(false); 
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
 
   const signIn = useCallback(async () => {
     try {
@@ -23,19 +26,21 @@ export function useAuth() {
       const result = await signInWithPopup(auth, provider);
       return result.user;
     } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+      // Call handleAuthError with only error and optional message
+      handleAuthError(error, 'Failed to sign in. Please try again.');
+      // No longer re-throwing the error as it's handled by the toast
     }
-  }, []);
+  }, []); // Remove showToast from dependency array
 
   const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
+      // Optionally, handle sign-out errors with a toast as well
+      // Call handleAuthError with only error and optional message
+      handleAuthError(error, 'Failed to sign out. Please try again.');
     }
-  }, []);
+  }, []); // Remove showToast from dependency array
 
 
   useEffect(() => {

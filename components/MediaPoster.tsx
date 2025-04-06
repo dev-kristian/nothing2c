@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/context/UserDataContext';
 import { Media } from '@/types';
-import { Star, Film, Tv, TrendingUp } from 'lucide-react';
+import { Star, Film, Tv} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { shimmer, toBase64 } from '@/lib/image-shimmer';
 import { CiBookmarkPlus, CiBookmarkMinus } from "react-icons/ci";
@@ -51,15 +51,10 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
       if (isInWatchlist) {
         await removeFromWatchlist(media.id, mediaType);
       } else {
-        const mediaDetails = {
-          id: media.id,
-          title: media.title || media.name || 'Unknown Title',
-          poster_path: media.poster_path || null,
-          release_date: media.release_date || media.first_air_date || '',
-          vote_average: media.vote_average || 0,
-          media_type: mediaType,
-        };
-        await addToWatchlist(mediaDetails, mediaType);
+        await addToWatchlist({
+          ...media,
+          addedAt: new Date().toISOString()
+        }, mediaType);
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);
@@ -140,7 +135,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
     <div className="group relative">
       {showRank && typeof index === 'number' && (
         <div className="absolute -top-3 -left-3 z-10">
-          <Badge className="bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-glow px-3 py-1 rounded-full">
+          <Badge className="bg-gradient-to-r from-pink to-purple text-white shadow-glow px-3 py-1 rounded-full">
             #{index + 1}
           </Badge>
         </div>
@@ -201,13 +196,6 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </div>
           )}
 
-          {/* Trending indicator */}
-          {showRank && (
-            <div className="absolute top-2 left-2 bg-gradient-to-r from-pink-500/80 to-purple-500/80 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-white" />
-            </div>
-          )}
-
           {/* Watchlist Button */}
           <TooltipProvider>
             <Tooltip>
@@ -221,8 +209,8 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
                     flex items-center justify-center 
                     shadow-lg transition-all duration-200
                     ${isInWatchlist
-                      ? 'bg-pink-400/30 backdrop-blur-md border-r border-t border-b border-pink-400/20'
-                      : 'bg-white/10 backdrop-blur-md border-r border-t border-b border-white/10'
+                      ? 'bg-pink dark:bg-pink-dark backdrop-blur-md hover:dark:bg-pink/80'
+                      : 'bg-white/10 backdrop-blur-md '
                     }
                     ${isLoading ? 'animate-pulse' : ''}
                     hover:bg-white/20
@@ -231,7 +219,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
                   {isLoading ? (
                     <div className="h-4 w-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
                   ) : isInWatchlist ? (
-                    <CiBookmarkMinus className="w-6 h-6 text-pink-100" />
+                    <CiBookmarkMinus className="w-6 h-6 text-white" />
                   ) : (
                     <CiBookmarkPlus className="w-6 h-6 text-white" />
                   )}

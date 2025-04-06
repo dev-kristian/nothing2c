@@ -1,13 +1,12 @@
-//context\SessionContext.tsx
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { SessionContextType } from '@/types';
-import { 
+import {
   useCreateSession,
   useUpdateUserDates,
   usePollActions,
   useParticipantActions,
   useSessionSubscription
-} from '@/hooks/watch-party';
+} from '@/hooks/session';
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
@@ -20,11 +19,24 @@ export const useSession = () => {
 };
 
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const createSession = useCreateSession();
   const updateUserDates = useUpdateUserDates();
   const { createPoll, addMovieToPoll, removeMovieFromPoll, toggleVote } = usePollActions();
   const updateParticipantStatus = useParticipantActions();
   const sessions = useSessionSubscription();
+  
+  // Update loading state when sessions data changes
+  useEffect(() => {
+    // Only set isLoading to false when we know data fetch has completed
+    if (sessions !== undefined) {
+      // Small delay to ensure UI transitions smoothly
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sessions]);
 
   const contextValue = useMemo(() => ({
     createSession,
@@ -34,7 +46,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addMovieToPoll,
     removeMovieFromPoll,
     updateParticipantStatus,
-    sessions
+    sessions: sessions || [], // Ensure sessions is always an array
+    isLoading
   }), [
     createSession,
     createPoll,
@@ -43,9 +56,10 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addMovieToPoll,
     removeMovieFromPoll,
     updateParticipantStatus,
-    sessions
+    sessions,
+    isLoading
   ]);
-  
+ 
   return (
     <SessionContext.Provider value={contextValue}>
       {children}

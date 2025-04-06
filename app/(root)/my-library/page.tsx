@@ -1,59 +1,89 @@
-// app/(root)/page.tsx
 "use client"
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useUserData } from '@/context/UserDataContext';
-import NotificationSubscription from '@/components/home/NotificationSubscription';
-import { WatchlistOverview } from '@/components/home/WatchlistOverview';
-import { CreateSession } from '@/components/home/CreateSession';
-import { TopWatchlistStats } from '@/components/home/TopWatchlistStats';
+import React, { useState } from 'react';
+import { WelcomeHero } from '@/components/home/WelcomeHero';
+import { WatchlistSection } from '@/components/home/WatchlistSection';
+import { CommunitySection } from '@/components/home/CommunitySection';
+import { QuickActions } from '@/components/home/QuickActions';
+import { UpcomingReleases } from '@/components/home/UpcomingReleases';
+import { Bookmark, Users, Calendar } from 'lucide-react';
+
+interface TabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: 'bookmark' | 'users' | 'calendar';
+  label: string;
+}
 
 export default function Home() {
-  const { userData } = useUserData();
+  const [activeTab, setActiveTab] = useState<'watchlist' | 'community' | 'upcoming'>('watchlist');
 
   return (
-    <div className="min-h-screen w-full px-4 pt-20 md:px-8 lg:px-10 pb-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-[2000px] mx-auto space-y-8"
-      >
-        {/* Header Section */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"> {/* Added flex-col and gap */}
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight"> {/* Responsive font sizes */}
-              {userData ? (
-                <span>Welcome back, <span className="text-primary">{userData.username}</span></span>
-              ) : (
-                "Welcome to AFK Cinema"
-              )}
-            </h1>
-            <p className="text-gray-400 text-sm sm:text-base">Discover, track, and watch together</p> {/* Responsive text size */}
-          </div>
-
-          {userData && userData.notification !== "unsupported" && (
-            <div>
-              <NotificationSubscription />
+    <div className="min-h-screen w-full pb-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 md:space-y-8">
+        <section>
+          <WelcomeHero />
+        </section>
+        
+        <section>
+          <QuickActions />
+        </section>
+        
+        <section className="space-y-5">
+          <div className="flex justify-center">
+            <div className="inline-flex rounded-xl p-1 bg-gray-5/50 dark:bg-gray-5-dark/50 backdrop-blur-sm">
+              <TabButton 
+                active={activeTab === 'watchlist'} 
+                onClick={() => setActiveTab('watchlist')}
+                icon="bookmark"
+                label="Watchlist"
+              />
+              <TabButton 
+                active={activeTab === 'community'} 
+                onClick={() => setActiveTab('community')}
+                icon="users"
+                label="Community"
+              />
+              <TabButton 
+                active={activeTab === 'upcoming'} 
+                onClick={() => setActiveTab('upcoming')}
+                icon="calendar"
+                label="Upcoming"
+              />
             </div>
-          )}
-        </header>
-
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-          {/* Left Column - Create Session & Watchlist */}
-          <div className="lg:col-span-8 space-y-6 ">
-              <CreateSession />
-
-              <WatchlistOverview />
           </div>
-
-          {/* Right Column - Trending Content */}
-          <div className="lg:col-span-4">
-              <TopWatchlistStats />
+          
+          <div className="min-h-[300px] animate-enter">
+            {activeTab === 'watchlist' && <WatchlistSection />}
+            {activeTab === 'community' && <CommunitySection />}
+            {activeTab === 'upcoming' && <UpcomingReleases />}
           </div>
-        </div>
-      </motion.div>
+        </section>
+      </div>
     </div>
   );
 }
+
+const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => {
+  const iconComponents: Record<TabButtonProps['icon'], JSX.Element> = {
+    bookmark: <Bookmark size={16} />,
+    users: <Users size={16} />,
+    calendar: <Calendar size={16} />,
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+        active 
+          ? 'bg-white dark:bg-gray-6-dark text-label dark:text-label-dark shadow-apple-sm dark:shadow-apple-dark-sm' 
+          : 'text-label-secondary dark:text-label-secondary-dark hover:text-label dark:hover:text-label-dark'
+      }`}
+    >
+      <span className={`${active ? 'text-system-pink dark:text-system-pink-dark' : ''}`}>
+        {iconComponents[icon]}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+};

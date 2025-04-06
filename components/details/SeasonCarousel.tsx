@@ -231,7 +231,7 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                     <div>
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="text-sm font-medium text-white group-hover:text-primary transition-colors">
+                          <h4 className="text-sm font-medium text-white group-hover:text-pink transition-colors">
                             {episode.name}
                           </h4>
                           <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
@@ -261,7 +261,7 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                         
                         <button
                           onClick={() => handleWatchNow(selectedSeasonDetails.season_number, episode.episode_number)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink/10 hover:bg-pink/20 text-pink transition-colors"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

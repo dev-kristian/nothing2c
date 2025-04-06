@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    let topic = body.topic;
+    const topic = body.topic;
     
     // Safety check: Only allow user-specific topics
     if (!topic || !topic.startsWith('user_')) {

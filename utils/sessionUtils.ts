@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 /**
  * Formats an array of hour timestamps into a readable string
  */
-export const formatHours = (hoursArray: string | any[]) => {
+export const formatHours = (hoursArray: string | string[] | 'all') => {
   if (!hoursArray || !Array.isArray(hoursArray) || hoursArray.length === 0) {
     return 'All day';
   }
@@ -34,11 +34,11 @@ export const countParticipantsByStatus = (participants: { [s: string]: unknown; 
   if (!participants) return { accepted: 0, pending: 0, total: 0 };
   
   const accepted = Object.values(participants).filter(
-    (p: any) => p.status === 'accepted'
+    (p) => typeof p === 'object' && p !== null && 'status' in p && p.status === 'accepted'
   ).length;
   
   const pending = Object.values(participants).filter(
-    (p: any) => p.status === 'invited'
+    (p) => typeof p === 'object' && p !== null && 'status' in p && p.status === 'invited'
   ).length;
   
   return { 

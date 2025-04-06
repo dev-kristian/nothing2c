@@ -119,12 +119,12 @@ const HostEmbed: React.FC<HostEmbedProps> = ({
 
   return (
     <motion.div 
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4 "
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="relative w-full h-[90vh] bg-gray-950/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="relative w-full h-[80vh] bg-gray-950/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
         <div className="relative z-20 p-2">
           <div className="flex flex-col space-y-1">
             {/* Top Controls Bar */}

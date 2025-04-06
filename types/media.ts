@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 
 // types/media.ts
 export interface Media {
+  overview?: ReactNode;
   id: number;
   title?: string;
   name?: string;
@@ -12,6 +13,8 @@ export interface Media {
   release_date?: string;
   first_air_date?: string;
   watchlist_count?: number;
+  addedAt?: string;
+  genre_ids?: number[];
 }
 
 export interface SearchResult extends Media {
@@ -114,8 +117,7 @@ export interface VideoData {
   type: string;
 }
 
-export interface TopWatchlistItem extends Media{
-  overview?: ReactNode;
+export interface FriendsWatchlistItem extends Media{
   weighted_score: number;
 }
 

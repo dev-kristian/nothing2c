@@ -7,10 +7,9 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/auth/AuthForm';
-import { useCustomToast } from '@/hooks/useToast';
-import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
+import { toast } from "@/hooks/use-toast"; // Import the correct toast function
+import { handleAuthError } from '@/lib/utils'; // Import the reusable error handler
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { FirebaseError } from 'firebase/app';
 
 interface SignInData {
   email: string;
@@ -19,7 +18,7 @@ interface SignInData {
 
 export default function SignIn() {
   const router = useRouter();
-  const { showToast } = useCustomToast();
+  // Remove incorrect useCustomToast usage
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (data: SignInData) => {
@@ -30,21 +29,26 @@ export default function SignIn() {
       const user = userCredential.user;
 
       if (!user.emailVerified) {
-        showToast("Email Not Verified", "Please verify your email to proceed.", "warning");
+        // Use the correct toast function
+        toast({
+          title: "Email Not Verified",
+          description: "Please verify your email to proceed.",
+          variant: "default", // Or "warning" if you add that variant style
+        });
         router.push('/verify-email');
         return;
       }
 
-      showToast("Sign In Successful", "Welcome back!", "success");
+      // Use the correct toast function
+      toast({
+        title: "Sign In Successful",
+        description: "Welcome back!",
+        variant: "default", // Or "success" if you add that variant style
+      });
       router.push('/');
     } catch (error: unknown) {
-      console.error('Error signing in:', error);
-      if (error instanceof FirebaseError) {
-        const errorMessage = getFirebaseErrorMessage(error.code);
-        showToast("Sign In Failed", errorMessage, "error");
-      } else {
-        showToast("Sign In Failed", "An unexpected error occurred", "error");
-      }
+      // Use the reusable error handler which calls the correct toast function
+      handleAuthError(error); 
     } finally {
       setLoading(false);
     }

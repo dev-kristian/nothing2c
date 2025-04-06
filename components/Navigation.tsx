@@ -106,11 +106,11 @@ export default function Navigation() {
                   href={href}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300
                     ${isActivePath(href)
-                      ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                      ? 'bg-pink/10 text-pink dark:bg-pink/20'
                       : 'hover:bg-foreground/5 dark:hover:bg-foreground/10'
                     }`}
                 >
-                  <Icon className={`h-4 w-4 ${isActivePath(href) ? 'text-primary' : ''}`} />
+                  <Icon className={`h-4 w-4 ${isActivePath(href) ? 'text-pink' : ''}`} />
                   <span className="font-medium">{label}</span>
                 </Link>
               </motion.div>
@@ -131,11 +131,11 @@ export default function Navigation() {
                       alt="User avatar"
                       width={28}
                       height={28}
-                      className="rounded-full ring-2 ring-primary/20"
+                      className="rounded-full ring-2 ring-pink/20"
                     />
                   ) : (
-                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                      <UserIcon className="h-4 w-4 text-primary" />
+                    <div className="h-7 w-7 rounded-full bg-pink/10 flex items-center justify-center">
+                      <UserIcon className="h-4 w-4 text-pink" />
                     </div>
                   )}
                   <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${
@@ -150,7 +150,7 @@ export default function Navigation() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
                       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                      className="absolute right-0 mt-2 w-56 frosted-glass rounded-2xl shadow-lg overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 frosted-panel rounded-2xl shadow-lg overflow-hidden"
                     >
                       <div className="p-2 space-y-1">
                         <Link
@@ -185,8 +185,8 @@ export default function Navigation() {
               >
                 <Link
                   href="/signin"
-                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-primary text-primary-foreground 
-                           hover:bg-primary-hover transition-colors duration-300 shadow-lg"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-pink-foreground 
+                           hover:bg-pink-hover transition-colors duration-300 shadow-lg"
                 >
                   <LogIn className="h-4 w-4" />
                   <span>Sign In</span>
@@ -237,7 +237,7 @@ export default function Navigation() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="md:hidden absolute w-full frosted-glass bg-white dark:bg-black rounded-b-2xl shadow-lg overflow-hidden"
+            className="md:hidden absolute w-full frosted-panel bg-white dark:bg-black rounded-b-2xl shadow-lg overflow-hidden"
           >
             <div className="px-4 py-3 space-y-2">
               {navigationItems.map(({ href, icon: Icon, label }) => (
@@ -250,7 +250,7 @@ export default function Navigation() {
                     href={href}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
                       ${isActivePath(href)
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-pink/10 text-pink'
                         : 'hover:bg-foreground/5 dark:hover:bg-foreground/10'
                       }`}
                     onClick={() => setIsOpen(false)}
@@ -278,8 +278,8 @@ export default function Navigation() {
                 <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}>
                   <Link
                     href="/signin"
-                    className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground 
-                             hover:bg-primary-hover transition-colors duration-200"
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-pink text-pink-foreground 
+                             hover:bg-pink-hover transition-colors duration-200"
                     onClick={() => setIsOpen(false)}
                   >
                     <LogIn className="h-5 w-5" />

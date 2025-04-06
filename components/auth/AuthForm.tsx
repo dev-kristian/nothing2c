@@ -215,11 +215,11 @@ import { AuthFormData } from '@/types';
           />
           <Label htmlFor="agree-terms" className="text-sm text-muted-foreground">
             I agree to the{' '}
-            <Link href="/terms" className="text-primary hover:text-primary/80 transition-colors">
+            <Link href="/terms" className="text-pink hover:text-pink/80 transition-colors">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="text-primary hover:text-primary/80 transition-colors">
+            <Link href="/privacy" className="text-pink hover:text-pink/80 transition-colors">
               Privacy Policy
             </Link>
           </Label>

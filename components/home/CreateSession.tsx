@@ -10,7 +10,7 @@ export function CreateSession() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 space-y-8 frosted-panel p-6 rounded-2xl"> {/* Responsive container */}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 space-y-8 frosted-panel p-6 rounded-2xl"> 
       <div className="space-y-1">
         <h2 className="text-xl font-semibold">Create Watch Party</h2>
         <p className="text-sm text-gray-400">Plan your next movie night with friends</p>
@@ -18,7 +18,7 @@ export function CreateSession() {
 
       <Button
         onClick={() => router.push('/watch-together?new=true')}
-        className="group relative px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-full w-full sm:w-auto"  /* Responsive button width */
+        className="group relative px-6 py-2 bg-pink hover:bg-pink/90 text-white rounded-full w-full sm:w-auto"  
       >
         <motion.span
           className="flex items-center justify-center space-x-2"

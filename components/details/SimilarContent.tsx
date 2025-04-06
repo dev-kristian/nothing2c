@@ -66,10 +66,10 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
       {/* Header with Apple-style typography */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-medium tracking-tight text-white">
+          <h2 className="text-2xl font-medium tracking-tight ">
             You May Also Like
           </h2>
-          <p className="text-sm text-white/60 mt-1">
+          <p className="text-sm  mt-1">
             Similar {mediaType === 'movie' ? 'movies' : 'shows'} you might enjoy
           </p>
         </div>
@@ -81,8 +81,8 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
             disabled={!canScrollLeft}
             className={`p-2 rounded-full transition-all duration-300 ${
               canScrollLeft 
-                ? 'bg-white/10 hover:bg-white/15 text-white' 
-                : 'bg-white/5 text-white/30 cursor-not-allowed'
+                ? 'bg-white/10 hover:bg-white/15 ' 
+                : 'bg-white/5  cursor-not-allowed'
             }`}
             aria-label="Scroll left"
           >
@@ -93,8 +93,8 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
             disabled={!canScrollRight}
             className={`p-2 rounded-full transition-all duration-300 ${
               canScrollRight 
-                ? 'bg-white/10 hover:bg-white/15 text-white' 
-                : 'bg-white/5 text-white/30 cursor-not-allowed'
+                ? 'bg-white/10 hover:bg-white/15 ' 
+                : 'bg-white/5  cursor-not-allowed'
             }`}
             aria-label="Scroll right"
           >
@@ -105,12 +105,6 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
       
       {/* Content scroller with fade edges */}
       <div className="relative">
-        {/* Left fade gradient */}
-        <div className={`absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent transition-opacity duration-300 ${canScrollLeft ? 'opacity-100' : 'opacity-0'}`}></div>
-        
-        {/* Right fade gradient */}
-        <div className={`absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent transition-opacity duration-300 ${canScrollRight ? 'opacity-100' : 'opacity-0'}`}></div>
-        
         {/* Scrollable content */}
         <div 
           ref={scrollContainerRef}
@@ -151,23 +145,23 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
                     </div>
                   ) : (
                     <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                      <span className="text-white/40 text-sm">No Image</span>
+                      <span className=" text-sm">No Image</span>
                     </div>
                   )}
                   
                   {/* Rating badge */}
                   <div className={`absolute bottom-3 left-3 flex items-center space-x-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded-md transition-all duration-300 ${hoveredIndex === index ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-2'}`}>
-                    <Star size={12} className="text-primary fill-primary" />
-                    <span className="text-xs font-medium text-white">{item.vote_average.toFixed(1)}</span>
+                    <Star size={12} className="text-pink fill-pink" />
+                    <span className="text-xs font-medium ">{item.vote_average.toFixed(1)}</span>
                   </div>
                 </div>
                 
                 {/* Content info with Apple-like typography */}
                 <div className="mt-3 px-1">
-                  <h3 className="font-medium text-sm text-white leading-tight truncate">
+                  <h3 className="font-medium text-sm  leading-tight truncate">
                     {item.title || item.name}
                   </h3>
-                  <p className="text-xs text-white/50 mt-1">
+                  <p className="text-xs  mt-1">
                     {new Date(item.release_date || item.first_air_date || '').getFullYear() || 'Unknown year'}
                   </p>
                 </div>
@@ -183,7 +177,7 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
                   transition={{ duration: 0.2 }}
                 >
                   <div className="flex items-center justify-center py-1.5 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-all duration-200">
-                    <span className="text-xs font-medium text-white">View Details</span>
+                    <span className="text-xs font-medium ">View Details</span>
                   </div>
                 </motion.div>
               </Link>

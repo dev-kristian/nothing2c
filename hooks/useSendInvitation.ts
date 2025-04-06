@@ -1,5 +1,4 @@
 // hooks/useSendInvitation.ts
-import { useState } from 'react';
 import { useUserData } from '@/context/UserDataContext';
 import useSWRMutation from 'swr/mutation';
 import { Friend } from '@/types';

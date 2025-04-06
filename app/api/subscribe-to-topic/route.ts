@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
     
     // Get user ID from the request or from authentication
-    let topic = body.topic;
+    const topic = body.topic;
     
     // Safety check: Only allow user-specific topics
     if (!topic || !topic.startsWith('user_')) {

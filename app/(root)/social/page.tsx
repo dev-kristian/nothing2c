@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2, UserPlus, UserRound, UserMinus, Users, Bell, MessageCircle, Clock, UserCheck, X, Check, MoreHorizontal } from 'lucide-react';
+import { Search, Loader2, UserPlus, UserRound, UserMinus, Users, Bell, Clock, UserCheck, X, Check, MoreHorizontal } from 'lucide-react';
 import { useCustomToast } from '@/hooks/useToast';
 import { useUserData } from '@/context/UserDataContext';
 import { Friend, FriendRequest, FriendSearchResult, FriendSearchResultWithStatus } from '@/types';
@@ -164,7 +164,7 @@ export default function FriendsPage() {
     <div className="min-h-screen  transition-colors duration-300">
       {/* Top Navigation Bar - Apple Style */}
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-white/70 dark:bg-black/70 border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className=" frosted-glass mx-auto px-6 h-16 flex items-center justify-between">
+        <div className=" frosted-panel mx-auto px-6 h-16 flex items-center justify-between">
           <h1 className="text-2xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
             People
           </h1>
@@ -350,7 +350,7 @@ export default function FriendsPage() {
                 ))
               ) : friends.length > 0 ? (
                 friends.map((friend) => (
-                  <div key={friend.uid} className="frosted-glass rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={friend.uid} className="frosted-panel rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-white text-xl font-medium">
                         {friend.username.charAt(0).toUpperCase()}
@@ -364,11 +364,6 @@ export default function FriendsPage() {
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                      <Button className="rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 text-sm">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Message
-                      </Button>
-                      
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">

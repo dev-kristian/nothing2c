@@ -42,7 +42,7 @@ const Loading: React.FC<LoadingProps> = ({
       className={`
         flex flex-col items-center justify-center 
         w-full h-full 
-        ${spinnerType === 'full' ? 'fixed inset-0 bg-background/70 z-50' : ''}
+        ${spinnerType === 'full' ? 'bg-background/70' : ''} /* Removed fixed inset-0 z-50 */
         ${className}
       `}
     >

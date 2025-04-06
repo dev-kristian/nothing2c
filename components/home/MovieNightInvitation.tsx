@@ -3,18 +3,17 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { useCustomToast } from '@/hooks/useToast';
 import { useUserData } from '@/context/UserDataContext';
 import { useSession } from '@/context/SessionContext';
 import { useSendInvitation } from '@/hooks/useSendInvitation';
 import MovieNightCalendar from './MovieNightCalendar';
-import { DateTimeSelection, TopWatchlistItem, Friend } from '@/types';
+import { DateTimeSelection, FriendsWatchlistItem, Friend } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTopWatchlist } from '@/context/TopWatchlistContext';
+import { useFriendsWatchlist } from '@/context/FriendsWatchlistContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Calendar, Film, Users, X, Plus, Send, Check, AlertTriangle, Search, Tv } from 'lucide-react';
+import { Calendar, Film, Users, X, Plus, Send, Check, Search, Tv } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -26,16 +25,15 @@ import {
   useOutsideClickHandler
 } from '@/utils/movieNightInvitationUtils';
 
-// Suggestion item component with Apple-style design
 const SuggestionItem = React.memo(({ item, onClick }: { 
-  item: TopWatchlistItem; 
+  item: FriendsWatchlistItem; 
   onClick: () => void 
 }) => (
   <motion.li
     initial={{ opacity: 0, y: -5 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 5 }}
-    className="px-3 py-2 hover:bg-foreground/10 cursor-pointer flex items-center rounded-lg transition-colors duration-200"
+    className="px-2 py-2 bg-gray-5/50 dark:bg-gray-5-dark/80 hover:bg-gray-5 hover:dar:bg-gray-5-dark flex list-item-selectable cursor-pointer rounded-lg transition-colors duration-200"
     onClick={onClick}
   >
     {item.poster_path ? (
@@ -50,11 +48,11 @@ const SuggestionItem = React.memo(({ item, onClick }: {
         />
       </div>
     ) : (
-      <div className="w-8 h-12 bg-foreground/10 rounded-md mr-3 flex items-center justify-center">
+      <div className="w-8 h-12 bg-gray dark:bg-gray-dark rounded-md mr-3 flex items-center justify-center">
         {item.media_type === 'tv' ? (
-          <Tv className="w-4 h-4 text-foreground/40" />
+          <Tv className="w-4 h-4 text-gray dark:text-gray-dark" />
         ) : (
-          <Film className="w-4 h-4 text-foreground/40" />
+          <Film className="w-4 h-4 text-gray dark:text-gray-dark" />
         )}
       </div>
     )}
@@ -68,19 +66,18 @@ const SuggestionItem = React.memo(({ item, onClick }: {
 ));
 SuggestionItem.displayName = "SuggestionItem"; 
 
-// Selected item (movie or TV show) with Apple-style design
 const SelectedMediaItem = React.memo(({ 
   item, 
   onRemove 
 }: { 
-  item: TopWatchlistItem; 
+  item: FriendsWatchlistItem; 
   onRemove: () => void 
 }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
     exit={{ opacity: 0, scale: 0.95 }}
-    className="flex items-center justify-between frosted-glass p-2 rounded-xl"
+    className="flex items-center justify-between list p-2 rounded-xl"
   >
     <div className="flex items-center overflow-hidden">
       {item.poster_path ? (
@@ -112,7 +109,7 @@ const SelectedMediaItem = React.memo(({
     </div>
     <button
       onClick={onRemove}
-      className="ml-2 p-1 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors duration-200 flex-shrink-0"
+      className="ml-2 p-1 icon-button"
       aria-label="Remove item"
     >
       <X className="w-3 h-3" />
@@ -121,7 +118,6 @@ const SelectedMediaItem = React.memo(({
 ));
 SelectedMediaItem.displayName = "SelectedMediaItem";
 
-// Friend selection item with Apple-style design
 const FriendSelectionItem = React.memo(({ friend, isSelected, onToggle }: { 
   friend: Friend; 
   isSelected: boolean;
@@ -134,7 +130,7 @@ const FriendSelectionItem = React.memo(({ friend, isSelected, onToggle }: {
     whileTap={{ scale: 0.99 }}
     className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-300 ${
       isSelected 
-        ? 'frosted-glass border border-primary/30 shadow-sm' 
+        ? 'frosted-panel border border-pink/30 dark:border-pink-dark/30 shadow-sm' 
         : 'bg-foreground/5 hover:bg-foreground/10'
     }`}
     onClick={onToggle}
@@ -142,14 +138,14 @@ const FriendSelectionItem = React.memo(({ friend, isSelected, onToggle }: {
     <div className="flex items-center">
       <Avatar className="h-8 w-8 mr-3">
         <AvatarImage src={friend.photoURL || ''} alt={friend.username} />
-        <AvatarFallback className="bg-primary/20 text-primary">
+        <AvatarFallback className="bg-pink/20 dark:bg-pink-dark/20 text-pink dark:text-pink-dark">
           {friend.username.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
       <span className="font-medium text-sm">{friend.username}</span>
     </div>
     <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 ${
-      isSelected ? 'bg-primary text-white' : 'bg-foreground/10'
+      isSelected ? 'bg-pink dark:bg-pink-dark text-white' : 'bg-foreground/10'
     }`}>
       {isSelected && <Check className="w-3 h-3" />}
     </div>
@@ -157,7 +153,6 @@ const FriendSelectionItem = React.memo(({ friend, isSelected, onToggle }: {
 ));
 FriendSelectionItem.displayName = "FriendSelectionItem";
 
-// Section header component
 const SectionHeader = React.memo(({ 
   icon, 
   title, 
@@ -169,7 +164,7 @@ const SectionHeader = React.memo(({
 }) => (
   <div className="mb-4">
     <div className="flex items-center gap-2 mb-1">
-      <div className="text-primary">{icon}</div>
+      <div className="text-gray dark:text-gray-dark">{icon}</div>
       <h3 className="font-semibold tracking-tight">{title}</h3>
     </div>
     {subtitle && (
@@ -187,10 +182,10 @@ export default function MovieNightInvitation() {
   const { sendInvitation, error: invitationError } = useSendInvitation();
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
   const [sendNotification, setSendNotification] = useState(true);
-  const [mediaTitles, setMediaTitles] = useState<TopWatchlistItem[]>([]);
+  const [mediaTitles, setMediaTitles] = useState<FriendsWatchlistItem[]>([]);
   const [inputMediaTitle, setInputMediaTitle] = useState('');
-  const { topWatchlistItems } = useTopWatchlist();
-  const [suggestions, setSuggestions] = useState<TopWatchlistItem[]>([]);
+  const { friendsWatchlistItems } = useFriendsWatchlist();
+  const [suggestions, setSuggestions] = useState<FriendsWatchlistItem[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -269,8 +264,8 @@ export default function MovieNightInvitation() {
   }, [inputMediaTitle, mediaTitles]);
 
   const handleMediaInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    handleInputChange(e, setInputMediaTitle, topWatchlistItems, setSuggestions);
-  }, [topWatchlistItems]);
+    handleInputChange(e, setInputMediaTitle, friendsWatchlistItems, setSuggestions);
+  }, [friendsWatchlistItems]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputMediaTitle.trim()) {
@@ -294,7 +289,7 @@ export default function MovieNightInvitation() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="frosted-panel p-4 sm:p-6 md:p-8"
+      className="space-y-6"
     >
       {/* Header */}
       <div className="text-center mb-6 md:mb-8">
@@ -305,9 +300,9 @@ export default function MovieNightInvitation() {
       </div>
 
       {/* Main content */}
-      <div className="space-y-6 md:space-y-8">
+      <div className="space-y-6">
         {/* Calendar section */}
-        <section>
+        <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<Calendar className="w-5 h-5" />} 
             title="Select Date & Time" 
@@ -320,7 +315,7 @@ export default function MovieNightInvitation() {
             />
           </div>
           <div className="mt-2 text-xs text-foreground/60 flex items-center">
-            <Badge variant="outline" className="mr-2 bg-primary/10 text-primary border-primary/20">
+            <Badge variant="outline" className="mr-2 bg-pink/10 dark:bg-pink-dark/10 text-pink dark:text-pink-dark border-pink/20 dark:border-pink-dark/20">
               {selectedDates.length}
             </Badge>
             {selectedDates.length === 0 
@@ -331,7 +326,7 @@ export default function MovieNightInvitation() {
         </section>
 
         {/* Media poll section */}
-        <section>
+        <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<div className="flex"><Film className="w-5 h-5" /><Tv className="w-5 h-5 -ml-1" /></div>} 
             title="Create Watch Poll" 
@@ -341,18 +336,18 @@ export default function MovieNightInvitation() {
           <div className="space-y-4">
             <div ref={inputContainerRef} className="relative">
               <div className="flex items-center gap-2">
-                <div className="relative flex-grow">
-                  <Input 
+                <div className="relative flex-grow ">
+                <input 
                     value={inputMediaTitle} 
                     onChange={handleMediaInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Search or enter title (movie or TV show)"
-                    className="apple-input pr-10"
+                    className="pr-10 input"
                   />
                   <button 
                     onClick={handleAddMedia}
                     disabled={!inputMediaTitle.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-foreground/10 hover:bg-foreground/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 icon-button"
                     aria-label="Add to poll"
                   >
                     <Plus className="w-4 h-4" />
@@ -367,7 +362,7 @@ export default function MovieNightInvitation() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute z-10 w-full mt-1 rounded-xl frosted-glass border border-white/20 dark:border-white/10 shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-10 w-full mt-1 rounded-xl list space-y-2 p-2"
                   >
                     {suggestions.map((item) => (
                       <SuggestionItem
@@ -408,7 +403,7 @@ export default function MovieNightInvitation() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center py-6 frosted-glass rounded-xl"
+                  className="text-center py-6 rounded-xl bg-foreground/5"
                 >
                   <div className="flex justify-center items-center gap-1">
                     <Film className="w-6 h-6 text-foreground/30" />
@@ -423,7 +418,7 @@ export default function MovieNightInvitation() {
         </section>
         
         {/* Friends section */}
-        <section>
+        <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<Users className="w-5 h-5" />} 
             title="Invite Friends" 
@@ -434,11 +429,11 @@ export default function MovieNightInvitation() {
           {friends && friends.length > 6 && (
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
-              <Input
+              <input
                 placeholder="Search friends..."
                 value={friendSearchQuery}
                 onChange={(e) => setFriendSearchQuery(e.target.value)}
-                className="apple-input pl-10"
+                className="input pl-10"
               />
             </div>
           )}
@@ -454,7 +449,7 @@ export default function MovieNightInvitation() {
               >
                 <div className="flex flex-col items-center space-y-2">
                   <div className="relative w-8 h-8">
-                    <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin"></div>
+                    <div className="absolute inset-0 rounded-full border-t-2 border-pink dark:border-pink-dark animate-spin"></div>
                   </div>
                   <p className="text-xs text-foreground/60">Loading friends...</p>
                 </div>
@@ -482,7 +477,7 @@ export default function MovieNightInvitation() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center py-6 frosted-glass rounded-xl"
+                className="text-center py-6 bg-foreground/5 rounded-xl"
               >
                 <Search className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-foreground/50">No friends match your search</p>
@@ -494,7 +489,7 @@ export default function MovieNightInvitation() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center py-8 frosted-glass rounded-xl"
+                className="text-center py-8 bg-foreground/5 rounded-xl"
               >
                 <Users className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-foreground/50">No friends found</p>
@@ -510,7 +505,7 @@ export default function MovieNightInvitation() {
                   id="sendNotification"
                   checked={sendNotification}
                   onCheckedChange={(checked) => setSendNotification(checked as boolean)}
-                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="data-[state=checked]:bg-gray data-[state=checked]:border-gray"
                 />
                 <label htmlFor="sendNotification" className="text-xs text-foreground/70 cursor-pointer">
                   Send notifications to invited friends
@@ -518,36 +513,17 @@ export default function MovieNightInvitation() {
               </div>
               
               <div className="text-xs text-foreground/60">
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                <Badge variant="outline" className="bg-pink/10 dark:bg-pink-dark/10 text-pink dark:text-pink-dark border-pink/20 dark:border-pink-dark/20">
                   {selectedFriends.length}
                 </Badge> of {filteredFriends.length} friends selected
               </div>
             </div>
           )}
         </section>
-        
-        {/* Warning if no friends selected */}
-        <AnimatePresence>
-          {selectedFriends.length === 0 && friends && friends.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3"
-            >
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-500">
-                  No friends selected. You can still create a session for yourself.
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Footer actions */}
-      <div className="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
         <Button
           onClick={handleCancel}
           variant="ghost"
@@ -562,7 +538,7 @@ export default function MovieNightInvitation() {
               <Button
                 onClick={completeSession}
                 disabled={isCreating}
-                className="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-6 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto bg-pink dark:bg-pink-dark hover:bg-pink/80 hover:dark:bg-pink-dark/80 text-white px-6 flex items-center justify-center gap-2"
               >
                 {isCreating ? (
                   <>

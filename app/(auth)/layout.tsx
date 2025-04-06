@@ -22,6 +22,7 @@ export default function AuthLayout({
               height={80} 
               className="mx-auto"
               style={{ width: 'auto', height: 'auto' }}
+              priority // Add priority for LCP
             />
           </div>
           {children}
@@ -32,6 +33,7 @@ export default function AuthLayout({
             src="/images/auth-background.jpg"
             alt="Authentication background"
             fill
+            sizes="(max-width: 768px) 0vw, 50vw" // Add sizes for fill prop
             style={{ objectFit: 'cover' }}
             priority
           />

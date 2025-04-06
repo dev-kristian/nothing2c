@@ -3,7 +3,7 @@
 import { UserDate } from "./context";
 
 export interface Session {
-  finalDate?: any;
+  finalDate?: string | Date;
   id: string;
   createdAt: Date;
   createdBy: string;
@@ -34,11 +34,12 @@ export interface Session {
     votes: { [username: string]: string[] };
   }
   
-  export interface DatePopularity {
+export interface DatePopularity {
+    hours: string[] | 'all';
     date: string;
     count: number;
     users: string[];
-    hours: { [hour: number]: { count: number; users: string[] } };
+    hourBreakdown?: Record<string, number>; 
   }
   
   export interface DateTimeSelection {
