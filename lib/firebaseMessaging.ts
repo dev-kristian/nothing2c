@@ -64,7 +64,7 @@ export const onMessageListener = async (callback: (payload: MessagePayload) => v
     return () => {};
   }
 
-  return onMessage(messaging, (payload) => {
+  return onMessage(messaging, (payload: MessagePayload) => {
     console.log("Received foreground message", payload);
     callback(payload);
   });

@@ -9,7 +9,7 @@ export interface Media {
   poster_path?: string | null;
   profile_path?: string | null;
   vote_average: number;
-  media_type?: 'movie' | 'tv';
+  media_type?: 'movie' | 'tv' | 'upcoming'; // Add 'upcoming'
   release_date?: string;
   first_air_date?: string;
   watchlist_count?: number;

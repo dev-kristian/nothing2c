@@ -13,9 +13,13 @@ const TrendingSection = dynamic(() => import('@/components/discover/TrendingSect
 
 export default function Discover() {
   return (
-    <div className="mx-2 md:mx-4 pt-16">
-      <SearchComponent className="mb-16" />
-      <TrendingSection />
+    // Make this div the scroll container for the page content
+    <div className="h-full overflow-y-auto no-scrollbar">
+      {/* Add padding inside the scrollable area */}
+      <div className="mx-2 md:mx-4 pt-16">
+        <SearchComponent className="mb-16" />
+        <TrendingSection />
+      </div>
     </div>
   );
 }

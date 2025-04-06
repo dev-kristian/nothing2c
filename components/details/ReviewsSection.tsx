@@ -1,265 +1,356 @@
 'use client'
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { Review } from '@/types';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
-import { motion } from 'framer-motion';
-import { Star, ChevronDown, ChevronUp, User, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Star, ChevronDown, User, MessageSquare, Plus } from 'lucide-react';
+import DOMPurify from 'dompurify'; // Import DOMPurify
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import SectionHeader from './SectionHeader'; // Import the new component
 
+// --- Configuration ---
+const REVIEWS_PER_PAGE = 5;
+const INITIAL_VISIBLE_LINES = 3; // Increased for better readability
+const LINE_HEIGHT_APPROX = 1.625;
+
+// --- Helper Functions ---
+const getAvatarUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  return path.startsWith('/https')
+    ? path.slice(1)
+    : `https://image.tmdb.org/t/p/w92${path}`;
+};
+
+// Function to sanitize HTML content
+const sanitizeHTML = (htmlString: string): string => {
+  // Check if running in a browser environment before using DOMPurify
+  if (typeof window !== 'undefined') {
+    return DOMPurify.sanitize(htmlString, { USE_PROFILES: { html: true } });
+  }
+  // Return the original string if not in a browser (e.g., during SSR)
+  // Consider server-side sanitization if needed, but basic return is often sufficient
+  return htmlString; 
+};
+
+// --- Main Component: ReviewsSection ---
 interface ReviewsSectionProps {
   reviews: Review[];
   mediaTitle?: string;
 }
 
 const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = 'this title' }) => {
-  if (!reviews || reviews.length === 0) {
-    return (
-      <section className="mt-12 mb-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-medium tracking-tight">Reviews</h2>
-        </div>
-        <div className="rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 p-8 flex flex-col items-center justify-center text-center gap-3">
-          <MessageSquare className="w-8 h-8 text-white/40" />
-          <p className="text-white/70 text-lg">No reviews available for {mediaTitle} yet.</p>
-          <p className="text-white/50 text-sm">Check back later for audience opinions.</p>
-        </div>
-      </section>
-    );
+  const [visibleCount, setVisibleCount] = useState(REVIEWS_PER_PAGE);
+
+  // Sort reviews by date (most recent first)
+  const sortedReviews = useMemo(() => {
+    if (!reviews?.length) return [];
+    return [...reviews].sort((a, b) => {
+      try {
+        const dateA = a.created_at ? parseISO(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? parseISO(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      } catch (error) {
+        console.error("Error parsing review date:", error);
+        return 0;
+      }
+    });
+  }, [reviews]);
+
+  const handleShowMoreReviews = () => {
+    setVisibleCount(prevCount => prevCount + REVIEWS_PER_PAGE);
+  };
+
+  const visibleReviews = sortedReviews.slice(0, visibleCount);
+  const hasMoreReviews = visibleCount < sortedReviews.length;
+
+  if (!sortedReviews?.length) {
+    return <NoReviewsState mediaTitle={mediaTitle} />;
   }
 
   return (
-    <section className="mt-12 mb-8">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-medium tracking-tight">Reviews</h2>
-        <p className="text-white/60 text-sm">
-          {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
-        </p>
+    <section className="py-4">
+      {/* Use the new SectionHeader component */}
+      <SectionHeader 
+        title="Reviews" 
+        subtitle={`${sortedReviews.length} ${sortedReviews.length === 1 ? 'Review' : 'Reviews'}`} 
+      />
+      {/* Add mb-6 here to match spacing in other components */}
+      <div className="space-y-4 mt-6"> 
+        <AnimatePresence initial={false}>
+          {visibleReviews.map((review, index) => (
+            <ReviewCard
+              key={review.id || `review-${index}`}
+              review={review}
+              index={index}
+            />
+          ))}
+        </AnimatePresence>
       </div>
-      <div className="space-y-4">
-        {reviews.map((review, index) => (
-          <ReviewCard key={review.id} review={review} index={index} />
-        ))}
-      </div>
+
+      {hasMoreReviews && (
+        <div className="mt-8 flex justify-center">
+          <Button
+            variant="secondary" // Changed from outline with overrides
+            onClick={handleShowMoreReviews}
+            className="transition-colors duration-300 group text-sm px-6 py-3 rounded-xl focus:ring-2 focus:ring-primary/30 shadow-apple-sm hover:shadow-apple" // Removed pink classes, adjusted focus ring
+          >
+            <Plus className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
+            Show More Reviews
+          </Button>
+        </div>
+      )}
     </section>
   );
 };
 
+// --- Sub-Component: NoReviewsState ---
+interface NoReviewsStateProps {
+  mediaTitle: string;
+}
+
+const NoReviewsState: React.FC<NoReviewsStateProps> = ({ mediaTitle }) => (
+  <section className="mt-12 mb-8 font-sans">
+    {/* Use the new SectionHeader component */}
+    <SectionHeader title="Reviews" />
+    {/* Add mt-6 here for consistency */}
+    {/* Combine the className attributes */}
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-6 rounded-2xl bg-system-background-secondary dark:bg-system-background-secondary-dark  p-10 flex flex-col items-center justify-center text-center gap-4 shadow-apple dark:shadow-apple-dark backdrop-blur-apple"
+    >
+      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2"> {/* bg-pink/10 -> bg-primary/10 */}
+        <MessageSquare className="w-7 h-7 text-primary" /> {/* text-pink -> text-primary */}
+      </div>
+      <p className="text-foreground text-lg font-medium">No Reviews Yet</p>
+      <p className="text-label-secondary dark:text-label-secondary-dark text-sm max-w-xs">
+        There are no reviews available for "{mediaTitle}" at the moment.
+      </p>
+    </motion.div>
+  </section>
+);
+
+// --- Sub-Component: ReviewCard ---
 interface ReviewCardProps {
   review: Review;
   index: number;
 }
 
 const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [contentHeight, setContentHeight] = useState<number | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [needsTruncation, setNeedsTruncation] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const MAX_CHARACTERS = 280;
-  const needsTruncation = review.content.length > MAX_CHARACTERS;
+  const animationDelay = (index % REVIEWS_PER_PAGE) * 0.08;
+  const contentId = useId();
 
-  const dateFormatted = format(parseISO(review.created_at), 'MMM d, yyyy');
-  const username = review.author_details.username || review.author;
-  const rating = review.author_details.rating;
-  
+  const { author_details, created_at, content } = review;
+  const { name, username, avatar_path, rating } = author_details || {};
+  const authorName = name || review.author || 'Anonymous';
+  const authorUsername = username || review.author;
+  const avatarUrl = getAvatarUrl(avatar_path);
+  const dateFormatted = created_at ? format(parseISO(created_at), 'MMMM d, yyyy') : 'Unknown date';
+
   useEffect(() => {
-    if (contentRef.current) {
-      setContentHeight(contentRef.current.scrollHeight);
-    }
-  }, [review.content]);
+    const checkTruncation = () => {
+      if (contentRef.current) {
+        const singleLineHeight = 16 * LINE_HEIGHT_APPROX; // 16px font size
+        const maxHeight = singleLineHeight * INITIAL_VISIBLE_LINES;
+        const actualHeight = contentRef.current.scrollHeight;
+        setNeedsTruncation(actualHeight > maxHeight + 8);
+      }
+    };
 
-  // Process markdown-like syntax in review content
-  const processContent = (content: string) => {
-    // Handle <em> tags
-    let processedContent = content.replace(/<em>(.*?)<\/em>/g, (_, p1) => {
-      return `<span class="italic text-white">${p1}</span>`;
-    });
-    
-    // Handle **bold** markdown
-    processedContent = processedContent.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold">$1</span>');
-    
-    // Handle *italic* markdown
-    processedContent = processedContent.replace(/\*(.*?)\*/g, '<span class="italic">$1</span>');
-    
-    // Handle _underscore_ markdown for italic
-    processedContent = processedContent.replace(/_(.*?)_/g, '<span class="italic">$1</span>');
-    
-    // Handle `code` markdown
-    processedContent = processedContent.replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
-    
-    // Handle URLs
-    processedContent = processedContent.replace(/(https?:\/\/[^\s]+)/g, '<span class="text-[#6bf]">$1</span>');
-    
-    return processedContent;
-  };
+    // Debounce function to improve performance
+    let timeoutId: NodeJS.Timeout;
+    const debouncedCheck = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkTruncation, 50);
+    };
 
-  // Animation settings
+    debouncedCheck();
+    const observer = new ResizeObserver(debouncedCheck);
+    if (contentRef.current) observer.observe(contentRef.current);
+    window.addEventListener('resize', debouncedCheck);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (contentRef.current) observer.unobserve(contentRef.current);
+      window.removeEventListener('resize', debouncedCheck);
+      observer.disconnect();
+    };
+  }, [content]);
+
+  const toggleExpand = () => setIsExpanded(!isExpanded);
+
+  // Animation Variants & Transitions
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
-      y: 0,
+      y: 0, 
       transition: { 
-        duration: 0.4,
-        delay: index * 0.1,
-        ease: [0.23, 1, 0.32, 1] // Apple's default ease curve
-      }
+        duration: 0.5, 
+        delay: animationDelay, 
+        ease: [0.22, 1, 0.36, 1] 
+      } 
+    },
+    exit: { 
+      opacity: 0, 
+      transition: { 
+        duration: 0.3, 
+        ease: [0.4, 0, 0.2, 1] 
+      } 
     }
   };
 
-  const renderRating = () => {
-    if (rating === null) return null;
-    
-    // Calculate full, half and empty stars
-    const starValue = rating / 2; // Convert 10-scale to 5-scale
-    const fullStars = Math.floor(starValue);
-    const hasHalfStar = starValue % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
-    return (
-      <motion.div 
-        className="flex gap-0.5"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ 
-          duration: 0.3, 
-          delay: 0.1 + index * 0.1,
-          staggerChildren: 0.05
-        }}
-      >
-        {[...Array(fullStars)].map((_, i) => (
-          <motion.div 
-            key={`full-${i}`}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2, delay: i * 0.05 }}
-          >
-            <Star 
-              fill="#FFCC00" 
-              className="w-4 h-4 text-[#FFCC00]"
-              strokeWidth={1.5}
-            />
-          </motion.div>
-        ))}
-        
-        {hasHalfStar && (
-          <motion.div 
-            className="relative"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2, delay: fullStars * 0.05 }}
-          >
-            <Star className="w-4 h-4 text-[#FFCC00]" strokeWidth={1.5} />
-            <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
-              <Star fill="#FFCC00" className="w-4 h-4 text-[#FFCC00]" strokeWidth={1.5} />
-            </div>
-          </motion.div>
-        )}
-        
-        {[...Array(emptyStars)].map((_, i) => (
-          <motion.div 
-            key={`empty-${i}`}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2, delay: (fullStars + (hasHalfStar ? 1 : 0) + i) * 0.05 }}
-          >
-            <Star 
-              fill="transparent" 
-              className="w-4 h-4 text-white/20"
-              strokeWidth={1.5}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
-    );
+  const contentTransition = { 
+    duration: 0.4, 
+    ease: [0.22, 1, 0.36, 1] 
+  }; 
+
+  const contentVariants = {
+    collapsed: { 
+      maxHeight: `${INITIAL_VISIBLE_LINES * LINE_HEIGHT_APPROX}rem`, 
+      opacity: 1 
+    },
+    expanded: { 
+      maxHeight: '1000px', 
+      opacity: 1 
+    }
+  };
+
+  const overlayVariants = {
+    hidden: { 
+      opacity: 0, 
+      transition: { 
+        ...contentTransition, 
+        delay: 0 
+      } 
+    },
+    visible: { 
+      opacity: 1, 
+      transition: { 
+        ...contentTransition, 
+        delay: 0.05 
+      } 
+    }
   };
 
   return (
     <motion.div
+      layout
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="rounded-2xl overflow-hidden"
+      exit="exit"
+      className="bg-system-background-tertiary dark:bg-system-background-tertiary-dark rounded-2xl overflow-hidden shadow-apple dark:shadow-apple-dark transition-all duration-300 hover:shadow-apple-lg dark:hover:shadow-apple-dark-lg"
     >
-      <div className="bg-black/30 backdrop-blur-sm border border-white/10 p-6 rounded-2xl transition-all duration-300 hover:bg-black/40">
-        {/* Header with avatar, name, and rating */}
-        <div className="flex items-start justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="relative h-11 w-11 rounded-full overflow-hidden bg-white/5 flex items-center justify-center border border-white/10 shadow-sm">
-              {review.author_details.avatar_path ? (
-                <Image
-                  src={review.author_details.avatar_path.startsWith('/https')
-                    ? review.author_details.avatar_path.slice(1)
-                    : `https://image.tmdb.org/t/p/w200${review.author_details.avatar_path}`}
-                  alt={username}
-                  fill
-                  className="object-cover"
-                  sizes="44px"
-                />
+      <div className="p-6">
+        {/* Card Header */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-5 dark:bg-gray-5-dark flex-shrink-0  flex items-center justify-center shadow-apple-sm">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={authorName} fill className="object-cover" sizes="48px" unoptimized />
               ) : (
-                <User className="w-5 h-5 text-white/50" />
+                <User className="w-6 h-6 text-muted-foreground" /> // text-gray-2 dark:text-gray-2-dark -> text-muted-foreground
               )}
             </div>
-            <div>
-              <p className="font-medium text-white">{review.author_details.name || review.author}</p>
-              <p className="text-sm text-white/60">
-                {username !== (review.author_details.name || review.author) && `@${username} • `}
-                {dateFormatted}
+            <div className="min-w-0">
+              <p className="font-medium text-base text-foreground truncate" title={authorName}>{authorName}</p>
+              <p className="text-sm text-label-secondary dark:text-label-secondary-dark truncate" title={`@${authorUsername} • ${dateFormatted}`}>
+                {authorUsername && `@${authorUsername} • `}{dateFormatted}
               </p>
             </div>
           </div>
-          
-          {/* Rating stars */}
-          {renderRating()}
+          {rating !== null && rating !== undefined && <RatingStars rating={rating} />}
         </div>
-        
-        {/* Review content */}
-        <motion.div 
-          animate={{
-            height: expanded || !needsTruncation ? contentHeight || 'auto' : '8em',
-            transition: { duration: 0.35, ease: [0.23, 1, 0.32, 1] }
-          }}
-          className="relative overflow-hidden"
-        >
-          <div 
-            ref={contentRef}
-            className="text-white/85 leading-relaxed text-base prose prose-invert max-w-none prose-p:my-2 prose-p:text-white/85 space-y-3"
-            dangerouslySetInnerHTML={{ 
-              __html: processContent(review.content)
-                .split('\n\n')
-                .map(para => `<p>${para}</p>`)
-                .join('')
-            }}
-          />
-          
-          {!expanded && needsTruncation && (
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-          )}
-        </motion.div>
-        
-        {/* Expand/collapse button */}
-        {needsTruncation && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 + index * 0.1 }}
-            onClick={() => setExpanded(!expanded)}
-            className="mt-3 text-sm font-medium text-white/70 hover:text-white transition-colors duration-200 flex items-center gap-1 group"
-            aria-expanded={expanded}
+
+        {/* Review Content Area */}
+        <div className="relative">
+          <motion.div
+             className="overflow-hidden"
+             initial="collapsed"
+             animate={isExpanded ? "expanded" : "collapsed"}
+              variants={contentVariants}
+              transition={contentTransition}
           >
-            {expanded ? (
-              <>
-                Show less
-                <ChevronUp className="w-4 h-4 group-hover:transform group-hover:-translate-y-0.5 transition-transform duration-200" />
-              </>
-            ) : (
-              <>
-                Show more
-                <ChevronDown className="w-4 h-4 group-hover:transform group-hover:translate-y-0.5 transition-transform duration-200" />
-              </>
-            )}
-          </motion.button>
+            {/* Render sanitized HTML content */}
+            <div
+              ref={contentRef}
+              id={contentId}
+              className="text-base text-foreground/90 leading-relaxed prose prose-sm max-w-none prose-p:my-2 prose-p:text-inherit prose-a:text-primary hover:prose-a:text-primary/90 font-smoothing-antialiased" // text-pink -> text-primary, hover:text-pink-dark -> hover:text-primary/90
+              dangerouslySetInnerHTML={{ __html: sanitizeHTML(content) }}
+            />
+          </motion.div>
+
+          {/* Fade overlay */}
+          {needsTruncation && (
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-system-background-tertiary dark:from-system-background-tertiary-dark to-transparent pointer-events-none"
+              initial="visible"
+              animate={isExpanded ? "hidden" : "visible"}
+              variants={overlayVariants}
+            />
+          )}
+        </div>
+
+        {/* Expand/Collapse Button */}
+        {needsTruncation && (
+          <button
+            onClick={toggleExpand}
+            aria-expanded={isExpanded}
+            aria-controls={contentId}
+            className="mt-3 text-sm font-medium text-pink hover:text-pink/90 transition-colors duration-200 flex items-center gap-1 px-2 py-1 -ml-2" // text-pink -> text-primary, hover:text-pink-dark -> hover:text-primary/90, focus:ring-pink/30 -> focus:ring-primary/30
+          >
+            {isExpanded ? 'Show Less' : 'Show More'}
+            <motion.div 
+              animate={{ rotate: isExpanded ? 180 : 0 }} 
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
+          </button>
         )}
       </div>
     </motion.div>
+  );
+};
+
+// --- Sub-Component: RatingStars ---
+interface RatingStarsProps {
+  rating: number;
+}
+
+const RatingStars: React.FC<RatingStarsProps> = ({ rating }) => {
+  const starValue = Math.max(0, Math.min(10, rating)) / 2;
+  const fullStars = Math.floor(starValue);
+  const hasHalfStar = starValue % 1 >= 0.3;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  // Removed hardcoded colors
+
+  return (
+    <div className="flex gap-1 items-center flex-shrink-0 bg-gray-6 dark:bg-gray-6-dark px-3 py-1.5 rounded-full shadow-apple-inner" title={`Rated ${rating}/10`}>
+      <span className="text-xs font-medium text-label-secondary dark:text-label-secondary-dark mr-1">{(rating / 2).toFixed(1)}</span>
+      {[...Array(fullStars)].map((_, i) => (
+        <Star key={`full-${i}`} fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} /> // Use currentColor for fill, text-pink -> text-primary
+      ))}
+      {hasHalfStar && (
+        <div className="relative">
+          <Star className="w-4 h-4 text-pink" strokeWidth={1.5} /> {/* text-pink -> text-primary */}
+          <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+            <Star fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} /> {/* Use currentColor for fill, text-pink -> text-primary */}
+          </div>
+        </div>
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <Star key={`empty-${i}`} fill="transparent" className="w-4 h-4 text-label-quaternary dark:text-label-quaternary-dark" strokeWidth={1.5} />
+      ))}
+    </div>
   );
 };
 

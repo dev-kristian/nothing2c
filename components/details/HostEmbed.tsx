@@ -1,7 +1,22 @@
 // components/HostEmbed.tsx
 'use client'
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { ChevronsUpDown, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const VIDSRC_DOMAINS = [
   'vidsrc.in',
@@ -10,342 +25,226 @@ const VIDSRC_DOMAINS = [
   'vidsrc.net'
 ];
 
+// Keep only VidSrc
 const SERVER_OPTIONS = [
-  {
-    id: 'vidsrc',
-    name: 'VidSrc',
-    domains: VIDSRC_DOMAINS,
-    currentDomain: VIDSRC_DOMAINS[0],
-  },
-  {
-    id: 'nexa',
-    name: 'Nexa',
-    url: 'https://v1.shaaringaton.host/nexa/',
-  },
-  {
-    id: 'multi',
-    name: 'Multi',
-    url: 'https://v2.shaaringaton.host/multi/',
-  },
-  {
-    id: 'shukra',
-    name: 'Shukra',
-    url: 'https://v3.shaaringaton.host/shukra/',
-  },
-  {
-    id: 'desi',
-    name: 'Desi',
-    url: 'https://v4.shaaringaton.host/desi/',
-  },
-  {
-    id: 'vietflick',
-    name: 'VietFlick',
-    url: 'https://v5.shaaringaton.host/vietflick/',
-  },
-  {
-    id: 'budh',
-    name: 'Budh',
-    url: 'https://v6.shaaringaton.host/budh/',
-  },
-  {
-    id: 'oyo',
-    name: 'OYO',
-    url: 'https://v7.shaaringaton.host/oyo/',
-  }
+  { id: 'vidsrc', name: 'VidSrc', domains: VIDSRC_DOMAINS },
 ];
+const VIDSRC_SERVER = SERVER_OPTIONS[0]; // Constant for the only server
 
 interface HostEmbedProps {
   tmdbId: number;
-  seasonNumber?: number;
-  episodeNumber?: number;
-  onClose: () => void;
-  // Add these new props
-  totalEpisodes?: number;
-  onNavigateEpisode?: (direction: 'next' | 'prev') => void;
+  initialData?: {
+    season: number;
+    episode: number;
+    totalSeasons?: number;
+    seasons?: { season_number: number; episode_count: number }[];
+  };
 }
 
-// Inside the component, add navigation buttons
-const HostEmbed: React.FC<HostEmbedProps> = ({ 
-  tmdbId, 
-  seasonNumber, 
-  episodeNumber,
-  onClose,
-  totalEpisodes,
-  onNavigateEpisode 
+const HostEmbed: React.FC<HostEmbedProps> = ({
+  tmdbId,
+  initialData,
 }) => {
-  const [selectedServer, setSelectedServer] = useState(SERVER_OPTIONS[0]);
+  const isTvShow = !!initialData;
+  // No need for selectedServer state anymore, always use VIDSRC_SERVER
   const [currentVidSrcDomain, setCurrentVidSrcDomain] = useState(VIDSRC_DOMAINS[0]);
-  const [isServerListOpen, setIsServerListOpen] = useState(false);
+  // Removed isServerPopoverOpen state
   const [isLoading, setIsLoading] = useState(true);
   const [embedUrl, setEmbedUrl] = useState('');
 
+  const [currentSeason, setCurrentSeason] = useState(initialData?.season ?? 1);
+  const [currentEpisode, setCurrentEpisode] = useState(initialData?.episode ?? 1);
+
   const generateEmbedUrl = useCallback(() => {
-    if (selectedServer.id === 'vidsrc') {
-      const baseUrl = `https://${currentVidSrcDomain}/embed/`;
-      if (seasonNumber && episodeNumber) {
-        return `${baseUrl}tv?tmdb=${tmdbId}&season=${seasonNumber}&episode=${episodeNumber}`;
-      }
-      return `${baseUrl}movie?tmdb=${tmdbId}`;
+    const season = isTvShow ? currentSeason : undefined;
+    const episode = isTvShow ? currentEpisode : undefined;
+
+    // Only VidSrc logic remains
+    const baseUrl = `https://${currentVidSrcDomain}/embed/`;
+    if (isTvShow && season && episode) {
+      return `${baseUrl}tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
     }
-    
-    // For other servers
-    if (seasonNumber && episodeNumber) {
-      return `${selectedServer.url}?id=${tmdbId}&season=${seasonNumber}&episode=${episodeNumber}`;
-    }
-    return `${selectedServer.url}?id=${tmdbId}`;
-  }, [tmdbId, seasonNumber, episodeNumber, selectedServer, currentVidSrcDomain]);
+    return `${baseUrl}movie?tmdb=${tmdbId}`;
+  }, [
+    tmdbId,
+    isTvShow,
+    currentSeason,
+    currentEpisode,
+    // selectedServer removed from dependencies
+    currentVidSrcDomain,
+  ]);
 
   useEffect(() => {
-    setEmbedUrl(generateEmbedUrl());
     setIsLoading(true);
+    const newUrl = generateEmbedUrl();
+    setEmbedUrl(newUrl);
   }, [generateEmbedUrl]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
 
-  useEffect(() => {
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
+  const totalEpisodesInCurrentSeason = React.useMemo(() => {
+    if (!isTvShow || !initialData?.seasons) return 0;
+    const seasonData = initialData.seasons.find(s => s.season_number === currentSeason);
+    return seasonData?.episode_count ?? 0;
+  }, [isTvShow, initialData?.seasons, currentSeason]);
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
-    };
-  }, [onClose]);
+  // Removed handleServerChange function
+
+  const handleDomainCycle = (direction: 'next' | 'prev') => {
+    setIsLoading(true);
+    const currentIndex = VIDSRC_DOMAINS.indexOf(currentVidSrcDomain);
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % VIDSRC_DOMAINS.length
+      : (currentIndex - 1 + VIDSRC_DOMAINS.length) % VIDSRC_DOMAINS.length;
+    setCurrentVidSrcDomain(VIDSRC_DOMAINS[newIndex]);
+  };
+
+  const handleSeasonChange = (value: string) => {
+    const seasonNum = parseInt(value, 10);
+    if (!isNaN(seasonNum)) {
+      setIsLoading(true);
+      setCurrentSeason(seasonNum);
+      setCurrentEpisode(1);
+    }
+  };
+
+  const handleEpisodeChange = (value: string) => {
+    const episodeNum = parseInt(value, 10);
+    if (!isNaN(episodeNum)) {
+      setIsLoading(true);
+      setCurrentEpisode(episodeNum);
+    }
+  };
 
   return (
-    <motion.div 
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-2 sm:p-4 "
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <div className="relative w-full h-[80vh] bg-gray-950/70 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-        <div className="relative z-20 p-2">
-          <div className="flex flex-col space-y-1">
-            {/* Top Controls Bar */}
-            <div className="flex items-center justify-between space-x-1">
-              {/* Left Side - Server Selection */}
-              <div className="relative flex-1">
-                <button 
-                  onClick={() => setIsServerListOpen(!isServerListOpen)}
-                  className="w-full bg-white/10 hover:bg-white/20 rounded-lg p-2 flex items-center justify-between"
-                >
-                  <span className="font-medium text-white">{selectedServer.name}</span>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-  
-                <AnimatePresence>
-                  {isServerListOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute left-0 right-0 mt-2 bg-gray-900/95 backdrop-blur-xl rounded-lg shadow-xl overflow-hidden z-50"
-                    >
-                      {SERVER_OPTIONS.map((server) => (
-                        <button
-                          key={server.id}
-                          onClick={() => {
-                            setSelectedServer(server);
-                            setIsServerListOpen(false);
-                          }}
-                          className={`w-full p-3 text-left hover:bg-gray-800/50 transition-colors
-                            ${selectedServer.id === server.id ? 'bg-gray-800/30' : ''}`}
-                        >
-                          <span className="text-white">{server.name}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-  
-              {/* Center - Episode Navigation */}
-              {seasonNumber && episodeNumber && onNavigateEpisode && (
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => onNavigateEpisode('prev')}
-                    disabled={episodeNumber === 1}
-                    className={`p-2 rounded-lg transition-colors ${
-                      episodeNumber === 1 
-                        ? 'opacity-50 cursor-not-allowed' 
-                        : 'hover:bg-white/10'
-                    }`}
-                  >
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-  
-                  <span className="text-sm text-gray-400">
-                    Episode {episodeNumber}{totalEpisodes ? ` / ${totalEpisodes}` : ''}
-                  </span>
-  
-                  <button
-                    onClick={() => onNavigateEpisode('next')}
-                    disabled={totalEpisodes ? episodeNumber === totalEpisodes : false}
-                    className={`p-2 rounded-lg transition-colors ${
-                      totalEpisodes && episodeNumber === totalEpisodes
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-white/10'
-                    }`}
-                  >
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-  
-              {/* Right Side - Close Button */}
-              <button 
-                onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+    <div className="flex flex-col md:flex-row gap-4 bg-card p-4 rounded-lg border">
+      {/* Left Column: Controls - Adjusted width for responsiveness */}
+      <div className="w-full md:w-64 lg:w-72 flex-shrink-0 flex flex-col space-y-3">
+
+        {/* Season and Episode Selection (for TV Shows) */}
+        {isTvShow && initialData?.totalSeasons && (
+          <>
+            {/* Season Select */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Season</label>
+              <Select
+                value={currentSeason.toString()}
+                onValueChange={handleSeasonChange}
               >
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <SelectTrigger className="w-full h-9 ">
+                  <SelectValue placeholder="Select season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: initialData.totalSeasons }, (_, i) => i + 1).map(seasonNum => (
+                    <SelectItem key={seasonNum} value={seasonNum.toString()}>
+                      Season {seasonNum}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-  
-           {/* VidSrc Domain Selection - Improved Version */}
-            {selectedServer.id === 'vidsrc' && (
-              <div className="relative">
-                <div className="flex items-center justify-between bg-gray-800/50 rounded-lg p-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-400">Current Server:</span>
-                    <span className="text-sm font-medium text-white">{currentVidSrcDomain}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    {/* Previous Domain Button */}
-                    <button
-                      onClick={() => {
-                        const currentIndex = VIDSRC_DOMAINS.indexOf(currentVidSrcDomain);
-                        const prevIndex = currentIndex > 0 ? currentIndex - 1 : VIDSRC_DOMAINS.length - 1;
-                        setCurrentVidSrcDomain(VIDSRC_DOMAINS[prevIndex]);
-                      }}
-                      className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                    >
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
 
-                    {/* Domain Status Indicators */}
-                    <div className="hidden sm:flex items-center space-x-1 px-2">
-                      {VIDSRC_DOMAINS.map((domain) => (
-                        <button
-                          key={domain}
-                          onClick={() => setCurrentVidSrcDomain(domain)}
-                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                            currentVidSrcDomain === domain
-                              ? 'bg-blue-500 w-4'
-                              : 'bg-gray-600 hover:bg-gray-500'
-                          }`}
-                          title={domain}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Next Domain Button */}
-                    <button
-                      onClick={() => {
-                        const currentIndex = VIDSRC_DOMAINS.indexOf(currentVidSrcDomain);
-                        const nextIndex = currentIndex < VIDSRC_DOMAINS.length - 1 ? currentIndex + 1 : 0;
-                        setCurrentVidSrcDomain(VIDSRC_DOMAINS[nextIndex]);
-                      }}
-                      className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                    >
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-
-                    {/* Quick Switch Menu Button */}
-                    <button
-                      onClick={() => setIsServerListOpen(!isServerListOpen)}
-                      className="p-1.5 hover:bg-white/10 rounded-lg transition-colors ml-1"
-                    >
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Quick Switch Menu */}
-                <AnimatePresence>
-                  {isServerListOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl rounded-lg shadow-xl overflow-hidden z-50"
-                    >
-                      {VIDSRC_DOMAINS.map((domain) => (
-                        <button
-                          key={domain}
-                          onClick={() => {
-                            setCurrentVidSrcDomain(domain);
-                            setIsServerListOpen(false);
-                          }}
-                          className={`w-full p-2.5 text-left hover:bg-gray-800/50 transition-colors flex items-center justify-between
-                            ${currentVidSrcDomain === domain ? 'bg-gray-800/30' : ''}`}
-                        >
-                          <span className="text-sm text-white">{domain}</span>
-                          {currentVidSrcDomain === domain && (
-                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                    </motion.div>
+            {/* Episode Select */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Episode</label>
+              <Select
+                value={currentEpisode.toString()}
+                onValueChange={handleEpisodeChange}
+                disabled={totalEpisodesInCurrentSeason === 0}
+              >
+                <SelectTrigger className="w-full h-9">
+                  <SelectValue placeholder="Select episode" />
+                </SelectTrigger>
+                <SelectContent>
+                  {totalEpisodesInCurrentSeason > 0 ? (
+                    Array.from({ length: totalEpisodesInCurrentSeason }, (_, i) => i + 1).map(episodeNum => (
+                      <SelectItem key={episodeNum} value={episodeNum.toString()}>
+                        Episode {episodeNum}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-episodes" disabled>No episodes available</SelectItem>
                   )}
-                </AnimatePresence>
-              </div>
-            )}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
 
+        {/* Server Selection Removed */}
+
+        {/* VidSrc Domain Selection (Always shown now) */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">VidSrc Domain</label>
+          <div className="flex items-center justify-between bg-muted p-1.5 rounded-md h-9">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDomainCycle('prev')}
+                className="h-6 w-6 text-muted-foreground hover:bg-accent"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium text-foreground px-1 truncate flex-grow text-center" title={currentVidSrcDomain}>
+                {currentVidSrcDomain}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDomainCycle('next')}
+                className="h-6 w-6 text-muted-foreground hover:bg-accent"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-  
+      </div>
+
+      {/* Right Column: Iframe Embed - Responsive height/aspect ratio */}
+      <div className="flex-grow relative aspect-video md:aspect-auto md:min-h-[80vh] bg-black rounded-md overflow-hidden border">
         {/* Loading Overlay */}
         <AnimatePresence>
           {isLoading && (
-            <motion.div 
-              className="absolute inset-0 flex items-center justify-center bg-black/50 z-30"
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center bg-background/80 z-10 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-t-2 border-white"></div>
+              <svg className="animate-spin h-8 w-8 text-pink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
             </motion.div>
           )}
         </AnimatePresence>
-  
+
         {/* Embed Iframe */}
-        <div 
-          className={`flex-grow relative transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-        >
+        {embedUrl ? (
           <iframe
+            key={embedUrl}
             src={embedUrl}
             width="100%"
             height="100%"
             allowFullScreen
             onLoad={handleIframeLoad}
-            className="absolute inset-0 w-full h-full object-cover"
+            className={cn(
+              "absolute inset-0 w-full h-full border-none transition-opacity duration-300",
+              isLoading ? 'opacity-0' : 'opacity-100'
+            )}
             referrerPolicy="origin"
+            sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"
           />
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+            Select a server to start watching.
+          </div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

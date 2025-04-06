@@ -35,17 +35,34 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
+
+    // Filter out movies with release dates in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to beginning of the day for comparison
+
+    const upcomingMovies = data.results.filter((movie: TMDBMovie) => {
+      if (!movie.release_date) return false; // Exclude movies without a release date
+      const releaseDate = new Date(movie.release_date);
+      releaseDate.setHours(0, 0, 0, 0); // Also set time to beginning of the day
+      return releaseDate >= today;
+    });
     
-    // Sort results based on sortBy parameter
+    // Sort the filtered results
     if (sortBy === 'release_date.asc') {
-      data.results.sort((a: TMDBMovie, b: TMDBMovie) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime());
+      upcomingMovies.sort((a: TMDBMovie, b: TMDBMovie) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime());
     } else if (sortBy === 'release_date.desc') {
-      data.results.sort((a: TMDBMovie, b: TMDBMovie) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime());
+      upcomingMovies.sort((a: TMDBMovie, b: TMDBMovie) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime());
     } else if (sortBy === 'popularity.desc') {
-      data.results.sort((a: TMDBMovie, b: TMDBMovie) => b.popularity - a.popularity);
+      // Note: Popularity sorting might be less relevant after filtering for future dates
+      upcomingMovies.sort((a: TMDBMovie, b: TMDBMovie) => b.popularity - a.popularity);
     }
 
-    return NextResponse.json(data);
+    // Return the filtered and sorted data
+    // Preserve the original pagination structure if needed by the frontend hook
+    return NextResponse.json({ 
+      ...data, // Keep original page, total_pages etc.
+      results: upcomingMovies // Replace results with the filtered list
+    });
   } catch (error) {
     console.error('Error fetching from TMDB:', error);
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { CrewMember } from '@/types';
 import { ChevronLeft, ChevronRight, User } from 'lucide-react';
+import SectionHeader from './SectionHeader'; // Import the new component
 
 interface CrewCarouselProps {
   cast: CrewMember[];
@@ -94,7 +95,8 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
   if (error) {
     return (
       <div className="w-full py-12 flex items-center justify-center">
-        <p className="text-red-400 text-sm font-medium bg-red-400/10 px-4 py-3 rounded-xl">
+        {/* Use semantic destructive colors */}
+        <p className="text-destructive-foreground text-sm font-medium bg-destructive/10 px-4 py-3 rounded-xl">
           {error}
         </p>
       </div>
@@ -110,36 +112,24 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
     >
       <div className="mx-auto">
         {/* Combined Header and Navigation Section */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <motion.h2 
-              className="text-3xl font-semibold tracking-tight text-white"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              Cast & Crew
-            </motion.h2>
-            <motion.p 
-              className="text-sm text-white/50 mt-1"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              The talented people behind this production
-            </motion.p>
-          </div>
+        <div className="flex items-center justify-between">
+          {/* Use the new SectionHeader component */}
+          <SectionHeader 
+            title="Cast & Crew" 
+            subtitle="The talented people behind this production" 
+          />
           
           {/* Navigation Controls */}
           <div className="flex space-x-2">
             <button
               onClick={() => handleScroll('left')}
               disabled={isAtStart}
-              className={`p-2 rounded-full ${
-                isAtStart 
-                  ? 'bg-white/5 text-white/20' 
-                  : 'bg-white/10 hover:bg-white/20 text-white/80'
-              } transition-all`}
+              // Use semantic colors for buttons, including accent for hover
+              className={`p-2 rounded-full transition-all ${
+                isAtStart
+                  ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                  : 'bg-muted/50 hover:bg-accent/20 text-foreground/80 hover:text-accent-foreground'
+              }`}
               aria-label="Scroll left"
             >
               <ChevronLeft size={18} />
@@ -147,11 +137,12 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
             <button
               onClick={() => handleScroll('right')}
               disabled={isAtEnd}
-              className={`p-2 rounded-full ${
-                isAtEnd 
-                  ? 'bg-white/5 text-white/20' 
-                  : 'bg-white/10 hover:bg-white/20 text-white/80'
-              } transition-all`}
+              // Use semantic colors for buttons, including accent for hover
+              className={`p-2 rounded-full transition-all ${
+                isAtEnd
+                  ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                  : 'bg-muted/50 hover:bg-accent/20 text-foreground/80 hover:text-accent-foreground'
+              }`}
               aria-label="Scroll right"
             >
               <ChevronRight size={18} />
@@ -174,17 +165,15 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 top-0 bottom-0 w-12  bg-gradient-to-r from-black to-transparent pointer-events-none"
               ></motion.div>
             )}
-            
+
             {!isAtEnd && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black to-transparent pointer-events-none"
               ></motion.div>
             )}
           </AnimatePresence>
@@ -203,8 +192,10 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center space-y-4"
                   >
-                    <div className="w-8 h-8 border-2 border-white/10 border-t-white/80 rounded-full animate-spin"></div>
-                    <p className="text-white/50 text-sm">Loading cast & crew...</p>
+                    {/* Use semantic border and pink accent for spinner */}
+                    <div className="w-8 h-8 border-2 border-muted/50 border-t-pink dark:border-t-pink-dark rounded-full animate-spin"></div>
+                    {/* Use semantic muted foreground color */}
+                    <p className="text-muted-foreground text-sm">Loading cast & crew...</p>
                   </motion.div>
                 </div>
               ) : (
@@ -219,11 +210,13 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                     }}
                     className="flex-none w-48"
                   >
-                    <motion.div 
-                      className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm"
-                      whileHover={{ 
+                    <motion.div
+                      // Use semantic card background and apply shadows directly
+                      className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-card/50 dark:bg-card/80 backdrop-blur-sm border border-border/10 shadow-apple dark:shadow-apple-dark"
+                      whileHover={{
                         y: -5,
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)'
+                        // Let hover manage shadow intensity if needed, or define specific hover shadows
+                        // boxShadow: '...' // Example: Define specific hover shadow if needed
                       }}
                       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                     >
@@ -237,17 +230,20 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                           loading="lazy"
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10">
-                          <User size={48} className="text-white/20" />
+                        // Use semantic card background and muted foreground for placeholder
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-card/70 to-card">
+                          <User size={48} className="text-muted-foreground/50" />
                         </div>
                       )}
-                      
-                      {/* Glass-like info overlay at bottom */}
-                      <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-md p-3 transform transition-transform">
-                        <h3 className="font-medium text-white text-base leading-tight truncate">
+
+                      {/* Glass-like info overlay at bottom - Use semantic colors */}
+                      <div className="absolute inset-x-0 bottom-0 bg-background/70 dark:bg-black/70 backdrop-blur-md p-3">
+                        {/* Use semantic card foreground */}
+                        <h3 className="font-medium text-card-foreground text-sm leading-tight truncate">
                           {member.name}
                         </h3>
-                        <p className="text-xs text-white/70 mt-1 line-clamp-1">
+                        {/* Use semantic muted foreground */}
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                           {member.roles?.join(', ') || 'Crew Member'}
                         </p>
                       </div>
@@ -259,9 +255,9 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
           </div>
         </motion.div>
         
-        {/* Count Indicator */}
-        <div className="text-center">
-          <p className="text-sm text-white/50">
+        {/* Count Indicator - Use semantic muted foreground */}
+        <div className="text-center mt-4">
+          <p className="text-xs text-muted-foreground">
             Showing all {mergedCrewMembers.length} cast & crew members
           </p>
         </div>

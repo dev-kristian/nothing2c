@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import FlickyEmbed from '@/components/details/HostEmbed';
-import { Season, SeasonDetails, SelectedEpisode } from '@/types';
+import { Season, SeasonDetails } from '@/types';
+import SectionHeader from './SectionHeader';
+import { Badge } from '@/components/ui/badge';
 
 interface SeasonCarouselProps {
   seasons: Season[];
@@ -19,7 +20,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
 }) => {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [selectedSeasonDetails, setSelectedSeasonDetails] = useState<SeasonDetails | null>(null);
-  const [selectedEpisode, setSelectedEpisode] = useState<SelectedEpisode | null>(null);
 
   const handleSeasonSelect = async (seasonNumber: number) => {
     // Toggle off if clicking the same season
@@ -41,126 +41,97 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
     }
   };
 
-  const handleWatchNow = (seasonNumber: number, episodeNumber: number) => {
-    const episode = selectedSeasonDetails?.episodes.find(
-      ep => ep.episode_number === episodeNumber
-    );
-    
-    setSelectedEpisode({
-      seasonNumber,
-      episodeNumber,
-      seasonId: selectedSeasonDetails?.id || 0,
-      episodeId: episode?.id || 0
-    });
-  };
-
-  const handleCloseEmbed = () => {
-    setSelectedEpisode(null);
-  };
-
   const validSeasons = seasons.filter(season => season.episode_count > 0);
-  const handleNavigateEpisode = (direction: 'next' | 'prev') => {
-    if (!selectedEpisode || !selectedSeasonDetails) return;
 
-    const currentIndex = selectedSeasonDetails.episodes.findIndex(
-      ep => ep.episode_number === selectedEpisode.episodeNumber
-    );
-
-    if (direction === 'next' && currentIndex < selectedSeasonDetails.episodes.length - 1) {
-      const nextEpisode = selectedSeasonDetails.episodes[currentIndex + 1];
-      setSelectedEpisode({
-        seasonNumber: selectedEpisode.seasonNumber,
-        episodeNumber: nextEpisode.episode_number,
-        seasonId: selectedSeasonDetails.id,
-        episodeId: nextEpisode.id
-      });
-    } else if (direction === 'prev' && currentIndex > 0) {
-      const prevEpisode = selectedSeasonDetails.episodes[currentIndex - 1];
-      setSelectedEpisode({
-        seasonNumber: selectedEpisode.seasonNumber,
-        episodeNumber: prevEpisode.episode_number,
-        seasonId: selectedSeasonDetails.id,
-        episodeId: prevEpisode.id
-      });
-    }
-  };
   return (
-    <div className="w-full pb-4">
+    <div className="w-full pb-8">
       <motion.div 
         className="w-full overflow-x-auto"
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] }}
       >
-        <h2 className="text-3xl font-bold text-white">
-          Seasons
-        </h2>
-        <div className="flex space-x-4 p-2">
+        <SectionHeader title="Seasons" subtitle="Explore episodes season by season" />
+        
+        {/* Season carousel with Apple-like aesthetics */}
+        <div className="flex space-x-5 p-2 pb-4 px-4 snap-x snap-mandatory">
           {validSeasons.map((season) => (
-            <motion.div 
+            <motion.div
               key={season.id} 
-              className="flex-none w-48 cursor-pointer"
+              className={`flex-none w-44 snap-center cursor-pointer transition-all duration-300 ${
+                selectedSeason === season.season_number ? 'scale-105' : ''
+              }`}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => handleSeasonSelect(season.season_number)}
             >
-              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-md">
+              <div className="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-apple dark:shadow-apple-dark">
                 {season.poster_path ? (
                   <Image
                     src={`https://image.tmdb.org/t/p/w300${season.poster_path}`}
                     alt={season.name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className={`object-cover transition-opacity duration-300 ${
+                    className={`object-cover transition-all duration-300 ${
                       selectedSeason !== null && selectedSeason !== season.season_number 
-                        ? 'opacity-30' 
-                        : 'opacity-100'
+                        ? 'opacity-60 dark:opacity-40 saturate-50' 
+                        : 'opacity-100 saturate-100'
                     }`}
                     priority
                   />
                 ) : (
-                  <div className={`w-full h-full bg-gray-700 flex items-center justify-center transition-opacity duration-300 ${
+                  <div className={`w-full h-full bg-muted flex items-center justify-center transition-all duration-300 ${
                     selectedSeason !== null && selectedSeason !== season.season_number 
-                      ? 'opacity-30' 
+                      ? 'opacity-60 dark:opacity-40' 
                       : 'opacity-100'
                   }`}>
-                    <span className="text-gray-400 text-sm">No Image</span>
+                    <svg className="w-10 h-10 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
                   </div>
                 )}
+                
+                {/* Selected indicator */}
+                {selectedSeason === season.season_number && (
+                  <div className="absolute inset-0 border-2 border-pink rounded-2xl"></div>
+                )}
               </div>
-              <h3 className="mt-2 text-sm font-semibold">{season.name}</h3>
-              <p className="text-xs text-gray-400">{season.episode_count} episodes</p>
+              
+              <div className="mt-3 px-1">
+                <h3 className="text-sm font-medium text-foreground truncate">{season.name}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{season.episode_count} episodes</p>
+              </div>
             </motion.div>
           ))}
         </div>
       </motion.div>
 
-      {/* Season Details */}
+      {/* Season Details - Apple-like aesthetics */}
       {selectedSeasonDetails && (
         <motion.div 
-          className="mt-6 mx-auto"
-          initial={{ opacity: 0, y: 50 }}
+          className="mt-8 mx-auto"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0], delay: 0.1 }}
         >
-          {/* Season Header - More Compact */}
-          <div className="rounded-xl bg-gray-900/30 backdrop-blur-sm border border-gray-800/50 overflow-hidden">
-            <div className="p-4 md:p-6">
+          {/* Season Header - Apple-like Card */}
+          <div className="rounded-2xl bg-system-background-tertiary dark:bg-system-background-tertiary-dark backdrop-blur-apple border border-border/50 dark:border-gray-800/40 overflow-hidden shadow-apple dark:shadow-apple-dark">
+            <div className="p-5 md:p-6">
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-medium text-white">
+                    <h2 className="text-2xl font-semibold text-foreground">
                       {selectedSeasonDetails.name}
                     </h2>
-                    <div className="text-xs text-gray-400">
+                    <Badge variant="outline" className="text-xs font-medium px-2 py-0.5 border-pink text-pink">
                       {selectedSeasonDetails.episodes.length} Episodes
-                    </div>
+                    </Badge>
                   </div>
 
-                  {/* Season Stats - Compact Row */}
-                  <div className="flex gap-6 text-xs text-gray-400">
+                  {/* Season Stats - Modern Row */}
+                  <div className="flex flex-wrap gap-6 text-xs text-muted-foreground">
                     <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1.5 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       {new Date(selectedSeasonDetails.air_date).toLocaleDateString('en-US', {
@@ -170,7 +141,7 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                       })}
                     </div>
                     <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1.5 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       {selectedSeasonDetails.episodes.reduce((acc, ep) => acc + (ep.runtime || 0), 0)} min total
@@ -184,7 +155,7 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                   </div>
 
                   {selectedSeasonDetails.overview && (
-                    <p className="text-xs text-gray-300 leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {selectedSeasonDetails.overview}
                     </p>
                   )}
@@ -193,48 +164,53 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
             </div>
           </div>
 
-          {/* Episodes List */}
-          <div className="mt-6 space-y-3">
+          {/* Episodes List - Apple-like Cards */}
+          <div className="mt-6 space-y-4">
             {selectedSeasonDetails.episodes.map((episode) => (
-              <motion.div 
-                key={episode.id} 
-                className="group relative rounded-lg bg-gray-900/30 hover:bg-gray-800/40 transition-all duration-300"
-                whileHover={{ scale: 1.002 }}
+              <motion.div
+                key={episode.id}
+                className="group relative rounded-xl bg-system-background-tertiary dark:bg-system-background-tertiary-dark  
+                          transition-all duration-300 backdrop-blur-sm border border-border/30 dark:border-gray-800/30 
+                          shadow-apple-sm dark:shadow-apple-dark-sm hover:shadow-apple dark:hover:shadow-apple-dark"
+                whileHover={{ scale: 1.01, y: -2 }}
               >
-                <div className="flex h-24">
+                <div className="flex h-24 md:h-28">
                   {/* Episode Thumbnail */}
-                  <div className="relative w-40 overflow-hidden rounded-l-lg">
+                  <div className="relative w-40 md:w-48 overflow-hidden rounded-l-xl">
                     {episode.still_path ? (
                       <Image
                         src={`https://image.tmdb.org/t/p/w300${episode.still_path}`}
                         alt={episode.name || `Episode ${episode.episode_number}`}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover rounded-lg"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-800/50 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <svg className="w-8 h-8 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
                       </div>
                     )}
                     
-                    <div className="absolute bottom-0 left-0 px-2 py-1 bg-gradient-to-tr from-black/90 to-transparent text-xs font-medium text-white rounded-tr-lg">
-                      {episode.episode_number}
+                    {/* Episode number badge */}
+                    <div className="absolute bottom-2 left-2">
+                      <Badge className="bg-pink/90 text-white text-xs backdrop-blur-sm">
+                        Ep {episode.episode_number}
+                      </Badge>
                     </div>
                   </div>
 
                   {/* Episode Details */}
-                  <div className="flex-1 p-3 flex flex-col justify-between relative">
+                  <div className="flex-1 p-4 flex flex-col  justify-between relative  ">
                     <div>
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start  justify-between ">
                         <div>
-                          <h4 className="text-sm font-medium text-white group-hover:text-pink transition-colors">
+                          <h4 className="text-sm font-medium text-foreground group-hover:text-pink transition-colors">
                             {episode.name}
                           </h4>
-                          <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
                             <span>{new Date(episode.air_date).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric'
@@ -259,20 +235,11 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                           </div>
                         </div>
                         
-                        <button
-                          onClick={() => handleWatchNow(selectedSeasonDetails.season_number, episode.episode_number)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-pink/10 hover:bg-pink/20 text-pink transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          </svg>
-                          <span className="text-xs font-medium">Watch</span>
-                        </button>
                       </div>
 
-                      {/* Episode Overview with Hover Effect */}
-                      <div className="relative group/text mt-1">
-                        <p className="text-xs text-gray-400 line-clamp-1 group-hover/text:line-clamp-none">
+                      {/* Episode Overview with elegant solution for overflow */}
+                      <div className="relative mt-1 overflow-hidden ">
+                        <p className="text-xs text-foreground/90  line-clamp-1 md:line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                           {episode.overview}
                         </p>
                       </div>
@@ -283,18 +250,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
             ))}
           </div>
         </motion.div>
-      )}
-
-      {/* FlickyEmbed Component */}
-      {selectedEpisode && (
-      <FlickyEmbed
-      tmdbId={tmdbId}
-      seasonNumber={selectedEpisode.seasonNumber}
-      episodeNumber={selectedEpisode.episodeNumber}
-      onClose={handleCloseEmbed}
-      totalEpisodes={selectedSeasonDetails?.episodes.length}
-      onNavigateEpisode={handleNavigateEpisode}
-    />
       )}
     </div>
   );

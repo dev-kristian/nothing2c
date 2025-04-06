@@ -152,6 +152,7 @@ const TrendingSection: React.FC = () => {
           <MediaTypeToggle
             mediaType={mediaType}
             onMediaTypeChange={setMediaType}
+            showUpcoming={true} // Add this prop
           />
         </motion.div>
       </motion.div>

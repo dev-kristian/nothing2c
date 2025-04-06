@@ -1,23 +1,16 @@
 // components/settings/AppearanceSettings.tsx
 'use client'
 
-import { useTheme } from '@/context/ThemeContext'
-import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
+// Removed useState, useEffect import as they are no longer needed for mounting check
 import { Sun, Moon, Laptop, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function AppearanceSettings() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  // Removed mounted state and useEffect
 
-  // Ensure we're mounted before showing theme options to prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return null
-  }
+  // The useTheme hook from next-themes handles hydration, so the mounted check is not needed.
 
   const themeOptions = [
     {

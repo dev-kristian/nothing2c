@@ -34,12 +34,14 @@ export function QuickActions() {
   ];
   
   return (
-    <div className="flex flex-wrap gap-3 sm:gap-4">
+    // Use Grid: 2 columns by default (mobile), 4 columns on large screens (desktop)
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {actions.map((action) => (
         <button
           key={action.title}
           onClick={action.onClick}
-          className="w-[calc(50%-0.375rem)] sm:w-[calc(50%-0.5rem)] flex flex-col items-center text-center
+          // Remove fixed width, grid handles sizing. Keep other styles.
+          className="flex flex-col items-center text-center
                     bg-white/50 dark:bg-gray-6-dark/50 backdrop-blur-sm
                     rounded-xl p-4 sm:p-5 
                     transition-all duration-200

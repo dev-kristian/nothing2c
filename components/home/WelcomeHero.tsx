@@ -80,7 +80,7 @@ export function WelcomeHero() {
             </div>
             
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight">
-              {greeting}, <span className="text-gradient">{userData?.username || "Cinephile"}</span>
+              {greeting}, <span className="text-pink">{userData?.username || "Cinephile"}</span>
             </h1>
             
             <p className="text-base text-foreground/70 max-w-md">

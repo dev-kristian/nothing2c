@@ -82,7 +82,7 @@ export default function SignIn() {
         </div>
         <div className="text-center">
           <span className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               href="/sign-up"
               className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
