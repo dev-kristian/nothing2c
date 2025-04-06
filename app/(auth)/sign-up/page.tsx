@@ -77,7 +77,7 @@ export default function SignUp() {
   return (
     <>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text">
+        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
           Create an Account
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
@@ -94,9 +94,9 @@ export default function SignUp() {
       <CardFooter className="flex justify-center pb-8">
         <span className="text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link 
-            href="/sign-in" 
-            className="text-primary hover:text-primary/80 transition-colors"
+          <Link
+            href="/sign-in"
+            className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
           >
             Sign in
           </Link>

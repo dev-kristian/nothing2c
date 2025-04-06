@@ -115,7 +115,7 @@ const NotificationSubscription = () => {
             await handleUpdateNotificationStatus("allowed");
             showToast(
               "Notifications Enabled",
-              "You'll now receive updates from Kino & Cill!",
+              "You'll now receive updates from Nothing<sup>2C</sup>!",
               "default",
             );
           } catch (error: unknown) {

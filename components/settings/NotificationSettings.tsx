@@ -74,7 +74,7 @@ export default function NotificationSettings() {
               await updateNotificationStatus("allowed");
               showToast(
                 "Notifications Enabled",
-                "You'll now receive updates from Kino & Cill!",
+                "You'll now receive updates from Nothing<sup>2C</sup>!",
                 "success"
               );
             } catch (error) {
@@ -122,7 +122,7 @@ export default function NotificationSettings() {
         await updateNotificationStatus("denied");
         showToast(
           "Notifications Disabled",
-          "You won't receive any notifications from Kino & Cill.",
+          "You won't receive any notifications from Nothing <sup>2C</sup>.",
           "default"
         );
       }

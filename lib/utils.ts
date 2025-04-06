@@ -36,13 +36,14 @@ export const checkOrCreateUserProfile = async (user: User) => {
     // API returns { profileCompleted: boolean }
     // Always redirect to home page after successful sign-in/profile check.
     // Profile completion checks can be handled elsewhere (e.g., WithAuth HOC).
-    console.log(`User profile check/create successful. Profile completed: ${data.profileCompleted}. Redirecting to /`);
-    return '/';
+    console.log(`User profile check/create successful. Profile completed: ${data.profileCompleted}. Redirecting to /discover`);
+    return '/discover';
   } catch (error) {
     console.error('Error checking/creating user profile:', error);
     // Use handleAuthError for consistency if appropriate, or keep specific logging
     handleAuthError(error, 'Failed to verify user profile. Please try again.');
-    return '/';
+    // Redirect to discover even on profile check error, as user is authenticated
+    return '/discover';
   }
 };
 

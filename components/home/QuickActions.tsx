@@ -17,13 +17,13 @@ export function QuickActions() {
       title: "Movies",
       description: "Discover new films to watch",
       icon: <Film size={20} />,
-      onClick: () => router.push('/explore?type=movie')
+      onClick: () => router.push('/?type=movie')
     },
     {
       title: "TV Shows",
       description: "Find your next binge-worthy series",
       icon: <Tv size={20} />,
-      onClick: () => router.push('/explore?type=tv')
+      onClick: () => router.push('/?type=tv')
     },
     {
       title: "Settings",

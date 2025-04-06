@@ -1,8 +1,8 @@
-# Kino & Chill
+# Nothing <sup>2C</sup>
 
 ### A Movie & TV Show Watchlist and Recommendation Platform
 
-**Kino & Chill** is an interactive movie and TV show platform that lets users explore, manage curated watchlists, vote on Movie Night polls, and create shared experiences with friends! Built with modern web development tools, it leverages Firebase for authentication, Firestore for real-time data management, and TMDb API for media information.
+**Nothing <sup>2C</sup>** is an interactive movie and TV show platform that lets users explore, manage curated watchlists, vote on Movie Night polls, and create shared experiences with friends! Built with modern web development tools, it leverages Firebase for authentication, Firestore for real-time data management, and TMDb API for media information.
 
 ## Screenshots
 ### Explore Movies Section
@@ -165,7 +165,7 @@ Please adhere to the pre-established code style and conventions where possible.
 
 ## 🌟 Made with ❤️
 
-**Kino & Chill** was crafted with care and passion by dev-kristian who loves both movies and great user experiences. 🎬🍿
+**Nothing <sup>2C</sup>** was crafted with care and passion by dev-kristian who loves both movies and great user experiences. 🎬🍿
 
 I believe in the power of cinema and bringing people together for shared moments, whether it's exploring new films, hosting movie nights, or building a community of cinephiles! If you enjoyed using this platform or have ideas on how to make it even better, please feel free to contribute, suggest, or simply say hi! 😄
 
@@ -181,5 +181,4 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 
 ---
 
-Feel free to open an issue or discuss new ideas to improve Kino & Chill!
-
+Feel free to open an issue or discuss new ideas to improve Nothing <sup>2C</sup>!

@@ -17,6 +17,7 @@ import {
   Library
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast'; // Import the toast function
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   const navigationItems = useMemo(() => [
-    { href: '/', icon: DraftingCompass, label: 'Discover' },
+    { href: '/discover', icon: DraftingCompass, label: 'Discover' },
     { href: '/watch-together', icon: TvMinimalPlay, label: 'Watch Together' },
     { href: '/my-library', icon: Library, label: 'My Library' },
     { href: '/social', icon: Share2, label: 'Social' },
@@ -50,12 +51,39 @@ export default function Navigation() {
 
   const handleSignOut = async () => {
     try {
+      // 1. Call the backend API to clear the session cookie
+      const response = await fetch('/api/auth/session-logout', {
+        method: 'POST', // Assuming POST, adjust if your API uses GET
+      });
+
+      // 2. Check if server-side logout was successful
+      if (!response.ok) {
+        // Server-side logout failed, log error, show toast, and stop the process
+        console.error('Server-side logout failed:', response.status, response.statusText);
+        toast({
+          title: "Sign Out Failed",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        return; // Stop the sign-out process
+      }
+
+      // 3. Server-side logout succeeded, now perform Firebase client-side sign out
       await signOut(auth);
-      router.push('/sign-in');
-      setIsOpen(false);
-      setIsDropdownOpen(false);
+
+      // 4. Redirect the user to the root page
+      router.push('/'); // Changed redirect to root
+      setIsOpen(false); // Close mobile menu if open
+      setIsDropdownOpen(false); // Close user dropdown if open
+
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Catch errors from fetch() or signOut()
+      console.error('Error during sign out process:', error);
+      toast({
+        title: "Sign Out Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -68,32 +96,47 @@ export default function Navigation() {
       className={`fixed w-full z-50 py-1 h-[var(--navbar-height)] transition-all duration-500 ${
         scrolled
           ? 'bg-background/60 dark:bg-background/30 backdrop-blur-xl shadow-lg'
-          : 'bg-background/30 dark:bg-background/60 backdrop-blur-md'
+          : 'bg-background/60 dark:bg-background/30 backdrop-blur-xl '
       }`}
     >
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-14 relative nav-container">
+        <div className="flex justify-between items-center h-16 relative nav-container">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 15 }}
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <Image
-                src="/icons/popcorn.png"
-                alt="Popcorn icon"
-                width={28}
-                height={28}
-                className="drop-shadow-lg"
-                priority
-              />
-            </motion.div>
-            <span className="text-2xl font-bold text-gradient">
-              AFK Cinema
-            </span>
+          <Link href="/" className="group flex items-center space-x-3" aria-label="Nothing2C Home">
+            <div className="relative">
+              <motion.div
+                whileHover={{ 
+                  scale: 1.12, 
+                  rotate: [0, -8, 12, -3, 0],
+                  transition: { duration: 0.4 }
+                }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 450, damping: 15 }}
+                className="relative z-10"
+              >
+                <Image
+                  src="/icons/popcorn.png"
+                  alt=""
+                  width={46}
+                  height={46}
+                  className="drop-shadow-lg filter"
+                  priority
+                />
+              </motion.div>
+            </div>
+            
+            <div className="flex flex-col">
+              <div className="flex items-baseline">
+                <span className="text-xl font-bold tracking-tight relative">
+                  <span className="text-pink">Nothing</span>
+                  <sup className="absolute -right-5 text-xs font-bold text-pink">2C</sup>
+                </span>
+              </div>
+              <span className="text-[10px] text-pin-secondary dark:text-label-secondary-dark font-medium tracking-widest uppercase -mt-0.5 ml-0.5">
+                Entertainment
+              </span>
+            </div>
           </Link>
-
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {navigationItems.map(({ href, icon: Icon, label }) => (
@@ -184,7 +227,7 @@ export default function Navigation() {
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
-                  href="/signin"
+                  href="/sign-in"
                   className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-pink-foreground 
                            hover:bg-pink-hover transition-colors duration-300 shadow-lg"
                 >
@@ -277,7 +320,7 @@ export default function Navigation() {
               ) : (
                 <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}>
                   <Link
-                    href="/signin"
+                    href="/sign-in"
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-pink text-pink-foreground 
                              hover:bg-pink-hover transition-colors duration-200"
                     onClick={() => setIsOpen(false)}
