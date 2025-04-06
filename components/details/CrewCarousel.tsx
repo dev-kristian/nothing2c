@@ -174,7 +174,7 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-black to-transparent pointer-events-none"
+                className="absolute left-0 top-0 bottom-0 w-12  bg-gradient-to-r from-black to-transparent pointer-events-none"
               ></motion.div>
             )}
             
@@ -184,7 +184,7 @@ const CrewCarousel: React.FC<CrewCarouselProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-black to-transparent pointer-events-none"
+                className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black to-transparent pointer-events-none"
               ></motion.div>
             )}
           </AnimatePresence>

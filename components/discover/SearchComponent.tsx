@@ -45,7 +45,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
   const [includeAdult, setIncludeAdult] = useState(false);
-  
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const advancedSearchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -161,7 +163,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
           >
             {userData ? (
               <>
-                Hi, <span className="text-primary font-semibold">{userData.username}</span>. Ready to
+                Hi, <span className="text-pink font-semibold">{userData.username}</span>. Ready to
                 discover?
               </>
             ) : (
@@ -179,10 +181,10 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
             }}
             className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
           >
-            <span className="text-foreground">Explore </span>
-            <span className="text-gradient font-semibold">Movies</span>
-            <span className="text-foreground"> and </span>
-            <span className="text-gradient font-semibold">TV Shows</span>
+            <span className="text-gray-5-dark dark:text-gray-5">Explore </span>
+            <span className="text-pink dark:text-pink-dark font-semibold">Movies</span>
+            <span className="text-gray-5-dark dark:text-gray-5"> and </span>
+            <span className="text-pink dark:text-pink-dark font-semibold">TV Shows</span>
           </motion.div>
         </motion.div>
   
@@ -199,9 +201,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
           {/* Apple-style search bar */}
           <div
             className={`
-              frosted-glass rounded-full shadow-lg overflow-hidden
+              frosted-panel p-0 rounded-full shadow-lg overflow-hidden
               transition-all duration-300 ease-out
-              ${isFocused ? 'ring-1 ring-primary/50 shadow-xl' : ''}
+              ${isFocused ? 'ring-1 ring-pink/50 shadow-xl' : ''}
             `}
           >
             <div className="flex items-center p-1 sm:p-1.5 md:p-2">
@@ -209,7 +211,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
               <div className="flex-shrink-0 pl-2 sm:pl-3">
                 <Search
                   className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors duration-300 ${
-                    isFocused ? 'text-primary' : 'text-foreground/50'
+                    isFocused ? 'text-pink' : 'text-foreground/50'
                   }`}
                 />
               </div>
@@ -258,7 +260,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 className={`
                   flex-shrink-0 p-1 sm:p-1.5 rounded-lg transition-colors
                   ${showAdvanced 
-                    ? 'bg-primary/10 text-primary' 
+                    ? 'bg-pink/10 text-pink' 
                     : 'text-foreground/50 hover:text-foreground hover:bg-foreground/10'
                   }
                 `}
@@ -277,7 +279,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 disabled={isLoading || (!searchQuery.trim() && !selectedGenre && !selectedYear)}
                 aria-label={isLoading ? "Searching" : "Search"}
                 className={`
-                  flex-shrink-0 bg-primary hover:bg-primary-hover text-primary-foreground 
+                  flex-shrink-0 bg-pink hover:bg-pink-hover text-white
                   transition-all duration-300 rounded-2xl py-1 sm:py-1.5 px-2 sm:px-3 md:px-4 mx-0.5 sm:mx-1
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
@@ -302,169 +304,255 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
           </div>
   
           {/* Advanced search panel */}
-          <AnimatePresence>
-            {showAdvanced && (
-              <motion.div
-                ref={advancedSearchRef}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute z-10 mt-2 w-full frosted-glass rounded-2xl sm:rounded-3xl shadow-lg p-3 sm:p-4"
+{/* Advanced search panel */}
+<AnimatePresence>
+  {showAdvanced && (
+    <motion.div
+      ref={advancedSearchRef}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="absolute z-10 mt-2 w-full frosted-panel rounded-2xl sm:rounded-3xl p-3 sm:p-4"
+    >
+      <div className="flex justify-between items-center mb-3 sm:mb-4">
+        <h3 className="text-xs sm:text-sm font-medium text-foreground/90">Advanced Search</h3>
+        <button 
+          type="button"
+          onClick={resetAdvancedFilters}
+          className="text-2xs sm:text-xs text-pink hover:text-pink-hover transition-colors"
+        >
+          Reset filters
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-3 sm:gap-4">
+        {/* Content type selector */}
+        <div className="space-y-1.5">
+          <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Content Type</label>
+          <div className="flex p-1 bg-white/20 dark:bg-black/20 rounded-xl">
+            {[
+              { value: 'multi', label: 'All' },
+              { value: 'movie', label: 'Movies' },
+              { value: 'tv', label: 'TV' },
+              { value: 'person', label: 'People' }
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSelectedType(option.value)}
+                className={`flex-1 py-1.5 px-2 text-2xs sm:text-xs rounded-lg transition-all duration-200 ${
+                  selectedType === option.value 
+                    ? 'bg-white dark:bg-gray-800 text-foreground shadow-sm' 
+                    : 'text-foreground/70 hover:text-foreground'
+                }`}
               >
-                <div className="flex justify-between items-center mb-2 sm:mb-3">
-                  <h3 className="text-xs sm:text-sm font-medium">Advanced Search</h3>
-                  <button 
-                    type="button"
-                    onClick={resetAdvancedFilters}
-                    className="text-2xs sm:text-xs text-primary hover:text-primary-hover transition-colors"
-                  >
-                    Reset filters
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                  {/* Content type selector */}
-                  <div className="space-y-1">
-                    <label className="text-2xs sm:text-xs text-foreground/70">Content Type</label>
-                    <div className="relative">
-                      <select
-                        value={selectedType}
-                        onChange={(e) => setSelectedType(e.target.value)}
-                        className="w-full rounded-lg bg-background/50 border border-foreground/10 
-                                  text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
-                      >
-                        <option value="multi">All (Movies, TV, People)</option>
-                        <option value="movie">Movies Only</option>
-                        <option value="tv">TV Shows Only</option>
-                        <option value="person">People Only</option>
-                      </select>
-                      <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  {/* Year selector */}
-                  <div className="space-y-1">
-                    <label className="text-2xs sm:text-xs text-foreground/70">Release Year</label>
-                    <div className="relative">
-                      <select
-                        value={selectedYear || ''}
-                        onChange={(e) => setSelectedYear(e.target.value || null)}
-                        className="w-full rounded-lg bg-background/50 border border-foreground/10 
-                                  text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
-                      >
-                        <option value="">Any Year</option>
-                        {years.map(year => (
-                          <option key={year} value={year}>{year}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  {/* Genre selector - only show for movies and TV */}
-                  {selectedType !== 'person' && (
-                    <div className="space-y-1">
-                      <label className="text-2xs sm:text-xs text-foreground/70">Genre</label>
-                      <div className="relative">
-                        <select
-                          value={selectedGenre || ''}
-                          onChange={(e) => setSelectedGenre(e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full rounded-lg bg-background/50 border border-foreground/10 
-                                    text-xs sm:text-sm py-1.5 sm:py-2 px-2 sm:px-3 appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
-                        >
-                          <option value="">Any Genre</option>
-                          {genres.map(genre => (
-                            <option key={genre.id} value={genre.id}>{genre.name}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-2 sm:right-3 top-2 sm:top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Adult content toggle */}
-                  <div>
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={includeAdult} 
-                        onChange={() => setIncludeAdult(!includeAdult)}
-                        className="sr-only peer"
-                      />
-                      <div className="relative w-9 sm:w-11 h-5 sm:h-6 bg-foreground/20 peer-focus:outline-none rounded-full peer 
-                                    peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
-                                    peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
-                                    after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                    after:h-4 sm:after:h-5 after:w-4 sm:after:w-5 after:transition-all peer-checked:bg-primary">
-                      </div>
-                      <span className="ms-2 sm:ms-3 text-xs sm:text-sm font-medium">Include adult content</span>
-                    </label>
-                  </div>
-                </div>
-                
-                {/* Active filters summary */}
-                {(selectedType !== 'multi' || selectedYear || selectedGenre || includeAdult) && (
-                  <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-foreground/10">
-                    <h4 className="text-2xs sm:text-xs text-foreground/70 mb-1.5 sm:mb-2">Active Filters:</h4>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {selectedType !== 'multi' && (
-                        <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
-                          {selectedType === 'movie' ? 'Movies' : selectedType === 'tv' ? 'TV Shows' : 'People'}
-                          <button 
-                            type="button" 
-                            onClick={() => setSelectedType('multi')}
-                            className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                          </button>
-                        </div>
-                      )}
-                      
-                      {selectedYear && (
-                        <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
-                          Year: {selectedYear}
-                          <button 
-                            type="button" 
-                            onClick={() => setSelectedYear(null)}
-                            className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
-                          >
-                            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                          </button>
-                          </div>
-                    )}
-                    
-                    {selectedGenre && (
-                      <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
-                        {genres.find(g => g.id === selectedGenre)?.name}
-                        <button 
-                          type="button" 
-                          onClick={() => setSelectedGenre(null)}
-                          className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
-                        >
-                          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        </button>
-                      </div>
-                    )}
-                    
-                    {includeAdult && (
-                      <div className="bg-primary/10 text-primary text-2xs sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center">
-                        Adult Content
-                        <button 
-                          type="button" 
-                          onClick={() => setIncludeAdult(false)}
-                          className="ml-0.5 sm:ml-1 hover:bg-primary/20 rounded-full p-0.5"
-                        >
-                          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Year selector */}
+<div className="space-y-1.5">
+  <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Release Year</label>
+  <div className="relative">
+    <button
+      type="button"
+      onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
+      className="w-full flex items-center justify-between bg-white/20 dark:bg-black/20 border-none
+                text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl
+                focus:outline-none focus:ring-1 focus:ring-pink/50"
+    >
+      <span>{selectedYear || 'Any Year'}</span>
+      <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`} />
+    </button>
+    
+    {/* Apple-style dropdown */}
+    <AnimatePresence>
+      {yearDropdownOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.15 }}
+          className="absolute z-20 mt-1 w-full max-h-60 overflow-auto frosted-panel rounded-xl shadow-lg p-1"
+        >
+          <div 
+            className="p-2 text-xs hover:bg-pink/10 rounded-lg cursor-pointer"
+            onClick={() => {
+              setSelectedYear(null);
+              setYearDropdownOpen(false);
+            }}
+          >
+            Any Year
+          </div>
+          <div className="border-t border-foreground/10 my-1"></div>
+          {years.map(year => (
+            <div 
+              key={year} 
+              className={`p-2 text-xs rounded-lg cursor-pointer ${selectedYear === year.toString() ? 'bg-pink/10 text-pink' : 'hover:bg-foreground/10'}`}
+              onClick={() => {
+                setSelectedYear(year.toString());
+                setYearDropdownOpen(false);
+              }}
+            >
+              {year}
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+</div>
+
+{/* Genre selector - only show for movies and TV */}
+{selectedType !== 'person' && (
+  <div className="space-y-1.5">
+    <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Genre</label>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setGenreDropdownOpen(!genreDropdownOpen)}
+        className="w-full flex items-center justify-between bg-white/20 dark:bg-black/20 border-none
+                  text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl
+                  focus:outline-none focus:ring-1 focus:ring-pink/50"
+      >
+        <span>{selectedGenre ? genres.find(g => g.id === selectedGenre)?.name : 'Any Genre'}</span>
+        <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 transition-transform duration-200 ${genreDropdownOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {/* Apple-style dropdown */}
+      <AnimatePresence>
+        {genreDropdownOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-20 mt-1 w-full max-h-60 overflow-auto frosted-panel rounded-xl shadow-lg p-1"
+          >
+            <div 
+              className="p-2 text-xs hover:bg-pink/10 rounded-lg cursor-pointer"
+              onClick={() => {
+                setSelectedGenre(null);
+                setGenreDropdownOpen(false);
+              }}
+            >
+              Any Genre
+            </div>
+            <div className="border-t border-foreground/10 my-1"></div>
+            {genres.map(genre => (
+              <div 
+                key={genre.id} 
+                className={`p-2 text-xs rounded-lg cursor-pointer ${selectedGenre === genre.id ? 'bg-pink/10 text-pink' : 'hover:bg-foreground/10'}`}
+                onClick={() => {
+                  setSelectedGenre(genre.id);
+                  setGenreDropdownOpen(false);
+                }}
+              >
+                {genre.name}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </div>
+)}
+
+        
+        {/* Adult content toggle */}
+        <div className="pt-1">
+          <label className="inline-flex items-center cursor-pointer">
+            <div className="relative">
+              <input 
+                type="checkbox" 
+                checked={includeAdult} 
+                onChange={() => setIncludeAdult(!includeAdult)}
+                className="sr-only peer"
+              />
+              <div className="w-9 sm:w-11 h-5 sm:h-6 bg-foreground/20 
+                            peer-focus:outline-none rounded-full peer 
+                            peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full 
+                            peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
+                            after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
+                            after:h-4 sm:after:h-5 after:w-4 sm:after:w-5 after:transition-all 
+                            peer-checked:bg-pink shadow-inner">
+              </div>
+            </div>
+            <span className="ms-2 sm:ms-3 text-xs sm:text-sm font-medium">Include adult content</span>
+          </label>
+        </div>
+      </div>
+      
+      {/* Active filters summary */}
+      {(selectedType !== 'multi' || selectedYear || selectedGenre || includeAdult) && (
+        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-foreground/10">
+          <h4 className="text-2xs sm:text-xs text-foreground/70 font-medium mb-2 sm:mb-3">Active Filters:</h4>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {selectedType !== 'multi' && (
+              <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
+                {selectedType === 'movie' ? 'Movies' : selectedType === 'tv' ? 'TV Shows' : 'People'}
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedType('multi')}
+                  className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
+                  aria-label="Remove filter"
+                >
+                  <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                </button>
+              </div>
+            )}
+            
+            {selectedYear && (
+              <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
+                Year: {selectedYear}
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedYear(null)}
+                  className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
+                  aria-label="Remove year filter"
+                >
+                  <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                </button>
+              </div>
+            )}
+            
+            {selectedGenre && (
+              <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
+                {genres.find(g => g.id === selectedGenre)?.name}
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedGenre(null)}
+                  className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
+                  aria-label="Remove genre filter"
+                >
+                  <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                </button>
+              </div>
+            )}
+            
+            {includeAdult && (
+              <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
+                Adult Content
+                <button 
+                  type="button" 
+                  onClick={() => setIncludeAdult(false)}
+                  className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
+                  aria-label="Remove adult content filter"
+                >
+                  <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
         <div className="mt-2 text-center text-2xs sm:text-xs text-foreground/40 hidden sm:block">
           <span>Press </span>

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
 import { ScreenSizeProvider } from '@/context/ScreenSizeContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { Toaster } from "@/components/ui/toaster" // Import the Toaster component
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           <ScreenSizeProvider>
             <AuthProvider>
               {children}
+              <Toaster /> {/* Render the Toaster component */}
             </AuthProvider>
           </ScreenSizeProvider>
         </ThemeProvider>

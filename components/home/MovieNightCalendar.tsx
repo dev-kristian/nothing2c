@@ -160,18 +160,18 @@ export default function MovieNightCalendar({
       const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
 
       // Determine cell styling based on state
-      let dayClasses = 'h-10 w-10 lg:w-12 lg:h-12 rounded-l-xl rounded-b-xl flex items-center justify-center relative text-base font-medium transition-all duration-200 ';
+      let dayClasses = 'h-10 w-10 lg:w-12 lg:h-12 rounded-md flex items-center justify-center relative text-base font-medium transition-all duration-200 ';
       
       if (isPastDate) {
-        dayClasses += "opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-600";
+        dayClasses += "opacity-40 cursor-not-allowed text-gray dark:text-gray-dark";
       } else if (isActiveUserSelected) {
-        dayClasses += "bg-primary text-white shadow-md";
+        dayClasses += "bg-pink dark:bg-pink-dark text-white";
       } else if (otherUsersSelected.length > 0) {
-        dayClasses += "bg-white/10 dark:bg-white/5 border border-primary/40 text-primary";
+        dayClasses += "border border-pink dark:border-pink-dark text-pink dark:text-pink-dark";
       } else if (isCurrentDay) {
-        dayClasses += "bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium";
+        dayClasses += "bg-blue/20 dark:bg-blue-dark/20 text-blue dark:text-blue-dark font-medium";
       } else {
-        dayClasses += "hover:bg-gray-100/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300";
+        dayClasses += "hover:bg-gray/80 dark:hover:bg-gray/40 text-gray dark:text-gray-dark";
       }
       
       days.push(
@@ -185,7 +185,7 @@ export default function MovieNightCalendar({
         >
           {i}
           {totalUsersSelected > 0 && !isPastDate && (
-            <span className="absolute top-0 right-0 text-xs bg-white text-black rounded-bl-md w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-end lg:justify-center">
+            <span className="absolute top-0 right-0 text-xs bg-white text-gray rounded-bl-sm rounded-tr-sm w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-center">
               {totalUsersSelected}
             </span>
           )}
@@ -214,12 +214,35 @@ export default function MovieNightCalendar({
           const isActiveUserSelected = isAllHoursSelected || 
             (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
   
-          const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => 
-            username !== activeUsername && 
-            dates.some(d => isSameDay(new Date(d.date), selectedDate) && 
-              (d.hours === 'all' || (Array.isArray(d.hours) && d.hours.includes(hour.toString())))
-            )
-          );
+          // Check if other users have selected this specific hour
+          const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => {
+            if (username === activeUsername) return false;
+            
+            return dates.some(d => {
+              if (!isSameDay(new Date(d.date), selectedDate)) return false;
+              
+              if (d.hours === 'all') return true;
+              
+              if (Array.isArray(d.hours)) {
+                // Check if this specific hour is in the user's selected hours
+                return d.hours.some(h => {
+                  // Handle both number and string hour formats
+                  if (typeof h === 'number') return h === hour;
+                  if (typeof h === 'string') {
+                    try {
+                      const hourFromString = new Date(h).getHours();
+                      return hourFromString === hour;
+                    } catch (e) {
+                      return parseInt(h) === hour;
+                    }
+                  }
+                  return false;
+                });
+              }
+              
+              return false;
+            });
+          });
   
           const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
           
@@ -230,14 +253,14 @@ export default function MovieNightCalendar({
                              `${hour-12}pm`;
           
           // Hour styling based on selection state
-          let hourClasses = "h-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all duration-200 ";
+          let hourClasses = "h-10 rounded-md flex items-center justify-center text-sm font-medium transition-all duration-200 relative ";
           
           if (isActiveUserSelected) {
-            hourClasses += "bg-primary text-white shadow-md";
+            hourClasses += "bg-pink dark:bg-pink-dark text-white";
           } else if (otherUsersSelected.length > 0) {
-            hourClasses += "bg-white/10 dark:bg-white/5 border border-primary/40 text-primary";
+            hourClasses += "border border-pink dark:border-pink-dark text-pink dark:text-pink-dark";
           } else {
-            hourClasses += "bg-gray-100/80 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300";
+            hourClasses += "hover:bg-gray/80 dark:hover:bg-gray/40 text-gray dark:text-gray-dark";
           }
           
           return (
@@ -245,11 +268,16 @@ export default function MovieNightCalendar({
               key={hour}
               onClick={() => handleHourClick(hour)}
               className={hourClasses}
-              title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''}
+              title={hourPopularity && typeof hourPopularity === 'object' && hourPopularity !== null && Array.isArray((hourPopularity as any).users) ? `Selected by: ${(hourPopularity as any).users.join(', ')}` : ''}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               {hourDisplay}
+              {totalUsersSelected > 0 && (
+                <span className="absolute top-0 right-0 text-xs bg-white text-gray rounded-bl-sm rounded-tr-sm w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-center">
+                  {totalUsersSelected}
+                </span>
+              )}
             </motion.button>
           );
         })}
@@ -259,7 +287,7 @@ export default function MovieNightCalendar({
     return (
       <div className="space-y-4">
         <div>
-          <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">Morning</h4>
+          <h4 className="text-sm text-gray dark:text-gray-dark mb-2 font-medium">Morning</h4>
           {renderHourGroup(amHours)}
         </div>
         <div>
@@ -269,12 +297,13 @@ export default function MovieNightCalendar({
       </div>
     );
   }, [selectedDate, selectedDates, datePopularity, userDates, activeUsername, handleHourClick]);
+  
 
   return (
     <div className="mt-4 flex flex-col lg:flex-row gap-4">
       {/* Calendar Panel */}
       <motion.div 
-        className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-4 flex-grow"
+        className="frosted-panel p-4 flex-grow"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -282,7 +311,7 @@ export default function MovieNightCalendar({
         <div className="flex justify-between items-center mb-4">
           <motion.button 
             onClick={handlePrevMonth}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            className=" flex items-center justify-center icon-button"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -304,7 +333,7 @@ export default function MovieNightCalendar({
           
           <motion.button 
             onClick={handleNextMonth}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            className=" flex items-center justify-center icon-button"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -335,15 +364,15 @@ export default function MovieNightCalendar({
         
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-primary" />
+            <div className="w-2 h-2 rounded-full bg-pink dark:bg-pink-dark" />
             <span>Your selection</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full border border-primary/40" />
-            <span>Others' selections</span>
+            <div className="w-2 h-2 rounded-full border border-pink dark:border-pink-dark" />
+            <span>Others&apos; selections</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500/20" />
+            <div className="w-2 h-2 rounded-full bg-blue/20" />
             <span>Today</span>
           </div>
         </div>
@@ -351,12 +380,7 @@ export default function MovieNightCalendar({
         {selectedDate && (
           <motion.button 
             onClick={() => setShowHourPicker(!showHourPicker)} 
-            className="mt-4 py-2 px-4 rounded-xl text-sm font-medium bg-primary/90 hover:bg-primary text-white w-full flex items-center justify-center transition-all shadow-sm"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+            className="mt-4 py-2 px-4 rounded-xl text-sm font-medium button-neutral w-full flex items-center justify-center "
           >
             <Clock className="mr-2 h-4 w-4" />
             {showHourPicker ? 'Hide Hours' : 'Select Hours'} for {format(selectedDate, 'MMM d')}
@@ -367,17 +391,17 @@ export default function MovieNightCalendar({
       {/* Hour Selection Panel */}
       {selectedDate && showHourPicker && (
         <motion.div 
-          className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-4 lg:w-[400px]"
+          className="frosted-panel p-4 lg:w-[400px]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-medium bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+            <h3 className="text-gray dark:text-gray-dark font-small">
               Available Hours
             </h3>
-            <div className="text-sm text-gray-600 dark:text-gray-300">
+            <div className="text-sm text-gray dark:text-gray-dark">
               {format(selectedDate, 'MMM d')}
             </div>
           </div>
@@ -389,7 +413,7 @@ export default function MovieNightCalendar({
           <div className="flex gap-2 mt-4">
             <motion.button
               onClick={handleSelectAllHours}
-              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium button-neutral flex items-center justify-center"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -399,7 +423,7 @@ export default function MovieNightCalendar({
             
             <motion.button
               onClick={handleClearSelection}
-              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center"
+              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium button-neutral flex items-center justify-center"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

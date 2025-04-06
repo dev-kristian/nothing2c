@@ -71,7 +71,7 @@ const TrendingSection: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Alert variant="destructive" className="my-4 frosted-glass border-none">
+        <Alert variant="destructive" className="my-4 frosted-panel border-none">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="flex items-center">
             {error}
@@ -80,7 +80,7 @@ const TrendingSection: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => refetch()} // Assuming SWR provides a refetch
-              className="ml-2 text-primary hover:text-primary-hover transition-colors"
+              className="ml-2 text-pink hover:text-pink-hover transition-colors"
             >
               Try again
             </motion.button> */}
@@ -139,7 +139,7 @@ const TrendingSection: React.FC = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Discover what's capturing the world's attention right now.
+            Discover what&apos;s capturing the world&apos;s attention right now.
           </motion.p>
         </div>
 
@@ -191,7 +191,7 @@ const TrendingSection: React.FC = () => {
 
       {data.length === 0 && !isLoading && (
         <motion.div
-          className="text-center text-muted-foreground my-12 space-y-4 frosted-glass p-8 rounded-2xl"
+          className="text-center text-muted-foreground my-12 space-y-4 frosted-panel p-8 rounded-2xl"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}

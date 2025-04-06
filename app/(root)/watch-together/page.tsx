@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSession } from '@/context/SessionContext';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -13,22 +13,13 @@ import { useUserData } from '@/context/UserDataContext';
 import { formatHours, countParticipantsByStatus } from '@/utils/sessionUtils';
 
 const SessionsPage = () => {
-  const { sessions } = useSession();
+  const { sessions, isLoading } = useSession();
   const { userData } = useUserData();
   const searchParams = useSearchParams();
   const router = useRouter();
   const showNewSession = searchParams.get('new') === 'true';
   const [filter, setFilter] = useState('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simulate loading state
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Memoize filtered sessions to prevent unnecessary recalculations
   const filteredSessions = useMemo(() => {
@@ -86,7 +77,7 @@ const SessionsPage = () => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-foreground/70 text-xs sm:text-sm font-medium mb-1"
+          className="text-gray dark:text-gray-dark text-xs sm:text-sm font-medium mb-1"
         >
           {userData ? (
             <>
@@ -108,8 +99,8 @@ const SessionsPage = () => {
           }}
           className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
         >
-          <span className="text-foreground">Watch Movies </span>
-          <span className="text-gradient font-semibold">Together</span>
+          <span className="text-gray-5-dark dark:text-gray-5">Watch Movies </span>
+          <span className="text-pink dark:text-pink-dark font-semibold">Together</span>
         </motion.div>
       </motion.div>
 
@@ -131,20 +122,20 @@ const SessionsPage = () => {
         transition={{ delay: 0.1, duration: 0.4 }}
         className="mb-6"
       >
-        <div className="flex items-center justify-between p-4 sm:p-6 frosted-glass rounded-xl mb-4">
+        <div className="flex items-center justify-between p-4 sm:p-6 rounded-xl mb-4">
           <div className="relative">
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center space-x-2 px-3 py-2 rounded-full bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10 hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 frosted-panel"
             >
-              <Filter className="w-4 h-4 text-foreground/70" />
+              <Filter className="w-4 h-4 text-gray dark:text-gray-dark" />
               <span className="text-sm font-medium">
                 {filter === 'all' ? 'All Sessions' : 
                  filter === 'active' ? 'Active Sessions' : 
                  filter === 'completed' ? 'Completed Sessions' : 
                  'Filter Sessions'}
               </span>
-              <ChevronDown className="w-4 h-4 text-foreground/50" />
+              <ChevronDown className="w-4 h-4 text-gray dark:text-gray-dark" />
             </button>
             
             <AnimatePresence>
@@ -154,23 +145,23 @@ const SessionsPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute z-10 mt-2 w-48 frosted-glass rounded-xl shadow-lg p-1"
+                  className="absolute z-10 mt-2 w-48 rounded-xl shadow-lg p-1 frosted-panel space-y-1"
                 >
                   <button 
                     onClick={() => handleFilterChange('all')}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'all' ? 'bg-primary/20 text-primary' : 'hover:bg-foreground/10'}`}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'all' ? 'bg-pink text-white' : 'hover:bg-foreground/10'}`}
                   >
                     All Sessions
                   </button>
                   <button 
                     onClick={() => handleFilterChange('active')}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'active' ? 'bg-primary/20 text-primary' : 'hover:bg-foreground/10'}`}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'active' ? 'bg-pink text-white' : 'hover:bg-foreground/10'}`}
                   >
                     Active Sessions
                   </button>
                   <button 
                     onClick={() => handleFilterChange('completed')}
-                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'completed' ? 'bg-primary/20 text-primary' : 'hover:bg-foreground/10'}`}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filter === 'completed' ? 'bg-pink text-white' : 'hover:bg-foreground/10'}`}
                   >
                     Completed Sessions
                   </button>
@@ -180,7 +171,7 @@ const SessionsPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="text-sm text-foreground/50">
+            <div className="text-sm text-gray dark:text-gray-dark">
               {filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}
             </div>
             
@@ -190,9 +181,7 @@ const SessionsPage = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.95 }}
                   className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300
-                            bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 
-                            dark:border-white/10 hover:bg-white/20 dark:hover:bg-black/30 
-                            text-foreground shadow-sm flex items-center gap-1.5"
+                            button-neutral flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Session</span>
@@ -213,18 +202,18 @@ const SessionsPage = () => {
             >
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative w-12 h-12">
-                  <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin"></div>
+                  <div className="absolute inset-0 rounded-full border-t-2 border-pink animate-spin"></div>
                 </div>
-                <p className="text-foreground/70 text-sm">Loading sessions...</p>
+                <p className="text-gray dark:text-gray-dark text-sm">Loading sessions...</p>
               </div>
             </motion.div>
-          ) : sortedSessions.length === 0 ? (
+          ) : !isLoading && sortedSessions.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="frosted-glass rounded-xl text-center py-24 px-4"
+              className="frosted-panel rounded-xl text-center py-24 px-4"
             >
               <div className="flex flex-col items-center space-y-4">
                 <div className="p-4 rounded-full bg-foreground/5 border border-foreground/10">
@@ -238,7 +227,7 @@ const SessionsPage = () => {
                 </p>
                 <Button 
                   onClick={() => router.push('/watch-together?new=true')}
-                  className="mt-2 bg-primary hover:bg-primary-hover text-white"
+                  className="mt-2 bg-pink hover:bg-pink-hover text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Session
@@ -254,13 +243,13 @@ const SessionsPage = () => {
               className="grid grid-cols-1 gap-4"
             >
               {sortedSessions.map((session) => {
-                const { accepted, pending, total } = countParticipantsByStatus(session.participants);
+                const { accepted, pending} = countParticipantsByStatus(session.participants);
                 
                 return (
                   <motion.div
                     key={session.id}
                     variants={itemVariants}
-                    className="frosted-glass rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+                    className="frosted-panel rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <Link href={`/watch-together/${session.id}`} className="block">
                       <div className="p-4 sm:p-6">
@@ -268,7 +257,7 @@ const SessionsPage = () => {
                           {/* Left column - Session info */}
                           <div className="space-y-3 flex-grow max-w-2xl">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-lg font-semibold text-foreground">
+                              <h3 className="text-lg font-semibold text-gray-5-dark dark:text-gray">
                                 Movie Night with {session.createdBy}
                               </h3>
                               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -341,7 +330,7 @@ const SessionsPage = () => {
                                 <div className="space-y-2">
                                   {Object.entries(session.userDates).slice(0, 2).map(([username, dates]) => (
                                     <div key={username} className="bg-foreground/10 rounded-lg p-2">
-                                      <p className="text-xs font-medium mb-1">{username}'s availability:</p>
+                                      <p className="text-xs font-medium mb-1">{username}&apos;s availability:</p>
                                       <div className="space-y-1.5">
                                         {Array.isArray(dates) && dates.slice(0, 2).map((dateInfo, index) => {
                                           const dateObj = new Date(dateInfo.date);
@@ -454,7 +443,7 @@ const SessionsPage = () => {
                       </div>
                       
                       {/* Card footer with subtle "View details" indicator */}
-                      <div className="bg-foreground/5 py-2 px-6 text-center text-sm text-foreground/50 border-t border-foreground/10">
+                      <div className="bg-white dark:bg-black/50 py-2 px-6 text-center text-sm text-foreground/50 border-t border-foreground/10">
                         View session details
                       </div>
                     </Link>
@@ -473,22 +462,22 @@ const SessionsPage = () => {
         transition={{ delay: 0.4, duration: 0.5 }}
         className="mt-8"
       >
-        <h3 className="text-sm font-medium text-foreground/70 mb-3 text-center">How It Works</h3>
+        <h3 className="text-sm font-medium text-gray dark:text-gray-dark mb-3 text-center">How It Works</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="frosted-glass rounded-xl p-4 flex flex-col items-center text-center">
-            <Calendar className="w-6 h-6 mb-2 text-primary" />
+          <div className="frosted-panel rounded-xl p-4 flex flex-col items-center text-center">
+            <Calendar className="w-6 h-6 mb-2 text-pink" />
             <h4 className="text-sm font-medium mb-1">Suggest Dates</h4>
-            <p className="text-xs text-foreground/70">Propose multiple dates and times to find when everyone is available</p>
+            <p className="text-xs text-gray dark:text-gray-dark">Propose multiple dates and times to find when everyone is available</p>
           </div>
-          <div className="frosted-glass rounded-xl p-4 flex flex-col items-center text-center">
-            <Film className="w-6 h-6 mb-2 text-primary" />
+          <div className="frosted-panel rounded-xl p-4 flex flex-col items-center text-center">
+            <Film className="w-6 h-6 mb-2 text-pink" />
             <h4 className="text-sm font-medium mb-1">Vote on Movies</h4>
-            <p className="text-xs text-foreground/70">Add movies to the poll and let everyone vote for their favorites</p>
+            <p className="text-xs text-gray dark:text-gray-dark">Add movies to the poll and let everyone vote for their favorites</p>
           </div>
-          <div className="frosted-glass rounded-xl p-4 flex flex-col items-center text-center">
-            <Users className="w-6 h-6 mb-2 text-primary" />
+          <div className="frosted-panel rounded-xl p-4 flex flex-col items-center text-center">
+            <Users className="w-6 h-6 mb-2 text-pink" />
             <h4 className="text-sm font-medium mb-1">Invite Friends</h4>
-            <p className="text-xs text-foreground/70">Send invitations to friends so they can join your watch party</p>
+            <p className="text-xs text-gray dark:text-gray-dark">Send invitations to friends so they can join your watch party</p>
           </div>
         </div>
       </motion.div>

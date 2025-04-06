@@ -1,6 +1,8 @@
 // types/context.ts
 import { Timestamp } from 'firebase/firestore';
-import { Media, UserData, Friend, FriendRequest, NotificationStatus, TopWatchlistItem, DateTimeSelection, Session, SearchResult } from './';
+import { Media, UserData, Friend, FriendRequest, NotificationStatus, DateTimeSelection, Session, SearchResult } from './';
+
+export type TopWatchlistItem = FirestoreWatchlistItem;
 
 export interface UserDataContextType {
     userData: UserData | null;
@@ -73,6 +75,7 @@ export interface SessionContextType {
   removeMovieFromPoll: (sessionId: string, movieTitle: string) => Promise<void>;
   updateParticipantStatus: (sessionId: string, status: 'accepted' | 'declined') => Promise<void>;
   sessions: Session[];
+  isLoading: boolean;
 }
 
 // For Firestore

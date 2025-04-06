@@ -101,7 +101,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                 {isMovie && (
                   <Button 
                     onClick={() => setShowFlickyEmbed(true)}
-                    className="w-full bg-primary hover:bg-primary/90 text-white 
+                    className="w-full bg-pink hover:bg-pink/90 text-white 
                              border-0 h-12 rounded-xl"
                   >
                     <Play className="w-5 h-5 mr-2" />
@@ -178,7 +178,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0  bg-black/90 backdrop-blur-xl"
+            className="fixed inset-0 z-10 bg-black/90 backdrop-blur-xl"
           >
             <FlickyEmbed 
               tmdbId={details.id} 

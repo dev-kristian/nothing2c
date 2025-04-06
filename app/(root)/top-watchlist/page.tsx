@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useTopWatchlist } from '@/context/TopWatchlistContext';
-import { TopWatchlistItem } from '@/types';
+import { useFriendsWatchlist } from '@/context/FriendsWatchlistContext';
+import { FriendsWatchlistItem } from '@/types';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export default function TopWatchlistPage() {
-  const { topWatchlistItems, isLoading, error } = useTopWatchlist();
+  const { friendsWatchlistItems, isLoading, error } = useFriendsWatchlist();
   const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
   const [mounted, setMounted] = useState(false);
 
@@ -20,7 +20,7 @@ export default function TopWatchlistPage() {
     setMounted(true);
   }, []);
 
-  const items: TopWatchlistItem[] = topWatchlistItems[mediaType];
+  const items: FriendsWatchlistItem[] = friendsWatchlistItems[mediaType];
 
   if (!mounted) return null;
 
@@ -36,7 +36,7 @@ export default function TopWatchlistPage() {
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <Loader2 className="w-12 h-12 animate-spin text-pink" />
         </div>
       ) : error ? (
         <div className="text-center text-red-500 p-4 bg-red-100 rounded-lg">
@@ -53,7 +53,7 @@ export default function TopWatchlistPage() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {items.map((item: TopWatchlistItem, index: number) => (
+            {items.map((item: FriendsWatchlistItem, index: number) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -71,7 +71,7 @@ export default function TopWatchlistPage() {
                         className="transition-transform duration-300 hover:scale-105"
                         priority
                       />
-                      <Badge className="absolute top-2 right-2 bg-primary/80">
+                      <Badge className="absolute top-2 right-2 bg-pink/80">
                         #{index + 1}
                       </Badge>
                     </div>

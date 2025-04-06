@@ -16,7 +16,7 @@ interface UseWatchlistReturn {
   addToWatchlist: (item: Media, mediaType: 'movie' | 'tv') => Promise<void>;
   removeFromWatchlist: (id: number, mediaType: 'movie' | 'tv') => Promise<void>;
   isLoading: boolean;
-  error: any; // Consider defining a more specific error type
+  error: Error | undefined; // More specific error type
 }
 
 export const useWatchlist = (): UseWatchlistReturn => {
@@ -24,7 +24,7 @@ export const useWatchlist = (): UseWatchlistReturn => {
   const { mutate } = useSWRConfig();
   const watchlistKey = user ? `watchlists/${user.uid}` : null;
 
-  const { data: watchlistItems, error, isLoading } = useSWR<Watchlist, any, string | null>(
+  const { data: watchlistItems, error, isLoading } = useSWR<Watchlist, Error, string | null>(
     watchlistKey,
     async (key) => {
       if (!key) return { movie: [], tv: [] };
@@ -51,6 +51,11 @@ export const useWatchlist = (): UseWatchlistReturn => {
 
       const watchlistDocRef = doc(db, 'watchlists', user.uid);
       try {
+        const itemToAdd = {
+          ...item,
+          addedAt: new Date().toISOString()
+        };
+
         await mutate(
           watchlistKey,
           async (cachedData: Watchlist | undefined) => {
@@ -59,11 +64,11 @@ export const useWatchlist = (): UseWatchlistReturn => {
               : { movie: [], tv: [] };
             updatedWatchlist[mediaType] = [
               ...(updatedWatchlist[mediaType] || []),
-              item,
+              itemToAdd,
             ];
             await setDoc(
               watchlistDocRef,
-              { [mediaType]: arrayUnion(item) },
+              { [mediaType]: arrayUnion(itemToAdd) },
               { merge: true }
             );
             return updatedWatchlist;

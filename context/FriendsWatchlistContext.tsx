@@ -1,45 +1,44 @@
-// context/TopWatchlistContext.tsx
 'use client';
 
 import React, { createContext, useContext, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TopWatchlistItem, FirestoreWatchlistItem } from '@/types'; 
+import { FriendsWatchlistItem, FirestoreWatchlistItem } from '@/types'; 
 import { useUserData } from './UserDataContext';
 import useSWR, { useSWRConfig } from 'swr';
 
-interface TopWatchlistContextType {
-  topWatchlistItems: { movie: TopWatchlistItem[]; tv: TopWatchlistItem[] };
-  setTopWatchlistItems: (data: { movie: TopWatchlistItem[]; tv: TopWatchlistItem[] }) => void;
+interface FriendsWatchlistContextType {
+  friendsWatchlistItems: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] };
+  setFriendsWatchlistItems: (data: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }) => void;
   isLoading: boolean;
   error: string | null;
-  fetchTopWatchlistItems: (mediaType: 'movie' | 'tv') => void;
+  fetchFriendsWatchlistItems: (mediaType: 'movie' | 'tv') => void;
 }
 
-const TopWatchlistContext = createContext<TopWatchlistContextType | undefined>(undefined);
+const FriendsWatchlistContext = createContext<FriendsWatchlistContextType | undefined>(undefined);
 
-export const useTopWatchlist = () => {
-  const context = useContext(TopWatchlistContext);
+export const useFriendsWatchlist = () => {
+  const context = useContext(FriendsWatchlistContext);
   if (!context) {
-    throw new Error('useTopWatchlist must be used within a TopWatchlistProvider');
+    throw new Error('useFriendsWatchlist must be used within a FriendsWatchlistProvider');
   }
   return context;
 };
 
-export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const FriendsWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { userData, friends, isLoadingFriends, isLoadingRequests } = useUserData();
   const { mutate } = useSWRConfig();
 
-  const topWatchlistKey = (userData && !isLoadingFriends && !isLoadingRequests)
-    ? `/topWatchlist/${userData.uid}/${friends?.map(f => f.uid).join(',')}`
+  const friendsWatchlistKey = (userData && !isLoadingFriends && !isLoadingRequests)
+    ? `/friendsWatchlist/${userData.uid}/${friends?.map(f => f.uid).join(',')}`
     : null;
 
-  const { data: topWatchlistItems, error: swrError, isLoading } = useSWR<{ movie: TopWatchlistItem[]; tv: TopWatchlistItem[] }>(
-    topWatchlistKey,
+  const { data: friendsWatchlistItems, error: swrError, isLoading } = useSWR<{ movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }>(
+    friendsWatchlistKey,
     async (key) => {
       if (!key) return { movie: [], tv: [] };
 
-      const fetchTopWatchlistItemsForUser = async (userId: string, mediaType: 'movie' | 'tv'): Promise<FirestoreWatchlistItem[]> => {
+      const fetchFriendsWatchlistItemsForUser = async (userId: string, mediaType: 'movie' | 'tv'): Promise<FirestoreWatchlistItem[]> => {
         try {
           const docRef = doc(db, 'watchlists', userId);
           const docSnap = await getDoc(docRef);
@@ -50,18 +49,18 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
           }
           return [];
         } catch (error) {
-          console.error(`Error fetching topWatchlist items for user ${userId}:`, error);
+          console.error(`Error fetching friendsWatchlist items for user ${userId}:`, error);
           throw error; 
         }
       };
 
-      const fetchTopWatchlistItems = async (mediaType: 'movie' | 'tv') => {
+      const fetchFriendsWatchlistItems = async (mediaType: 'movie' | 'tv') => {
         const watchlistCounts: { [id: number]: number } = {};
         let allUserItems: FirestoreWatchlistItem[] = [];
 
         if (userData?.uid) {
           try {
-            const userItems = await fetchTopWatchlistItemsForUser(userData.uid, mediaType);
+            const userItems = await fetchFriendsWatchlistItemsForUser(userData.uid, mediaType);
             allUserItems = [...allUserItems, ...userItems];
           } catch (userError) {
             throw userError;
@@ -69,7 +68,7 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
         if (friends && friends.length > 0) {
           const friendsItemsPromises = friends.map(friend =>
-            fetchTopWatchlistItemsForUser(friend.uid, mediaType)
+            fetchFriendsWatchlistItemsForUser(friend.uid, mediaType)
           );
           const friendsItemsResults = await Promise.all(friendsItemsPromises);
           friendsItemsResults.forEach(items => {
@@ -77,7 +76,7 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         }
 
-        const filteredAndCountedItems: TopWatchlistItem[] = [];
+        const filteredAndCountedItems: FriendsWatchlistItem[] = [];
         allUserItems.forEach(item => {
           if (item.media_type === mediaType && typeof item.vote_average === 'number' && item.vote_average > 0) {
             watchlistCounts[item.id] = (watchlistCounts[item.id] || 0) + 1;
@@ -94,7 +93,7 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         filteredAndCountedItems.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
 
-        const topItems: TopWatchlistItem[] = filteredAndCountedItems.slice(0, 20).map(item => ({
+        const topItems: FriendsWatchlistItem[] = filteredAndCountedItems.slice(0, 20).map(item => ({
           ...item,
           watchlist_count: watchlistCounts[item.id],
         }));
@@ -103,8 +102,8 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
 
       try {
-        const movie = await fetchTopWatchlistItems('movie');
-        const tv = await fetchTopWatchlistItems('tv');
+        const movie = await fetchFriendsWatchlistItems('movie');
+        const tv = await fetchFriendsWatchlistItems('tv');
         return { movie, tv };
       } catch (error) {
         throw error;
@@ -115,30 +114,28 @@ export const TopWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 
   const error = swrError
-    ? `Failed to fetch topWatchlist items: ${swrError instanceof Error ? swrError.message : 'Unknown error'}`
+    ? `Failed to fetch friendsWatchlist items: ${swrError instanceof Error ? swrError.message : 'Unknown error'}`
     : null;
 
+  const setFriendsWatchlistItems = useCallback((data: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }) => {
+    mutate(friendsWatchlistKey, data, false); 
+  }, [mutate, friendsWatchlistKey]);
 
-  const setTopWatchlistItems = useCallback((data: { movie: TopWatchlistItem[]; tv: TopWatchlistItem[] }) => {
-    mutate(topWatchlistKey, data, false); 
-  }, [mutate, topWatchlistKey]);
-
-  const fetchTopWatchlistItems = useCallback((mediaType: 'movie' | 'tv') => {
-    if (topWatchlistKey) {
-      mutate(topWatchlistKey);
+  const fetchFriendsWatchlistItems = useCallback(() => {
+    if (friendsWatchlistKey) {
+      mutate(friendsWatchlistKey);
     }
-
-  }, [mutate, topWatchlistKey]);
+  }, [mutate, friendsWatchlistKey]);
 
   return (
-    <TopWatchlistContext.Provider value={{
-      topWatchlistItems: topWatchlistItems || { movie: [], tv: [] }, 
-      setTopWatchlistItems,
+    <FriendsWatchlistContext.Provider value={{
+      friendsWatchlistItems: friendsWatchlistItems || { movie: [], tv: [] }, 
+      setFriendsWatchlistItems,
       isLoading,
       error,
-      fetchTopWatchlistItems,
+      fetchFriendsWatchlistItems,
     }}>
       {children}
-    </TopWatchlistContext.Provider>
+    </FriendsWatchlistContext.Provider>
   );
 };

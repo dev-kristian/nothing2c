@@ -88,44 +88,87 @@
     left: 0;
     right: 0;
     bottom: 0;
-    @apply bg-background/80 backdrop-blur-md;
+    @apply bg-background/90 backdrop-blur-md;
     z-index: -1;
     transition: background-color 0.3s ease;
   }
 }
 
 @layer components {
-/* Apple-style frosted glass components */
-.frosted-glass {
-  @apply bg-white/60 dark:bg-black/60 
-         backdrop-blur-xl 
-         border border-white/30 dark:border-white/10 
-         shadow-lg
-         rounded-xl
-         transition-all duration-300 ease-in-out
-         hover:bg-white/70 dark:hover:bg-black/70
-         hover:shadow-xl;
-}
+  /* Primary Pink Button */
+  .button-primary {
+    @apply bg-pink text-white px-5 py-2.5 rounded-full font-medium
+           shadow-sm hover:shadow transition-all duration-300
+           hover:-translate-y-0.5 active:translate-y-0 
+           focus:outline-none focus:ring-2 focus:ring-pink/30 focus:ring-offset-2;
+  }
 
-  
+  /* Neutral Button */
+  .button-neutral {
+    @apply px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight
+          bg-system-background dark:bg-system-background-secondary-dark
+          text-label dark:text-label-dark
+          border border-separator dark:border-separator-dark
+          shadow-sm hover:shadow transition-all duration-200
+          active:translate-y-[1px] focus:outline-none
+  }
+
+  /* Improved frosted panel */
   .frosted-panel {
-    @apply bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/30 dark:border-white/10 
-           shadow-lg rounded-2xl;
+    @apply bg-white/60 dark:bg-[#1c1c1e]/80
+           backdrop-blur-[30px] backdrop-saturate-[180%]
+           border border-white/30 dark:border-white/10
+           rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,0.08)]
+           dark:shadow-[0_10px_20px_rgba(0,0,0,0.3)];
   }
   
-  .apple-button {
-    @apply px-6 py-2 rounded-full text-sm font-medium transition-all duration-300
-           bg-primary/90 hover:bg-primary text-white shadow-md
-           hover:shadow-lg active:scale-95;
+  /* Improved hover lift animation */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 
+           hover:shadow-lg active:translate-y-0 active:shadow-md;
   }
-  
-  .apple-icon-button {
-    @apply p-2 rounded-full transition-all duration-300
-           bg-white/10 dark:bg-black/20 backdrop-blur-md
-           hover:bg-white/20 dark:hover:bg-black/30
-           active:scale-95 shadow-sm;
+
+  .icon-button {
+    @apply p-2.5 rounded-full bg-white/10 dark:bg-black/20 backdrop-blur-sm
+           hover:bg-white/20 dark:hover:bg-black/30 transition-all duration-300
+           shadow-sm hover:shadow active:translate-y-0.5
+           focus:outline-none;
   }
-  
+
+  .button-outline {
+    @apply px-6 py-2.5 rounded-full text-sm font-semibold tracking-tight
+           bg-transparent border border-blue dark:border-blue-dark
+           text-blue dark:text-blue-dark
+           hover:bg-blue/5 dark:hover:bg-blue-dark/10
+           transition-all duration-200 active:translate-y-[1px]
+           shadow-sm hover:shadow focus:outline-none
+           focus:ring-2 focus:ring-blue/30 dark:focus:ring-blue-dark/30
+           focus:ring-offset-2;
+  }
+  /* Pink variant */
+  .button-outline-pink {
+    @apply border-pink dark:border-pink-dark
+           text-pink dark:text-pink-dark
+           hover:bg-pink/5 dark:hover:bg-pink-dark/10
+           focus:ring-pink/30 dark:focus:ring-pink-dark/30;
+  }
+  .list {
+    @apply rounded-xl overflow-hidden 
+           bg-system-background dark:bg-system-background-secondary-dark
+           border border-separator dark:border-separator-dark
+           shadow-sm;
+  }
+  .list-item {
+    @apply  px-4 py-3 
+           text-label dark:text-label-dark
+           border-b border-separator dark:border-separator-dark
+           last:border-b-0;
+  }
+  .list-item-selectable {
+    @apply list-item cursor-pointer
+           hover:bg-gray-6 dark:hover:bg-gray-5-dark
+           transition-colors duration-150;
+  }
   .btn-transparent {
     @apply bg-transparent hover:bg-transparent text-foreground hover:text-primary transition-colors duration-300;
   }
@@ -155,7 +198,7 @@
   
   /* Pink accent color text gradient */
   .text-gradient {
-    background: linear-gradient(to right, #ff69b4, #ff1493, #ff69b4);
+    background: linear-gradient(to right, #FF375F, #FF2D55);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -200,8 +243,6 @@
 }
 
 @layer utilities {
-  /* Apple-style smooth scrolling */
-
   
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -226,17 +267,17 @@
   }
   
   /* Apple-style input fields */
-  .apple-input {
+  .input {
     @apply w-full px-4 py-3 bg-white/10 dark:bg-black/10 backdrop-blur-md
            border border-white/20 dark:border-white/10 rounded-xl
-           shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50
+           shadow-sm focus:outline-none focus:ring-1 focus:ring-pink/50
            focus:border-transparent transition-all duration-300;
   }
   
   .auth-input {
     @apply w-full px-4 py-3 bg-white/10 dark:bg-black/10 backdrop-blur-md
            border border-white/20 dark:border-white/10 rounded-xl
-           shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50
+           shadow-sm focus:outline-none focus:ring-1 focus:ring-pink/50
            focus:border-transparent transition-all duration-300;
   }
   

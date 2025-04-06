@@ -92,7 +92,7 @@ export default function SearchResultsPage() {
       
       {loading ? (
         <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-pink" />
         </div>
       ) : error ? (
         <div className="text-center py-10">
@@ -112,6 +112,8 @@ export default function SearchResultsPage() {
                   src={`https://image.tmdb.org/t/p/w500${result.poster_path || result.profile_path}`}
                   alt={result.title || result.name || "Media content"}
                   className="w-full aspect-[2/3] object-cover"
+                  width={150}
+                  height={150}
                 />
               ) : (
                 <div className="w-full aspect-[2/3] bg-foreground/10 flex items-center justify-center">

@@ -14,7 +14,7 @@ if (!admin.apps.length) {
 
 export async function POST(request: Request) {
   try {
-    const { title, body, icon, clickAction, recipients, sessionId, ...otherFields } = await request.json();
+    const { title, body, icon, clickAction, recipients, ...otherFields } = await request.json();
     
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ 
