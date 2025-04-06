@@ -36,7 +36,7 @@ const ForgotPasswordPage = (): JSX.Element => {
   return (
     <div>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text">
+        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
           Forgot Password
         </CardTitle>
         <CardDescription className='text-center text-muted-foreground'>
@@ -57,7 +57,7 @@ const ForgotPasswordPage = (): JSX.Element => {
           
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
             disabled={loading}
           >
             {loading ? (
@@ -74,7 +74,7 @@ const ForgotPasswordPage = (): JSX.Element => {
       <CardFooter className="flex justify-center pb-8">
         <Link 
           href="/sign-in" 
-          className="text-primary hover:text-primary/80 transition-colors"
+          className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
         >
           ← Back to login
         </Link>

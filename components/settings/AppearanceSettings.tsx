@@ -51,7 +51,7 @@ export default function AppearanceSettings() {
       <div>
         <h2 className="text-2xl font-semibold mb-2">Appearance</h2>
         <p className="text-muted-foreground">
-          Customize how AFK Cinema looks on your device
+          Customize how Nothing<sup>2C</sup> looks on your device
         </p>
       </div>
       

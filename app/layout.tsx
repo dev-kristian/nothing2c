@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/toaster" // Import the Toaster componen
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AFK Cinema',
+  title: 'Nothing2C',
   description: 'Track and share movies with friends',
   manifest: '/manifest.json',
   icons: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black',
-    'apple-mobile-web-app-title': 'AFK Cinema',
+    'apple-mobile-web-app-title': 'Nothing²ᶜ',
   },
 }
 

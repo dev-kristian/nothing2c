@@ -142,7 +142,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center signin-text">
+          <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
             Email Verification
           </CardTitle>
           <CardDescription className='text-center text-muted-foreground'>
@@ -160,7 +160,7 @@ function AuthActionContent() {
             <div className="mt-4 text-center">
               <Link
                 href="/sign-in"
-                className="text-primary hover:text-primary/80 transition-colors"
+                className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
               >
                 ← Back to login
               </Link>
@@ -175,7 +175,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center signin-text">
+          <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
             Reset Password
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
@@ -229,7 +229,7 @@ function AuthActionContent() {
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
               disabled={!isFormValid || loading}
             >
               {loading ? (

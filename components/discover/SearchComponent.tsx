@@ -167,7 +167,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 discover?
               </>
             ) : (
-              "Welcome to AFK Cinema"
+              <>Welcome to Nothing <sup>2C</sup></>
             )}
           </motion.p>
   

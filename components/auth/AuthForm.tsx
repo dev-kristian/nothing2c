@@ -197,6 +197,7 @@ import { AuthFormData } from '@/types';
             id="remember-me"
             checked={rememberMe}
             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            className="data-[state=checked]:bg-pink data-[state=checked]:text-pink-foreground data-[state=checked]:border-pink" // Added pink classes
           />
           <Label htmlFor="remember-me" className="text-sm text-muted-foreground">
             Remember me
@@ -212,6 +213,7 @@ import { AuthFormData } from '@/types';
             required
             checked={agreeToTerms}
             onCheckedChange={handleAgreeToTermsChange}
+            className="data-[state=checked]:bg-pink data-[state=checked]:text-pink-foreground data-[state=checked]:border-pink" // Added pink classes
           />
           <Label htmlFor="agree-terms" className="text-sm text-muted-foreground">
             I agree to the{' '}
@@ -229,7 +231,7 @@ import { AuthFormData } from '@/types';
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full"
+        className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
         disabled={isSubmitDisabled || loading}
       >
         {loading ? (

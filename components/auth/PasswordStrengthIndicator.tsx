@@ -45,10 +45,10 @@ const PasswordStrengthIndicator: React.FC<Props> = ({ password }) => {
         {requirements.map((requirement, index) => {
           const isMet = requirement.re.test(password);
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`flex items-center ${
-                isMet ? 'text-green-600' : 'text-gray-400'
+                isMet ? 'text-pink' : 'text-gray-400' // Changed green to pink
               }`}
             >
               {isMet ? (

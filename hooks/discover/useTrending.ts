@@ -1,5 +1,6 @@
 // hooks/useTrending.ts
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 import useSWRInfinite from 'swr/infinite';
 import { Media } from '@/types/media';
 
@@ -35,11 +36,35 @@ const fetcher = async (url: string, mediaType: 'movie' | 'tv', page: number): Pr
 };
 
 export const useTrending = (): UseTrendingReturn => {
-  const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
+  const searchParams = useSearchParams(); // Get search params
+  const initialType = searchParams.get('type'); // Get 'type' param
+
+  // Determine initial media type based on URL param, default to 'movie'
+  const getInitialMediaType = (): 'movie' | 'tv' => {
+    if (initialType === 'movie' || initialType === 'tv') {
+      return initialType;
+    }
+    return 'movie';
+  };
+
+  const [mediaType, setMediaTypeState] = useState<'movie' | 'tv'>(getInitialMediaType);
+
+  // Update state if searchParams change after initial load
+  useEffect(() => {
+    const currentUrlType = searchParams.get('type');
+    if (currentUrlType === 'movie' || currentUrlType === 'tv') {
+      if (currentUrlType !== mediaType) {
+        setMediaTypeState(currentUrlType);
+      }
+    }
+    // Only run when searchParams change
+  }, [searchParams, mediaType]);
+
 
   const getKey = (pageIndex: number, previousPageData: TrendingApiResponse | null) => {
+    // Ensure mediaType is included in the key so SWR refetches when it changes
     if (previousPageData && !previousPageData.results.length) return null;
-    return [`/api/trending`, mediaType, pageIndex + 1];
+    return [`/api/trending`, mediaType, pageIndex + 1]; // Include mediaType in the key
   };
 
   const {
@@ -98,7 +123,7 @@ export const useTrending = (): UseTrendingReturn => {
     hasMore,
     loadMore,
     mediaType,
-    setMediaType,
-    refetch, 
+    setMediaType: setMediaTypeState, // Rename internal state setter
+    refetch,
   };
 };

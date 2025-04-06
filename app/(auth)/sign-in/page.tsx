@@ -45,7 +45,7 @@ export default function SignIn() {
         description: "Welcome back!",
         variant: "default", // Or "success" if you add that variant style
       });
-      router.push('/');
+      router.push('/discover'); // Redirect to discover page
     } catch (error: unknown) {
       // Use the reusable error handler which calls the correct toast function
       handleAuthError(error); 
@@ -57,7 +57,7 @@ export default function SignIn() {
   return (
     <>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text">
+        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
           Welcome Back!
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
@@ -73,19 +73,19 @@ export default function SignIn() {
       </CardContent>
       <CardFooter className="flex flex-col space-y-4 pb-8">
         <div className="text-center">
-          <Link 
-            href="/forgot-password" 
-            className="text-sm text-primary hover:text-primary/80 transition-colors"
+          <Link
+            href="/forgot-password"
+            className="text-sm text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
           >
             Forgot Password?
           </Link>
         </div>
         <div className="text-center">
           <span className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
-            <Link 
-              href="/sign-up" 
-              className="text-primary hover:text-primary/80 transition-colors"
+            Don't have an account?{' '}
+            <Link
+              href="/sign-up"
+              className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
             >
               Sign up
             </Link>
