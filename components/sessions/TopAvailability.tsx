@@ -31,7 +31,6 @@ const TopAvailability: React.FC<TopAvailabilityProps> = ({ datePopularity }) => 
     );
   }
 
-  // Helper function to get most popular hours for a date
   const getPopularHours = (date: DatePopularity): PopularHour[] => {
     if (!date.hours || Object.keys(date.hours).length === 0) {
       return [];
@@ -46,7 +45,6 @@ const TopAvailability: React.FC<TopAvailabilityProps> = ({ datePopularity }) => 
       .slice(0, 3);
   };
 
-  // Format hour to AM/PM format
   const formatHour = (hour: number): string => {
     if (hour === 0) return '12 AM';
     if (hour === 12) return '12 PM';

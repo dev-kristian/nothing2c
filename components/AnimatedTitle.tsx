@@ -13,7 +13,6 @@ const AnimatedTitle: React.FC<AnimatedTitleProps> = ({
   children, 
   size = 'lg' 
 }) => {
-  // Apple-inspired text sizes with proper scaling
   const sizeClasses = {
     sm: "text-2xl md:text-3xl",
     md: "text-3xl md:text-4xl",
@@ -21,7 +20,6 @@ const AnimatedTitle: React.FC<AnimatedTitleProps> = ({
     xl: "text-5xl md:text-6xl lg:text-7xl"
   };
   
-  // Word animation for staggered entrance
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -33,7 +31,6 @@ const AnimatedTitle: React.FC<AnimatedTitleProps> = ({
     }
   };
   
-  // Letter animation for subtle float-in effect
   const child = {
     hidden: { 
       y: 20, 

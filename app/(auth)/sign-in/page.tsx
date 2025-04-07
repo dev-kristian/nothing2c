@@ -7,8 +7,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/auth/AuthForm';
-import { toast } from "@/hooks/use-toast"; // Import the correct toast function
-import { handleAuthError } from '@/lib/utils'; // Import the reusable error handler
+import { toast } from "@/hooks/use-toast";
+import { handleAuthError } from '@/lib/utils'; 
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
 interface SignInData {
@@ -18,7 +18,6 @@ interface SignInData {
 
 export default function SignIn() {
   const router = useRouter();
-  // Remove incorrect useCustomToast usage
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (data: SignInData) => {
@@ -29,25 +28,22 @@ export default function SignIn() {
       const user = userCredential.user;
 
       if (!user.emailVerified) {
-        // Use the correct toast function
         toast({
           title: "Email Not Verified",
           description: "Please verify your email to proceed.",
-          variant: "default", // Or "warning" if you add that variant style
+          variant: "default", 
         });
         router.push('/verify-email');
         return;
       }
 
-      // Use the correct toast function
       toast({
         title: "Sign In Successful",
         description: "Welcome back!",
-        variant: "default", // Or "success" if you add that variant style
+        variant: "default",
       });
-      router.push('/discover'); // Redirect to discover page
+      router.push('/discover');
     } catch (error: unknown) {
-      // Use the reusable error handler which calls the correct toast function
       handleAuthError(error); 
     } finally {
       setLoading(false);
@@ -57,7 +53,7 @@ export default function SignIn() {
   return (
     <>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+        <CardTitle className="text-2xl font-bold text-center signin-text text-pink">
           Welcome Back!
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
@@ -75,7 +71,7 @@ export default function SignIn() {
         <div className="text-center">
           <Link
             href="/forgot-password"
-            className="text-sm text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
+            className="text-sm text-pink hover:text-pink/80 transition-colors" 
           >
             Forgot Password?
           </Link>
@@ -85,7 +81,7 @@ export default function SignIn() {
             Don&apos;t have an account?{' '}
             <Link
               href="/sign-up"
-              className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
+              className="text-pink hover:text-pink/80 transition-colors" 
             >
               Sign up
             </Link>

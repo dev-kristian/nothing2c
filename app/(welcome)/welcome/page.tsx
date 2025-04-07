@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useTransition } from 'react'; // Added useTransition
+import { useState, useTransition } from 'react'; 
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { checkUsernameAvailability } from '@/app/actions/userActions'; // Import Server Action
-// Removed WithProfileUncompleted import
+import { checkUsernameAvailability } from '@/app/actions/userActions';
 
 function WelcomePage() {
   const [username, setUsername] = useState('');
-  const [isPending, startTransition] = useTransition(); // Use transition hook
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   const { user } = useAuthContext();
   const router = useRouter();
@@ -27,9 +26,9 @@ function WelcomePage() {
 
     setError('');
 
-    startTransition(async () => { // Wrap logic in startTransition
+    startTransition(async () => {
       try {
-        const validation = await checkUsernameAvailability(username); // Call Server Action
+        const validation = await checkUsernameAvailability(username);
 
         if (!validation.isValid) {
           setError(validation.message);
@@ -70,9 +69,9 @@ function WelcomePage() {
             value={username}
             onChange={(e) => {
               setUsername(e.target.value.toLowerCase());
-              setError(''); // Clear error when user types
+              setError(''); 
             }}
-            disabled={isPending} // Use isPending for disabled state
+            disabled={isPending} 
             className="lowercase"
             maxLength={15}
           />
@@ -88,14 +87,13 @@ function WelcomePage() {
         <Button
           type="submit"
           className="w-full"
-          disabled={isPending || !username.trim()} // Use isPending for disabled state
+          disabled={isPending || !username.trim()}
         >
-          {isPending ? "Setting up..." : "Continue"} {/* Use isPending for button text */}
+          {isPending ? "Setting up..." : "Continue"} 
         </Button>
       </form>
     </div>
   );
 }
 
-// Removed WithProfileUncompleted HOC wrapper
 export default WelcomePage;

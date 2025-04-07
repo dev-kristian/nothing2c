@@ -14,7 +14,6 @@ if (!getApps().length) {
 }
 
 export const auth = getAuth(app);
-// Persistence is set within the useAuth hook's useEffect to ensure it only runs client-side.
 
 export const db = getFirestore(app);
 export const getMessagingInstance = async () => {

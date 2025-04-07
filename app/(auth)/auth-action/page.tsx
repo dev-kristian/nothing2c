@@ -160,7 +160,7 @@ function AuthActionContent() {
             <div className="mt-4 text-center">
               <Link
                 href="/sign-in"
-                className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
+                className="text-pink hover:text-pink/80 transition-colors"
               >
                 ← Back to login
               </Link>
@@ -229,7 +229,7 @@ function AuthActionContent() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
+              className="w-full bg-pink text-pink-foreground hover:bg-pink-hover"
               disabled={!isFormValid || loading}
             >
               {loading ? (

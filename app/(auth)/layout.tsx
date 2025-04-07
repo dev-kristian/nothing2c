@@ -12,25 +12,20 @@ export default function AuthLayout({
 }) {
   return (
     <div className={`${inter.className} min-h-screen flex items-center justify-center p-2`}>
-      {/* Removed flex flex-col md:flex-row, added relative */}
-      {/* Reduced max-width from 4xl to xl */}
       <div className="max-w-xl w-full bg-card rounded-3xl overflow-hidden border border-border/50 relative">
-        {/* Background Image */}
         <Image
           src="/images/auth-background.jpg"
           alt="Authentication background"
           fill
-          sizes="100vw" // Adjusted sizes for full coverage
+          sizes="100vw"
           style={{ objectFit: 'cover' }}
-          className="opacity-10 z-0" // Added opacity and z-index
+          className="opacity-10 z-0" 
           priority
         />
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-pink/10 via-background/70 to-background/90 z-0"></div>
 
-        {/* Content Area - Added relative, z-10, reduced padding */}
         <div className="relative z-10"> 
-          <div className="text-center"> {/* Added margin-bottom */}
+          <div className="text-center">
             <Image
               src="/icons/popcorn.png"
               alt="App Logo"

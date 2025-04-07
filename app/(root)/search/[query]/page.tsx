@@ -26,7 +26,6 @@ export default function SearchResultsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Get advanced search params
   const type = searchParams.get('type') || 'multi'
   const year = searchParams.get('year')
   const genre = searchParams.get('genre')
@@ -38,7 +37,6 @@ export default function SearchResultsPage() {
       setError(null)
       
       try {
-        // Build search params
         const params = new URLSearchParams()
         if (query && query !== 'discover') params.append('query', query)
         if (type) params.append('type', type)
@@ -65,7 +63,6 @@ export default function SearchResultsPage() {
     fetchResults()
   }, [query, type, year, genre, includeAdult])
   
-  // Generate page title based on search parameters
   const getPageTitle = () => {
     if (query && query !== 'discover') {
       return `Search results for "${query}"`
@@ -139,7 +136,6 @@ export default function SearchResultsPage() {
   )
 }
 
-// TMDB genres (same as in SearchComponent)
 const genres = [
   { id: 28, name: "Action" },
   { id: 12, name: "Adventure" },

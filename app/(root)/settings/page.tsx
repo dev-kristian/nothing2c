@@ -59,8 +59,8 @@ export default function SettingsPage() {
               onClick={() => setActiveCategory(id)}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
                 activeCategory === id
-                  ? 'bg-pink text-white' // Active state: pink background, white text
-                  : 'hover:bg-accent/5 text-foreground' // Inactive state: default text color, hover effect
+                  ? 'bg-pink text-white'
+                  : 'hover:bg-accent/5 text-foreground' 
               }`}
             >
               <div className="flex items-center space-x-3">
