@@ -14,10 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID token is required.' }, { status: 400 });
     }
 
-    await adminAuth.verifyIdToken(idToken);
+    // Verify the ID token (optional here, createSessionCookie also verifies)
+    // We don't need the decoded token here anymore.
+    // const decodedToken = await adminAuth.verifyIdToken(idToken);
 
+    // Create the session cookie
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
+    // Set cookie options
     const options = {
       name: '__session', 
       value: sessionCookie,
@@ -28,9 +32,11 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax' as const, 
     };
 
-    cookies().set(options);
+    // Create the response and set the cookie
+    const response = NextResponse.json({ status: 'success' }, { status: 200 }); // Just return success
+    response.cookies.set(options);
 
-    return NextResponse.json({ status: 'success' }, { status: 200 });
+    return response;
 
   } catch (error: any) {
     console.error('[API Session Login] Error creating session cookie:', error);

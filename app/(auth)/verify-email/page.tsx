@@ -3,15 +3,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { getAuth, reload, sendEmailVerification, User } from 'firebase/auth';
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import Loader from '@/components/Loader';
+import SpinningLoader from '@/components/SpinningLoader';
 
 export default function VerifyEmail(): JSX.Element {
   const router = useRouter();
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
   const [loading, setLoading] = useState<boolean>(false);
   const [resendLoading, setResendLoading] = useState<boolean>(false);
 
@@ -23,14 +23,29 @@ export default function VerifyEmail(): JSX.Element {
       await reload(user);
       
       if (user.emailVerified) {
-        showToast("Email Verified", "Your email has been verified.", "success");
+        // Use standard toast
+        toast({
+          title: "Email Verified",
+          description: "Your email has been verified.",
+          variant: "default", // Or "success" if available
+        });
         router.push('/welcome');
       } else {
-        showToast("Email Not Verified", "Please verify your email to proceed.", "warning");
+        // Use standard toast
+        toast({
+          title: "Email Not Verified",
+          description: "Please verify your email to proceed.",
+          variant: "default", // Or "warning" if available
+        });
       }
     } catch (error) {
       console.error('Error refreshing email verification status:', error);
-      showToast("Error", "Failed to refresh email verification status.", "error");
+      // Use standard toast
+      toast({
+        title: "Error",
+        description: "Failed to refresh email verification status.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -45,10 +60,20 @@ export default function VerifyEmail(): JSX.Element {
         url: `${process.env.NEXT_PUBLIC_APP_URL}/auth-action`,
         handleCodeInApp: true,
       });
-      showToast("Email Sent", "Verification email has been resent. Please check your inbox.", "success");
+      // Use standard toast
+      toast({
+        title: "Email Sent",
+        description: "Verification email has been resent. Please check your inbox.",
+        variant: "default", // Or "success" if available
+      });
     } catch (error) {
       console.error('Error resending verification email:', error);
-      showToast("Error", "Failed to resend verification email.", "error");
+      // Use standard toast
+      toast({
+        title: "Error",
+        description: "Failed to resend verification email.",
+        variant: "destructive",
+      });
     } finally {
       setResendLoading(false);
     }
@@ -57,7 +82,7 @@ export default function VerifyEmail(): JSX.Element {
   return (
     <div>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+        <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
           Verify your email
         </CardTitle>
         <CardDescription className='text-center text-muted-foreground'>
@@ -73,7 +98,7 @@ export default function VerifyEmail(): JSX.Element {
         >
           {loading ? (
             <>
-              Checking &nbsp; <Loader />
+              Checking &nbsp; <SpinningLoader />
             </>
           ) : (
             'I have verified my email'
@@ -87,7 +112,7 @@ export default function VerifyEmail(): JSX.Element {
         >
           {resendLoading ? (
             <>
-              Sending &nbsp; <Loader />
+              Sending &nbsp; <SpinningLoader />
             </>
           ) : (
             'Resend Verification Email'

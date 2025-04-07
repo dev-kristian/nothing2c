@@ -2,9 +2,9 @@
 import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getUserProfileStatus } from '@/lib/server-auth-utils';
-import { ClientProviders } from '@/components/providers/ClientProviders'; 
+import { ClientProviders } from '@/components/providers/ClientProviders';
 import Navigation from '@/components/Navigation';
-import Loading from '@/components/Loading';
+import SpinningLoader from '@/components/SpinningLoader';
 
 export default async function RootLayout({
   children,
@@ -18,10 +18,13 @@ export default async function RootLayout({
     redirect('/sign-in');
   }
 
-  if (!profileStatus.setupCompleted) {
-    console.log('[Root Layout] Profile not complete, redirecting to /welcome');
-    redirect('/welcome');
-  }
+  // Middleware already handles redirecting users without usernames to /welcome.
+  // Users with usernames should be allowed into root routes.
+  // The /welcome page itself should manage completion steps.
+  // if (!profileStatus.setupCompleted) {
+  //   console.log('[Root Layout] Profile not complete, redirecting to /welcome');
+  //   redirect('/welcome');
+  // }
 
   return (
     <>
@@ -30,10 +33,7 @@ export default async function RootLayout({
         <main className="flex-grow">
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center mt-[var(--navbar-height)]">
-              <Loading
-                message="Loading content..." 
-                spinnerType="full"
-              />
+              <SpinningLoader />
             </div>
           }>
             <div className="mt-[var(--navbar-height)]">

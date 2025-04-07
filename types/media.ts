@@ -7,11 +7,11 @@ export interface Media {
   title?: string;
   name?: string;
   poster_path?: string | null;
-  profile_path?: string | null;
-  vote_average: number;
-  media_type?: 'movie' | 'tv' | 'upcoming'; // Add 'upcoming'
-  release_date?: string;
-  first_air_date?: string;
+  profile_path?: string | null; // Used for people
+  vote_average: number; // May not exist for people, handle appropriately
+  media_type?: 'movie' | 'tv' | 'person' | 'upcoming'; // Add 'person'
+  release_date?: string; // Only for movies
+  first_air_date?: string; // Only for TV shows
   watchlist_count?: number;
   addedAt?: string;
   genre_ids?: number[];

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Bell, BellOff } from 'lucide-react';
 import { useUserData } from '@/context/UserDataContext';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { requestForToken } from '@/lib/firebaseMessaging';
 import { getAuth } from 'firebase/auth';
 
@@ -10,7 +10,7 @@ export default function NotificationSettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const { userData, updateNotificationStatus } = useUserData();
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
 
   useEffect(() => {
     const checkSupport = () => {
@@ -26,11 +26,12 @@ export default function NotificationSettings() {
     setIsLoading(true);
     try {
       if (!isSupported) {
-        showToast(
-          "Not Supported",
-          "Push notifications are not supported in your browser.",
-          "error"
-        );
+        // Use standard toast
+        toast({
+          title: "Not Supported",
+          description: "Push notifications are not supported in your browser.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -39,11 +40,12 @@ export default function NotificationSettings() {
       const user = auth.currentUser;
       
       if (!user) {
-        showToast(
-          "Error",
-          "You must be logged in to manage notifications.",
-          "error"
-        );
+        // Use standard toast
+        toast({
+          title: "Error",
+          description: "You must be logged in to manage notifications.",
+          variant: "destructive",
+        });
         setIsLoading(false);
         return;
       }
@@ -72,27 +74,30 @@ export default function NotificationSettings() {
               }
       
               await updateNotificationStatus("allowed");
-              showToast(
-                "Notifications Enabled",
-                "You'll now receive updates from Nothing<sup>2C</sup>!",
-                "success"
-              );
+              // Use standard toast
+              toast({
+                title: "Notifications Enabled",
+                description: "You'll now receive updates from Nothing<sup>2C</sup>!",
+                variant: "default", // Or "success" if available
+              });
             } catch (error) {
               console.error("Error enabling notifications:", error);
-              showToast(
-                "Error",
-                "Failed to enable notifications. Please try again.",
-                "error"
-              );
+              // Use standard toast
+              toast({
+                title: "Error",
+                description: "Failed to enable notifications. Please try again.",
+                variant: "destructive",
+              });
             }
           }
         } else {
           await updateNotificationStatus("denied");
-          showToast(
-            "Permission Denied",
-            "Please allow notifications in your browser settings.",
-            "warning"
-          );
+          // Use standard toast
+          toast({
+            title: "Permission Denied",
+            description: "Please allow notifications in your browser settings.",
+            variant: "default", // Or "warning" if available
+          });
         }
       } else {
         // Unsubscribe from notifications
@@ -120,19 +125,21 @@ export default function NotificationSettings() {
         }
 
         await updateNotificationStatus("denied");
-        showToast(
-          "Notifications Disabled",
-          "You won't receive any notifications from Nothing <sup>2C</sup>.",
-          "default"
-        );
+        // Use standard toast
+        toast({
+          title: "Notifications Disabled",
+          description: "You won't receive any notifications from Nothing <sup>2C</sup>.",
+          variant: "default",
+        });
       }
     } catch (error) {
       console.error("Error toggling notifications:", error);
-      showToast(
-        "Error",
-        "An error occurred while updating notification settings.",
-        "error"
-      );
+      // Use standard toast
+      toast({
+        title: "Error",
+        description: "An error occurred while updating notification settings.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { getUserProfileStatus } from '@/lib/server-auth-utils';
 import { Inter } from "next/font/google";
 import Image from 'next/image';
 import { WelcomeClientWrapper } from '@/components/providers/WelcomeClientWrapper';
+import { Toaster } from "@/components/ui/toaster"; // Import the Toaster
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,21 +28,37 @@ export default async function WelcomeLayout({
 
   return (
     <div className={`${inter.className} min-h-screen flex items-center justify-center p-2`}>
-      <div className="max-w-md w-full bg-card rounded-xl p-8 border border-border/50">
-        <div className="text-center mb-6">
-          <Image
-            src="/icons/popcorn.png"
-            alt="App Logo"
-            width={60}
-            height={60}
-            className="mx-auto"
-            style={{ width: 'auto', height: 'auto' }}
-          />
+      <div className="max-w-xl w-full bg-white/60 dark:bg-[#1c1c1e]/80 backdrop-blur-[30px] backdrop-saturate-[180%] rounded-2xl overflow-hidden border border-white/30 dark:border-white/10 relative shadow-apple dark:shadow-apple-dark">
+        <div className="relative z-10 p-8"> 
+          <div className="flex justify-center items-center space-x-3 mb-6"> {/* Centered logo and text, kept margin-bottom */}
+            <div className="relative">
+              <Image
+                src="/icons/popcorn.png"
+                alt=""
+                width={46} 
+                height={46}
+                className="drop-shadow-lg filter"
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-baseline">
+                <span className="text-xl font-bold tracking-tight relative text-pink">
+                  <span>Nothing</span>
+                  <sup className="absolute -right-5 text-xs font-bold text-pink">2C</sup>
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase -mt-0.5 ml-0.5"> {/* Adjusted color for theme */}
+                Entertainment
+              </span>
+            </div>
+          </div>
+          <WelcomeClientWrapper>
+            {children}
+          </WelcomeClientWrapper>
         </div>
-        <WelcomeClientWrapper>
-          {children}
-        </WelcomeClientWrapper>
       </div>
+      <Toaster />
     </div>
   );
 }

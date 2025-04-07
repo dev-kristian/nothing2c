@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { useUserData } from '@/context/UserDataContext';
 import { useSession } from '@/context/SessionContext';
 import { useSendInvitation } from '@/hooks/useSendInvitation';
@@ -176,7 +176,7 @@ SectionHeader.displayName = "SectionHeader";
 
 export default function MovieNightInvitation() {
   const router = useRouter();
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
   const { userData, isLoading: userLoading, friends, isLoadingFriends } = useUserData();
   const { createSession, createPoll } = useSession();
   const { sendInvitation, error: invitationError } = useSendInvitation();
@@ -210,7 +210,12 @@ export default function MovieNightInvitation() {
 
   const completeSession = useCallback(async () => {
     if (userLoading || !userData) {
-      showToast("Error", "User data not available. Please try again.", "error");
+      // Use standard toast
+      toast({
+        title: "Error",
+        description: "User data not available. Please try again.",
+        variant: "destructive",
+      });
       return;
     }
   
@@ -227,7 +232,12 @@ export default function MovieNightInvitation() {
         if (invitationError) throw new Error(invitationError);
       }
   
-      showToast("Session Created", "Your watch party session has been created successfully!", "success");
+      // Use standard toast
+      toast({
+        title: "Session Created",
+        description: "Your watch party session has been created successfully!",
+        variant: "default", // Or "success" if available
+      });
   
       setSelectedDates([]);
       setMediaTitles([]);
@@ -236,7 +246,12 @@ export default function MovieNightInvitation() {
   
     } catch (error) {
       console.error('Error completing session:', error);
-      showToast("Error", "Failed to complete the session. Please try again.", "error");
+      // Use standard toast
+      toast({
+        title: "Error",
+        description: "Failed to complete the session. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsCreating(false);
     }
@@ -247,7 +262,7 @@ export default function MovieNightInvitation() {
     mediaTitles, 
     selectedFriends, 
     sendNotification, 
-    showToast, 
+    // Removed showToast from dependency array
     createSession, 
     createPoll, 
     sendInvitation, 

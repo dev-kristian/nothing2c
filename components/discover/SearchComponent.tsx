@@ -1,52 +1,50 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Loader2, X, Filter, ChevronDown } from 'lucide-react';
+import { Search, X, Filter, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserData } from '@/context/UserDataContext';
+import { GENRES_BY_TYPE, Genre } from '@/constants/genres';
 
 interface SearchComponentProps {
   className?: string;
+  initialQuery?: string;
+  initialType?: string;
+  initialYear?: string | null;
+  initialGenre?: string | null; 
+  initialIncludeAdult?: boolean;
+  hideTitleSection?: boolean;
 }
 
-// TMDB genres
-const genres = [
-  { id: 28, name: "Action" },
-  { id: 12, name: "Adventure" },
-  { id: 16, name: "Animation" },
-  { id: 35, name: "Comedy" },
-  { id: 80, name: "Crime" },
-  { id: 99, name: "Documentary" },
-  { id: 18, name: "Drama" },
-  { id: 10751, name: "Family" },
-  { id: 14, name: "Fantasy" },
-  { id: 36, name: "History" },
-  { id: 27, name: "Horror" },
-  { id: 10402, name: "Music" },
-  { id: 9648, name: "Mystery" },
-  { id: 10749, name: "Romance" },
-  { id: 878, name: "Science Fiction" },
-  { id: 10770, name: "TV Movie" },
-  { id: 53, name: "Thriller" },
-  { id: 10752, name: "War" },
-  { id: 37, name: "Western" }
-];
-
-// Generate years (current year down to 1900)
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
 
-const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const SearchComponent: React.FC<SearchComponentProps> = ({ 
+  className,
+  initialQuery = '',
+  initialType = 'multi',
+  initialYear = null,
+  initialGenre = null,
+  initialIncludeAdult = false,
+  hideTitleSection = false, // Default to showing the title section
+}) => {
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isFocused, setIsFocused] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectedType, setSelectedType] = useState('multi');
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
-  const [includeAdult, setIncludeAdult] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(
+    !!initialQuery && (!!initialYear || !!initialGenre || initialIncludeAdult)
+  );
+  const [selectedType, setSelectedType] = useState(initialType);
+  const [selectedYear, setSelectedYear] = useState<string | null>(initialQuery.trim() ? initialYear : null); // Reset initial year if no initial query
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(initialGenre ? parseInt(initialGenre, 10) : null);
+  const [includeAdult, setIncludeAdult] = useState(initialIncludeAdult);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+
+  // Determine the correct genre list based on the selected type
+  // Genre list is only relevant if type is not 'multi' or 'person'
+  const currentGenreList: Genre[] = (selectedType === 'movie' || selectedType === 'tv') ? GENRES_BY_TYPE[selectedType] : [];
+  const selectedGenreName = currentGenreList.find(g => g.id === selectedGenre)?.name;
+
 
   const inputRef = useRef<HTMLInputElement>(null);
   const advancedSearchRef = useRef<HTMLDivElement>(null);
@@ -55,12 +53,21 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim() && !selectedGenre && !selectedYear) return;
 
-    setIsLoading(true);
+    if (!searchQuery.trim() && selectedType === 'person') return;
+
+    const isTypeFilterActive = selectedType !== 'multi';
+    const isYearFilterActive = selectedType !== 'person' && !!selectedYear;
+    const isGenreFilterActive = selectedType !== 'person' && !!selectedGenre;
+    const isAdultFilterActive = includeAdult;
+    const isAnyFilterActive = isTypeFilterActive || isYearFilterActive || isGenreFilterActive || isAdultFilterActive;
+
+    if (!searchQuery.trim() && selectedType === 'person') return;
+
+    if (!searchQuery.trim() && !isAnyFilterActive) return;
+
 
     try {
-      // Build search params
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.append('query', searchQuery.trim());
       if (selectedType) params.append('type', selectedType);
@@ -74,7 +81,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
         throw new Error(`Search failed with status: ${response.status}`);
       }
       
-      // Build the search URL for the client-side navigation
       let searchPath = '/search';
       if (searchQuery.trim()) {
         searchPath += `/${encodeURIComponent(searchQuery)}`;
@@ -82,7 +88,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
         searchPath += '/discover';
       }
       
-      // Add advanced params as query string
       const advancedParams = new URLSearchParams();
       if (selectedType !== 'multi') advancedParams.append('type', selectedType);
       if (selectedYear) advancedParams.append('year', selectedYear);
@@ -97,9 +102,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
       router.push(searchPath);
     } catch (error) {
       console.error('Search error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    } // finally { setIsLoading(false); } // Removed
   };
 
   const handleClearSearch = () => {
@@ -148,45 +151,46 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
   return (
     <form onSubmit={handleSearch} className={`${className} w-full px-2 sm:px-4 md:px-6`}>
       <div className="container mx-auto flex flex-col items-center">
-        {/* Welcome and Title Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          className="text-center w-full mb-3 sm:mb-4 md:mb-6"
-        >
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-foreground/70 text-xs sm:text-sm font-medium mb-1"
-          >
-            {userData ? (
-              <>
-                Hi, <span className="text-pink font-semibold">{userData.username}</span>. Ready to
-                discover?
-              </>
-            ) : (
-              <>Welcome to Nothing <sup>2C</sup></>
-            )}
-          </motion.p>
-  
+        {!hideTitleSection && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.1,
-              duration: 0.5,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            className="text-center w-full mb-3 sm:mb-4 md:mb-6"
           >
-            <span className="text-gray-5-dark dark:text-gray-5">Explore </span>
-            <span className="text-pink dark:text-pink-dark font-semibold">Movies</span>
-            <span className="text-gray-5-dark dark:text-gray-5"> and </span>
-            <span className="text-pink dark:text-pink-dark font-semibold">TV Shows</span>
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-foreground/70 text-xs sm:text-sm font-medium mb-1"
+            >
+              {userData ? (
+                <>
+                  Hi, <span className="text-pink font-semibold">{userData.username}</span>. Ready to
+                  discover?
+                </>
+              ) : (
+                <>Welcome to Nothing <sup>2C</sup></>
+              )}
+            </motion.p>
+    
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.1,
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
+            >
+              <span className="text-gray-5-dark dark:text-gray-5">Explore </span>
+              <span className="text-pink dark:text-pink-dark font-semibold">Movies</span>
+              <span className="text-gray-5-dark dark:text-gray-5"> and </span>
+              <span className="text-pink dark:text-pink-dark font-semibold">TV Shows</span>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
   
         <motion.div
           className="relative w-full max-w-2xl mx-auto"
@@ -198,7 +202,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
             ease: [0.22, 1, 0.36, 1],
           }}
         >
-          {/* Apple-style search bar */}
           <div
             className={`
               frosted-panel p-0 rounded-full shadow-lg overflow-hidden
@@ -207,7 +210,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
             `}
           >
             <div className="flex items-center p-1 sm:p-1.5 md:p-2">
-              {/* Search icon */}
               <div className="flex-shrink-0 pl-2 sm:pl-3">
                 <Search
                   className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors duration-300 ${
@@ -216,22 +218,26 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 />
               </div>
               
-              {/* Input field */}
               <input
                 ref={inputRef}
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const newQuery = e.target.value;
+                  setSearchQuery(newQuery);
+                  // Reset year if query becomes empty
+                  if (!newQuery.trim()) {
+                    setSelectedYear(null);
+                  }
+                }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="Search movies, TV shows..."
                 aria-label="Search for movies, TV shows, or people"
-                disabled={isLoading}
                 className="flex-grow bg-transparent text-foreground placeholder-foreground/50 border-none 
                           py-1.5 sm:py-2 px-1.5 sm:px-2 md:px-3 text-xs sm:text-sm md:text-base focus:outline-none focus:ring-0"
               />
               
-              {/* Clear button */}
               <AnimatePresence>
                 {searchQuery && (
                   <motion.button
@@ -249,10 +255,8 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 )}
               </AnimatePresence>
               
-              {/* Divider */}
               <div className="h-5 sm:h-6 w-px bg-foreground/10 mx-0.5 sm:mx-1"></div>
               
-              {/* Advanced search toggle */}
               <button
                 type="button"
                 data-advanced-toggle
@@ -270,14 +274,22 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 <Filter className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
               
-              {/* Divider */}
               <div className="h-5 sm:h-6 w-px bg-foreground/10 mx-0.5 sm:mx-1"></div>
               
-              {/* Search button */}
               <motion.button
                 type="submit"
-                disabled={isLoading || (!searchQuery.trim() && !selectedGenre && !selectedYear)}
-                aria-label={isLoading ? "Searching" : "Search"}
+                disabled={
+                  !searchQuery.trim() &&
+                  (
+                    selectedType === 'person' ||
+                    (
+                      selectedType === 'multi' &&
+                      !selectedGenre &&
+                      !includeAdult
+                    )
+                  )
+                }
+                aria-label={"Search"} 
                 className={`
                   flex-shrink-0 bg-pink hover:bg-pink-hover text-white
                   transition-all duration-300 rounded-2xl py-1 sm:py-1.5 px-2 sm:px-3 md:px-4 mx-0.5 sm:mx-1
@@ -287,24 +299,13 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex items-center space-x-1 sm:space-x-2">
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-                      <span className="text-2xs sm:text-xs md:text-sm">Searching</span>
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="text-2xs sm:text-xs md:text-sm">Search</span>
-                    </>
-                  )}
+                  <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="text-2xs sm:text-xs md:text-sm">Search</span>
                 </div>
               </motion.button>
             </div>
           </div>
   
-          {/* Advanced search panel */}
-{/* Advanced search panel */}
 <AnimatePresence>
   {showAdvanced && (
     <motion.div
@@ -327,7 +328,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
       </div>
       
       <div className="grid grid-cols-1 gap-3 sm:gap-4">
-        {/* Content type selector */}
         <div className="space-y-1.5">
           <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Content Type</label>
           <div className="flex p-1 bg-white/20 dark:bg-black/20 rounded-xl">
@@ -340,9 +340,15 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setSelectedType(option.value)}
+                onClick={() => {
+                  setSelectedType(option.value);
+                  // Reset genre if switching to multi or person
+                  if (option.value === 'multi' || option.value === 'person') {
+                    setSelectedGenre(null);
+                  }
+                }}
                 className={`flex-1 py-1.5 px-2 text-2xs sm:text-xs rounded-lg transition-all duration-200 ${
-                  selectedType === option.value 
+                  selectedType === option.value
                     ? 'bg-white dark:bg-gray-800 text-foreground shadow-sm' 
                     : 'text-foreground/70 hover:text-foreground'
                 }`}
@@ -352,8 +358,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
             ))}
           </div>
         </div>
-        
-        {/* Year selector */}
+
+{/* Only show Year filter if type is not 'person' AND there is a search query */}
+{selectedType !== 'person' && searchQuery.trim() && (
 <div className="space-y-1.5">
   <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Release Year</label>
   <div className="relative">
@@ -368,7 +375,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
       <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`} />
     </button>
     
-    {/* Apple-style dropdown */}
     <AnimatePresence>
       {yearDropdownOpen && (
         <motion.div
@@ -405,9 +411,10 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
     </AnimatePresence>
   </div>
 </div>
+)}
 
-{/* Genre selector - only show for movies and TV */}
-{selectedType !== 'person' && (
+{/* Only show Genre filter if type is 'movie' or 'tv' */}
+{(selectedType === 'movie' || selectedType === 'tv') && (
   <div className="space-y-1.5">
     <label className="text-2xs sm:text-xs text-foreground/70 font-medium">Genre</label>
     <div className="relative">
@@ -418,11 +425,10 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                   text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl
                   focus:outline-none focus:ring-1 focus:ring-pink/50"
       >
-        <span>{selectedGenre ? genres.find(g => g.id === selectedGenre)?.name : 'Any Genre'}</span>
+        <span>{selectedGenreName || 'Any Genre'}</span>
         <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/50 transition-transform duration-200 ${genreDropdownOpen ? 'rotate-180' : ''}`} />
       </button>
-      
-      {/* Apple-style dropdown */}
+
       <AnimatePresence>
         {genreDropdownOpen && (
           <motion.div
@@ -442,9 +448,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
               Any Genre
             </div>
             <div className="border-t border-foreground/10 my-1"></div>
-            {genres.map(genre => (
-              <div 
-                key={genre.id} 
+            {currentGenreList.map(genre => (
+              <div
+                key={genre.id}
                 className={`p-2 text-xs rounded-lg cursor-pointer ${selectedGenre === genre.id ? 'bg-pink/10 text-pink' : 'hover:bg-foreground/10'}`}
                 onClick={() => {
                   setSelectedGenre(genre.id);
@@ -462,7 +468,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
 )}
 
         
-        {/* Adult content toggle */}
         <div className="pt-1">
           <label className="inline-flex items-center cursor-pointer">
             <div className="relative">
@@ -486,7 +491,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
         </div>
       </div>
       
-      {/* Active filters summary */}
       {(selectedType !== 'multi' || selectedYear || selectedGenre || includeAdult) && (
         <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-foreground/10">
           <h4 className="text-2xs sm:text-xs text-foreground/70 font-medium mb-2 sm:mb-3">Active Filters:</h4>
@@ -504,11 +508,12 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 </button>
               </div>
             )}
-            
-            {selectedYear && (
+
+            {/* Only show Year filter badge if type is not 'person' AND there is a search query */}
+            {selectedYear && selectedType !== 'person' && searchQuery.trim() && (
               <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
                 Year: {selectedYear}
-                <button 
+                <button
                   type="button" 
                   onClick={() => setSelectedYear(null)}
                   className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
@@ -518,12 +523,12 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ className }) => {
                 </button>
               </div>
             )}
-            
-            {selectedGenre && (
+            {/* Only show Genre filter badge if type is 'movie' or 'tv' */}
+            {selectedGenre && (selectedType === 'movie' || selectedType === 'tv') && (
               <div className="bg-pink/10 text-pink text-2xs sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full flex items-center">
-                {genres.find(g => g.id === selectedGenre)?.name}
-                <button 
-                  type="button" 
+                {selectedGenreName}
+                <button
+                  type="button"
                   onClick={() => setSelectedGenre(null)}
                   className="ml-1 sm:ml-1.5 hover:bg-pink/20 rounded-full p-0.5"
                   aria-label="Remove genre filter"

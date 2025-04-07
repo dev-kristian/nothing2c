@@ -15,8 +15,12 @@ import { handleAuthError } from '@/lib/utils'; // Import the error handler utili
 
 // Helper function for API calls
 async function syncSession(endpoint: string, body?: any) {
+  // Ensure endpoint starts with '/'
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${window.location.origin}${path}`; // Construct absolute URL
+
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(url, { // Use the absolute URL
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -121,6 +125,7 @@ export function useAuth() {
     signIn,
     signOut,
     isAuthenticated: !!user,
-    initialAuthChecked 
+    initialAuthChecked,
+    auth // <-- Add the auth instance here
   };
 }

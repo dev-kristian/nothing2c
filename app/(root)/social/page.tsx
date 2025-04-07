@@ -8,7 +8,7 @@ import {
   Bell, Clock, UserCheck, X, Check, MoreHorizontal,
   ChevronLeft, ArrowRight
 } from 'lucide-react';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { useUserData } from '@/context/UserDataContext';
 import { Friend, FriendRequest, FriendSearchResult, FriendSearchResultWithStatus } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,7 +40,7 @@ export default function SocialPage() {
     removeFriend,
   } = useUserData();
   
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FriendSearchResultWithStatus[]>([]);
@@ -71,7 +71,12 @@ export default function SocialPage() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || !userData?.uid) {
-      showToast('Search Error', 'Please enter a username to search', 'info');
+      // Use standard toast
+      toast({
+        title: 'Search Error',
+        description: 'Please enter a username to search',
+        variant: 'default', // Or 'info' if available
+      });
       return;
     }
     
@@ -94,12 +99,22 @@ export default function SocialPage() {
       
       setSearchResults(filteredResults);
       if (filteredResults.length === 0) {
-        showToast('No Results', 'No users found with that username', 'default');
+        // Use standard toast
+        toast({
+          title: 'No Results',
+          description: 'No users found with that username',
+          variant: 'default',
+        });
       }
     } catch (error: unknown) {
       const apiError = error as ApiError;
       console.error('Search error:', error);
-      showToast('Search Error', apiError.message || 'Failed to search for users. Please try again.', 'warning');
+      // Use standard toast
+      toast({
+        title: 'Search Error',
+        description: apiError.message || 'Failed to search for users. Please try again.',
+        variant: 'destructive', // Or 'warning' if available
+      });
     } finally {
       setIsSearching(false);
     }
@@ -107,7 +122,12 @@ export default function SocialPage() {
 
   const handleSendFriendRequest = async (targetUser: FriendSearchResult) => {
     if (!userData) {
-      showToast('Authentication Error', 'You must be logged in to send friend requests', 'warning');
+      // Use standard toast
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to send friend requests',
+        variant: 'destructive', // Or 'warning' if available
+      });
       return;
     }
     
@@ -115,7 +135,12 @@ export default function SocialPage() {
     
     try {
       await sendFriendRequest(targetUser);
-      showToast('Friend Request Sent', `Friend request sent to ${targetUser.username}`, 'success');
+      // Use standard toast
+      toast({
+        title: 'Friend Request Sent',
+        description: `Friend request sent to ${targetUser.username}`,
+        variant: 'default', // Or 'success' if available
+      });
       setSearchResults(prev => 
         prev.map(user => 
           user.uid === targetUser.uid 
@@ -125,7 +150,12 @@ export default function SocialPage() {
       );
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      showToast('Request Failed', apiError.message || 'Failed to send friend request. Please try again.', 'error');
+      // Use standard toast
+      toast({
+        title: 'Request Failed',
+        description: apiError.message || 'Failed to send friend request. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setPendingRequests(prev => {
         const newSet = new Set(prev);
@@ -141,11 +171,21 @@ export default function SocialPage() {
     setProcessingRequests(prev => new Set(prev).add(request.id));
     try {
       await acceptFriendRequest(request);
-      showToast('Friend Request Accepted', `You are now friends with ${request.fromUsername}`, 'success');
+      // Use standard toast
+      toast({
+        title: 'Friend Request Accepted',
+        description: `You are now friends with ${request.fromUsername}`,
+        variant: 'default', // Or 'success' if available
+      });
       setActiveTab('friends');
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      showToast('Error', apiError.message || 'Failed to accept friend request. Please try again.', 'error');
+      // Use standard toast
+      toast({
+        title: 'Error',
+        description: apiError.message || 'Failed to accept friend request. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setProcessingRequests(prev => {
         const newSet = new Set(prev);
@@ -159,10 +199,20 @@ export default function SocialPage() {
     setProcessingRequests(prev => new Set(prev).add(request.id));
     try {
       await rejectFriendRequest(request);
-      showToast('Friend Request Rejected', `Friend request from ${request.fromUsername} was rejected`, 'info');
+      // Use standard toast
+      toast({
+        title: 'Friend Request Rejected',
+        description: `Friend request from ${request.fromUsername} was rejected`,
+        variant: 'default', // Or 'info' if available
+      });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      showToast('Error', apiError.message || 'Failed to reject friend request. Please try again.', 'error');
+      // Use standard toast
+      toast({
+        title: 'Error',
+        description: apiError.message || 'Failed to reject friend request. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setProcessingRequests(prev => {
         const newSet = new Set(prev);
@@ -178,10 +228,20 @@ export default function SocialPage() {
     setRemovingFriends(prev => new Set(prev).add(friend.uid));
     try {
       await removeFriend(friend);
-      showToast('Friend Removed', `${friend.username} has been removed from your friends list`, 'success');
+      // Use standard toast
+      toast({
+        title: 'Friend Removed',
+        description: `${friend.username} has been removed from your friends list`,
+        variant: 'default', // Or 'success' if available
+      });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      showToast('Error', apiError.message || 'Failed to remove friend. Please try again.', 'error');
+      // Use standard toast
+      toast({
+        title: 'Error',
+        description: apiError.message || 'Failed to remove friend. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setRemovingFriends(prev => {
         const newSet = new Set(prev);
@@ -646,4 +706,3 @@ export default function SocialPage() {
     </div>
   );
 }
-

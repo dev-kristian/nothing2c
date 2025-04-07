@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { useUserData } from '@/context/UserDataContext';
 import { requestForToken, onMessageListener } from '@/lib/firebaseMessaging';
 import NotificationSubscriptionUI from './NotificationSubscriptionUI';
@@ -10,7 +10,7 @@ const NotificationSubscription = () => {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [isIOS166OrHigher, setIsIOS166OrHigher] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
   const { userData, updateNotificationStatus } = useUserData();
   const [showDetails, setShowDetails] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -55,11 +55,12 @@ const NotificationSubscription = () => {
       const setupMessaging = async () => {
         const unsubscribe = await onMessageListener((payload: NotificationPayload) => {
           console.log('New foreground notification:', payload);
-          showToast(
-            payload?.notification?.title || "New Notification",
-            payload?.notification?.body || "You have a new notification.",
-            "default",
-          );
+          // Use standard toast
+          toast({
+            title: payload?.notification?.title || "New Notification",
+            description: payload?.notification?.body || "You have a new notification.",
+            variant: "default",
+          });
         });
 
         return () => {
@@ -71,7 +72,7 @@ const NotificationSubscription = () => {
 
       setupMessaging();
     }
-  }, [isSupported, showToast]);
+  }, [isSupported]); // Removed showToast from dependency array
 
   const handleUpdateNotificationStatus = async (status: NotificationStatus) => {
     try {
@@ -79,21 +80,23 @@ const NotificationSubscription = () => {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update notification status. Please try again.";
       console.error("Error updating notification status:", error);
-      showToast(
-        "Error Updating Status",
-        errorMessage,
-        "error",
-      );
+      // Use standard toast
+      toast({
+        title: "Error Updating Status",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
   const handleSubscribe = async () => {
     if (!isSupported) {
-      showToast(
-        "Notifications Not Supported",
-        "Push notifications are not available on this device or browser.",
-        "warning",
-      );
+      // Use standard toast
+      toast({
+        title: "Notifications Not Supported",
+        description: "Push notifications are not available on this device or browser.",
+        variant: "default", // Or "warning" if available
+      });
       await handleUpdateNotificationStatus("unsupported");
       return;
     }
@@ -113,36 +116,40 @@ const NotificationSubscription = () => {
               body: JSON.stringify({ token }),
             });
             await handleUpdateNotificationStatus("allowed");
-            showToast(
-              "Notifications Enabled",
-              "You'll now receive updates from Nothing<sup>2C</sup>!",
-              "default",
-            );
+            // Use standard toast
+            toast({
+              title: "Notifications Enabled",
+              description: "You'll now receive updates from Nothing<sup>2C</sup>!",
+              variant: "default", // Or "success" if available
+            });
           } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : "Failed to enable notifications. Please try again later.";
             console.error("Error enabling notifications:", error);
-            showToast(
-              "Subscription Error",
-              errorMessage,
-              "error",
-            );
+            // Use standard toast
+            toast({
+              title: "Subscription Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
           }
         }
       } else {
         await handleUpdateNotificationStatus("denied");
-        showToast(
-          "Permission Denied",
-          "Please allow notifications in your browser settings to receive updates.",
-          "warning",
-        );
+        // Use standard toast
+        toast({
+          title: "Permission Denied",
+          description: "Please allow notifications in your browser settings to receive updates.",
+          variant: "default", // Or "warning" if available
+        });
       }
     } else {
       await handleUpdateNotificationStatus("unsupported");
-      showToast(
-        "Notifications Not Supported",
-        "Your browser doesn't support push notifications.",
-        "warning",
-      );
+      // Use standard toast
+      toast({
+        title: "Notifications Not Supported",
+        description: "Your browser doesn't support push notifications.",
+        variant: "default", // Or "warning" if available
+      });
     }
   };
   

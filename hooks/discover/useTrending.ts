@@ -10,6 +10,7 @@ export type DiscoverMediaType = 'movie' | 'tv' | 'upcoming';
 interface ApiResponse {
   results: Media[];
   total_pages: number;
+  page?: number; // Add optional page property
 }
 
 interface UseTrendingReturn {
@@ -110,8 +111,23 @@ export const useTrending = (): UseTrendingReturn => {
   const isLoadingMore =
     isLoading || (size > 0 && apiResponses && typeof apiResponses[size - 1] === 'undefined');
   const isEmpty = apiResponses?.[0]?.results.length === 0;
-  const isReachingEnd =
-    isEmpty || (apiResponses && apiResponses[apiResponses.length - 1]?.results.length < 20);
+
+  // Adjust 'isReachingEnd' logic based on mediaType
+  const isReachingEnd = useMemo(() => {
+    if (!apiResponses || isEmpty) return true;
+
+    const lastResponse = apiResponses[apiResponses.length - 1];
+    if (!lastResponse) return true; // Should not happen if !isEmpty, but safety check
+
+    if (mediaType === 'upcoming') {
+      // For upcoming, check if the current page is the last page reported by the API
+      // Ensure page is defined before comparing (satisfies TypeScript)
+      return lastResponse.page !== undefined && lastResponse.page >= lastResponse.total_pages;
+    } else {
+      // For movie/tv, rely on the number of results returned
+      return lastResponse.results.length < 20;
+    }
+  }, [apiResponses, isEmpty, mediaType]);
 
   const data = useMemo(() => {
     return apiResponses ? apiResponses.flatMap((response) => response.results) : [];
