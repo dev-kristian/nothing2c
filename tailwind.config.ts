@@ -49,154 +49,93 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))'
+        red: {
+          DEFAULT: '#FF3B30',
+          dark: '#FF453A',
+        },
+        orange: {
+          DEFAULT: '#FF9500',
+          dark: '#FF9F0A',
+        },
+        yellow: {
+          DEFAULT: '#FFCC00',
+          dark: '#FFD60A',
+        },
+        green: {
+          DEFAULT: '#34C759',
+          dark: '#30D158',
+        },
+        pink: {
+          DEFAULT: '#FF2D55',
+          dark: '#FF375F',
+          },
+        gray: {
+          DEFAULT: '#8E8E93',
+          dark: '#8E8E93',
+          '2': '#AEAEB2',
+          '2-dark': '#636366',
+          '3': '#C7C7CC',
+          '3-dark': '#48484A',
+          '4': '#D1D1D6',
+          '4-dark': '#3A3A3C',
+          '5': '#E5E5EA',
+          '5-dark': '#2C2C2E',
+          '6': '#F2F2F7',
+          '6-dark': '#1C1C1E',
+        },
+        'system-orange': {
+          DEFAULT: '#FF9500',
+          dark: '#FF9F0A'
+        },
+        'system-pink': {
+          DEFAULT: '#FF2D55',
+          dark: '#FF375F'
+        },
+        'system-red': {
+          DEFAULT: '#FF3B30',
+          dark: '#FF453A'
+        },
+
+        'system-yellow': {
+          DEFAULT: '#FFCC00',
+          dark: '#FFD60A'
+        },
+        'system-background': {
+          DEFAULT: '#FFFFFF',
+          dark: '#000000',
+          secondary: '#F2F2F7',
+          'secondary-dark': '#1C1C1E',
+          tertiary: '#FFFFFF',
+          'tertiary-dark': '#2C2C2E',
+        },
+        'system-grouped-background': {
+          DEFAULT: '#F2F2F7',
+          dark: '#000000',
+          secondary: '#FFFFFF',
+          'secondary-dark': '#1C1C1E',
+          tertiary: '#F2F2F7',
+          'tertiary-dark': '#2C2C2E',
         },
         
-          red: {
-            DEFAULT: '#FF3B30',
-            dark: '#FF453A',
-          },
-          orange: {
-            DEFAULT: '#FF9500',
-            dark: '#FF9F0A',
-          },
-          yellow: {
-            DEFAULT: '#FFCC00',
-            dark: '#FFD60A',
-          },
-          green: {
-            DEFAULT: '#34C759',
-            dark: '#30D158',
-          },
-          mint: {
-            DEFAULT: '#00C7BE',
-            dark: '#66D4CF',
-          },
-          teal: {
-            DEFAULT: '#30B0C7',
-            dark: '#40C8E0',
-          },
-          cyan: {
-            DEFAULT: '#32ADE6',
-            dark: '#64D2FF',
-          },
-          blue: {
-            DEFAULT: '#007AFF',
-            dark: '#0A84FF',
-          },
-          indigo: {
-            DEFAULT: '#5856D6',
-            dark: '#5E5CE6',
-          },
-          purple: {
-            DEFAULT: '#AF52DE',
-            dark: '#BF5AF2',
-          },
-          pink: {
-            DEFAULT: '#FF2D55',
-            dark: '#FF375F',
-          },
-          brown: {
-            DEFAULT: '#A5845E',
-            dark: '#AC8E68',
-          },
-          
-          // UI Colors
-          gray: {
-            DEFAULT: '#8E8E93',
-            dark: '#8E8E93',
-            '2': '#AEAEB2',
-            '2-dark': '#636366',
-            '3': '#C7C7CC',
-            '3-dark': '#48484A',
-            '4': '#D1D1D6',
-            '4-dark': '#3A3A3C',
-            '5': '#E5E5EA',
-            '5-dark': '#2C2C2E',
-            '6': '#F2F2F7',
-            '6-dark': '#1C1C1E',
-          },
-          
-          // Semantic Colors
-          'system-blue': {
-            DEFAULT: '#007AFF',
-            dark: '#0A84FF'
-          },
-          'system-green': {
-            DEFAULT: '#34C759',
-            dark: '#30D158'
-          },
-          'system-indigo': {
-            DEFAULT: '#5856D6',
-            dark: '#5E5CE6'
-          },
-          'system-orange': {
-            DEFAULT: '#FF9500',
-            dark: '#FF9F0A'
-          },
-          'system-pink': {
-            DEFAULT: '#FF2D55',
-            dark: '#FF375F'
-          },
-          'system-purple': {
-            DEFAULT: '#AF52DE',
-            dark: '#BF5AF2'
-          },
-          'system-red': {
-            DEFAULT: '#FF3B30',
-            dark: '#FF453A'
-          },
-          'system-teal': {
-            DEFAULT: '#30B0C7',
-            dark: '#40C8E0'
-          },
-          'system-yellow': {
-            DEFAULT: '#FFCC00',
-            dark: '#FFD60A'
-          },
-          
-          // Background Colors
-          'system-background': {
-            DEFAULT: '#FFFFFF',
-            dark: '#000000',
-            secondary: '#F2F2F7',
-            'secondary-dark': '#1C1C1E',
-            tertiary: '#FFFFFF',
-            'tertiary-dark': '#2C2C2E',
-          },
-          'system-grouped-background': {
-            DEFAULT: '#F2F2F7',
-            dark: '#000000',
-            secondary: '#FFFFFF',
-            'secondary-dark': '#1C1C1E',
-            tertiary: '#F2F2F7',
-            'tertiary-dark': '#2C2C2E',
-          },
-          
-          // Label Colors
-          'label': {
-            DEFAULT: '#000000',
-            dark: '#FFFFFF',
-            secondary: 'rgba(60, 60, 67, 0.6)',
-            'secondary-dark': 'rgba(235, 235, 245, 0.6)',
-            tertiary: 'rgba(60, 60, 67, 0.3)',
-            'tertiary-dark': 'rgba(235, 235, 245, 0.3)',
-            quaternary: 'rgba(60, 60, 67, 0.18)',
-            'quaternary-dark': 'rgba(235, 235, 245, 0.16)',
-          },
-          
-          // Separator Colors
-          'separator': {
-            DEFAULT: 'rgba(60, 60, 67, 0.29)',
-            dark: 'rgba(84, 84, 88, 0.6)',
-            opaque: '#C6C6C8',
-            'opaque-dark': '#38383A',
-          },
+        // Label Colors
+        'label': {
+          DEFAULT: '#000000',
+          dark: '#FFFFFF',
+          secondary: 'rgba(60, 60, 67, 0.6)',
+          'secondary-dark': 'rgba(235, 235, 245, 0.6)',
+          tertiary: 'rgba(60, 60, 67, 0.3)',
+          'tertiary-dark': 'rgba(235, 235, 245, 0.3)',
+          quaternary: 'rgba(60, 60, 67, 0.18)',
+          'quaternary-dark': 'rgba(235, 235, 245, 0.16)',
+        },
+        
+        // Separator Colors
+        'separator': {
+          DEFAULT: 'rgba(60, 60, 67, 0.29)',
+          dark: 'rgba(84, 84, 88, 0.6)',
+          opaque: '#C6C6C8',
+          'opaque-dark': '#38383A',
+        },
       },
       borderRadius: {
         '2xl': 'calc(var(--radius) + 2px)',

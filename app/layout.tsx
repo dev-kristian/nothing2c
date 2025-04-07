@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { Toaster } from "@/components/ui/toaster" // Import the Toaster component
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,12 +37,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* The `suppressHydrationWarning` prop is required by next-themes when using `attribute="class"` */}
       <body className={`${inter.className} text-foreground`}>
         <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             {children}
-            <Toaster /> {/* Render the Toaster component */}
+            <Toaster /> 
           </AuthProvider>
         </NextThemesProvider>
         <Analytics/>

@@ -7,17 +7,10 @@ interface ValidationResult {
   message: string;
 }
 
-/**
- * Validates a username format and checks its availability in Firestore using the Admin SDK.
- * To be called from client components as a Server Action.
- * @param username The username string to validate.
- * @returns ValidationResult object.
- */
+
 export const checkUsernameAvailability = async (username: string): Promise<ValidationResult> => {
-  // Trim and convert to lowercase
   const trimmedUsername = username.trim().toLowerCase();
 
-  // Check if empty
   if (!trimmedUsername) {
     return {
       isValid: false,
@@ -25,7 +18,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  // Check length
   if (trimmedUsername.length < 3) {
     return {
       isValid: false,
@@ -40,7 +32,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  // Check format (letters, numbers, underscores only)
   if (!/^[a-z0-9_]+$/.test(trimmedUsername)) {
     return {
       isValid: false,
@@ -48,7 +39,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  // Check if username starts with a number
   if (/^[0-9]/.test(trimmedUsername)) {
     return {
       isValid: false,
@@ -57,7 +47,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
   }
 
   try {
-    // Check availability in database using Admin SDK
     const usersRef = adminDb.collection('users');
     const querySnapshot = await usersRef.where('username', '==', trimmedUsername).limit(1).get();
 
@@ -74,7 +63,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   } catch (error) {
     console.error('Error checking username availability (Server Action):', error);
-    // Avoid leaking internal error details to the client
     return {
       isValid: false,
       message: "Error checking username availability. Please try again."

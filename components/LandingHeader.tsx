@@ -5,14 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogIn, DraftingCompass } from 'lucide-react'; // Import DraftingCompass
+import { LogIn, DraftingCompass } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth'; // Import useAuth hook
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
-  const { user } = useAuth(); // Get user authentication status
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,13 +74,11 @@ export default function LandingHeader() {
             </div>
           </Link>
 
-          {/* Conditional Button */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             {user ? (
-              // Authenticated: Link to Discover
               <Link
                 href="/discover"
                 className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-pink-foreground

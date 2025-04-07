@@ -17,17 +17,14 @@ export async function POST(request: NextRequest) {
 
     const batch = writeBatch(db);
 
-    // Update request status
     const requestRef = doc(db, 'users', currentUserId, 'friendRequests', requesterId);
     batch.update(requestRef, { status: 'rejected' });
 
-    // Remove from received requests
     const currentUserFriendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
     batch.set(currentUserFriendsRef, {
       receivedRequests: { [requesterId]: deleteField() }
     }, { merge: true });
 
-    // Remove from sent requests
     const requesterFriendsRef = doc(db, 'users', requesterId, 'friends', 'data');
     batch.set(requesterFriendsRef, {
       sentRequests: { [currentUserId]: deleteField() }

@@ -57,7 +57,7 @@ const ForgotPasswordPage = (): JSX.Element => {
           
           <Button
             type="submit"
-            className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
+            className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" 
             disabled={loading}
           >
             {loading ? (
@@ -74,7 +74,7 @@ const ForgotPasswordPage = (): JSX.Element => {
       <CardFooter className="flex justify-center pb-8">
         <Link 
           href="/sign-in" 
-          className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
+          className="text-pink hover:text-pink/80 transition-colors"
         >
           ← Back to login
         </Link>

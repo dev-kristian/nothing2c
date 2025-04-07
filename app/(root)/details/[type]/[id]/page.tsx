@@ -101,7 +101,6 @@ async function getSeasonDetails(type: string, id: string, seasonNumber: number) 
   return await response.json();
 }
 
-// New function to fetch reviews
 async function getReviews(type: string, id: string): Promise<Review[]> {
     const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
     const reviewsUrl = `https://api.themoviedb.org/3/${type}/${id}/reviews`;
@@ -115,13 +114,12 @@ async function getReviews(type: string, id: string): Promise<Review[]> {
     });
 
     if (!response.ok) {
-        // Don't throw an error for reviews; just return an empty array
         console.error(`Failed to fetch reviews: ${response.status}`);
         return [];
     }
 
     const data = await response.json();
-    return data.results || []; // Ensure results exists
+    return data.results || []; 
 }
 
 async function getSimilar(type: string, id: string): Promise<Media[]> {
@@ -162,7 +160,7 @@ export default async function DetailPage({ params }: DetailPageProps) {
     notFound();
   }
 
-  // Server Action for fetching season details
+ 
   async function fetchSeasonDetails(formData: FormData) {
     'use server'
     const seasonNumber = Number(formData.get('seasonNumber'));

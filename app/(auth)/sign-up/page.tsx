@@ -96,7 +96,7 @@ export default function SignUp() {
           Already have an account?{' '}
           <Link
             href="/sign-in"
-            className="text-pink hover:text-pink/80 transition-colors" // Changed primary to pink
+            className="text-pink hover:text-pink/80 transition-colors"
           >
             Sign in
           </Link>

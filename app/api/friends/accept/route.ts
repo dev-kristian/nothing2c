@@ -17,11 +17,9 @@ export async function POST(request: NextRequest) {
 
     const batch = writeBatch(db);
 
-    // Update request status
     const requestRef = doc(db, 'users', currentUserId, 'friendRequests', requesterId);
     batch.update(requestRef, { status: 'accepted' });
 
-    // Add to current user's friends list
     const currentUserFriendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
     batch.set(currentUserFriendsRef, {
       friendsList: { [requesterId]: true },
@@ -29,7 +27,6 @@ export async function POST(request: NextRequest) {
       receivedRequests: { [requesterId]: deleteField() }
     }, { merge: true });
 
-    // Add to requester's friends list
     const requesterFriendsRef = doc(db, 'users', requesterId, 'friends', 'data');
     batch.set(requesterFriendsRef, {
       friendsList: { [currentUserId]: true },
