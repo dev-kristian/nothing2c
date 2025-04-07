@@ -1,69 +1,88 @@
 'use client';
 
-import { useState, useTransition } from 'react'; 
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { checkUsernameAvailability } from '@/app/actions/userActions';
+import { setUsernameAndClaim } from '@/app/actions/userActions'; 
+import { getIdToken } from 'firebase/auth';
 
 function WelcomePage() {
   const [username, setUsername] = useState('');
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
-  const { user } = useAuthContext();
+  const { user, auth } = useAuthContext(); 
   const router = useRouter();
+
+  useEffect(() => {
+    if (user === null) { 
+      router.replace('/sign-in');
+    }
+  }, [user, router]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    if (!user) {
-      setError('You must be logged in to complete setup');
+    if (!user || !auth) { 
+      setError('Authentication context not available. Please try refreshing.');
       return;
     }
 
-    setError('');
+    const finalUsername = username.trim();
+    if (!finalUsername) {
+      setError('Username cannot be empty.');
+      return;
+    }
 
     startTransition(async () => {
       try {
-        const validation = await checkUsernameAvailability(username);
+        const result = await setUsernameAndClaim(user.uid, finalUsername);
 
-        if (!validation.isValid) {
-          setError(validation.message);
+        if (!result.success) {
+          setError(result.message);
           return;
         }
 
-        const userRef = doc(db, 'users', user.uid);
-      
-        await updateDoc(userRef, {
-          username: username.trim().toLowerCase(),
-          setupCompleted: true,
-          updatedAt: serverTimestamp(),
+        const freshIdToken = await getIdToken(user, true); // Force refresh
+
+        const response = await fetch('/api/auth/session-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken: freshIdToken }),
         });
 
-        router.replace('/');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error refreshing session cookie:', errorData);
+          setError('Username set, but failed to refresh session. Please log out and log back in.');
+          return;
+        }
+
+        window.location.href = '/discover';
 
       } catch (error) {
-        console.error('Error updating profile:', error);
-        setError('Failed to update profile. Please try again.');
+        console.error('Error setting username or refreshing session:', error);
+        setError('An unexpected error occurred. Please try again.');
       }
     });
   };
 
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6"> 
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Welcome to Nothing<sup>2C</sup>!</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground">
           Choose a username to get started
         </p>
       </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Input
+          <div className="space-y-2">
+            <Input
             type="text"
             placeholder="Enter username"
             value={username}
@@ -71,12 +90,12 @@ function WelcomePage() {
               setUsername(e.target.value.toLowerCase());
               setError(''); 
             }}
-            disabled={isPending} 
-            className="lowercase"
+            disabled={isPending}
+            className="lowercase focus:ring-[pink]"
             maxLength={15}
           />
           {error && (
-            <p className="text-sm text-destructive">
+            <p className="text-sm text-[pink]">
               {error}
             </p>
           )}
@@ -86,13 +105,13 @@ function WelcomePage() {
         </div>
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-pink text-white hover:bg-pink/90"
           disabled={isPending || !username.trim()}
         >
           {isPending ? "Setting up..." : "Continue"} 
         </Button>
       </form>
-    </div>
+    </div> 
   );
 }
 

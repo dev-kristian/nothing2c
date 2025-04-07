@@ -29,7 +29,7 @@ export default function LandingHeader() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed w-full z-50 py-1 h-[var(--navbar-height)] transition-all duration-500 ${
+      className={`sticky top-0 w-full z-50 py-1 h-[var(--navbar-height)] transition-all duration-500 ${
         scrolled
           ? 'bg-background/60 dark:bg-background/30 backdrop-blur-xl shadow-lg'
           : 'bg-background/30 dark:bg-background/60 backdrop-blur-md'
@@ -81,17 +81,16 @@ export default function LandingHeader() {
             {user ? (
               <Link
                 href="/discover"
-                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-pink-foreground
+                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
                          hover:bg-pink-hover transition-colors duration-300 shadow-lg"
               >
                 <DraftingCompass className="h-4 w-4" />
                 <span>Go to App</span>
               </Link>
             ) : (
-              // Unauthenticated: Link to Sign In
               <Link
                 href="/sign-in"
-                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-pink-foreground
+                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
                          hover:bg-pink-hover transition-colors duration-300 shadow-lg"
               >
                 <LogIn className="h-4 w-4" />

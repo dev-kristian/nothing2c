@@ -4,16 +4,16 @@ import React, { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Loader from '@/components/Loader';
+import SpinningLoader from '@/components/SpinningLoader';
 
 const ForgotPasswordPage = (): JSX.Element => {
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -24,10 +24,20 @@ const ForgotPasswordPage = (): JSX.Element => {
         url: `${process.env.NEXT_PUBLIC_APP_URL}/auth-action`,
         handleCodeInApp: true,
       });
-      showToast("Reset Link Sent", "Please check your email to reset your password.", "success");
+      // Use the standard toast function
+      toast({
+        title: "Reset Link Sent",
+        description: "Please check your email to reset your password.",
+        variant: "default", // Or "success" if you have that variant
+      });
     } catch (error) {
       console.error('Error sending password reset email:', error);
-      showToast("Error", "Failed to send reset link. Please try again.", "error");
+      // Use the standard toast function
+      toast({
+        title: "Error",
+        description: "Failed to send reset link. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -36,7 +46,7 @@ const ForgotPasswordPage = (): JSX.Element => {
   return (
     <div>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+        <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
           Forgot Password
         </CardTitle>
         <CardDescription className='text-center text-muted-foreground'>
@@ -57,12 +67,12 @@ const ForgotPasswordPage = (): JSX.Element => {
           
           <Button
             type="submit"
-            className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" 
+            className="w-full bg-pink text-white hover:bg-pink-hover" // Changed text to white
             disabled={loading}
           >
             {loading ? (
               <>
-                Sending &nbsp; <Loader />
+                Sending &nbsp; <SpinningLoader />
               </>
             ) : (
               'Send Reset Link'

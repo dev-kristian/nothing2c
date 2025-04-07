@@ -1,6 +1,7 @@
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin'; // Assuming admin DB is initialized here
+import { adminDb, adminAuth } from '@/lib/firebase-admin'; // Assuming admin DB and Auth are initialized here
+import { FieldValue } from 'firebase-admin/firestore'; // For serverTimestamp
 
 interface ValidationResult {
   isValid: boolean;
@@ -67,5 +68,55 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
       isValid: false,
       message: "Error checking username availability. Please try again."
     };
+  }
+};
+
+// --- New Server Action ---
+
+interface SetUsernameResult {
+  success: boolean;
+  message: string;
+}
+
+export const setUsernameAndClaim = async (uid: string, username: string): Promise<SetUsernameResult> => {
+  if (!uid) {
+    return { success: false, message: 'User ID is required.' };
+  }
+
+  const validation = await checkUsernameAvailability(username);
+  if (!validation.isValid) {
+    return { success: false, message: validation.message };
+  }
+
+  const finalUsername = username.trim().toLowerCase();
+
+  try {
+    // 1. Update Firestore document
+    const userRef = adminDb.collection('users').doc(uid);
+    await userRef.update({
+      username: finalUsername,
+      setupCompleted: true,
+      updatedAt: FieldValue.serverTimestamp(), // Use FieldValue for server timestamp
+    });
+
+    // 2. Set custom claim
+    await adminAuth.setCustomUserClaims(uid, { hasUsername: true });
+
+    console.log(`[Server Action] Successfully set username and claim for UID: ${uid}`);
+    return { success: true, message: 'Username set successfully.' };
+
+  } catch (error) {
+    console.error(`[Server Action] Error setting username and claim for UID ${uid}:`, error);
+    // Attempt to revert custom claim if Firestore update failed after claim was set (best effort)
+    try {
+      const user = await adminAuth.getUser(uid);
+      if (user.customClaims?.hasUsername) {
+        await adminAuth.setCustomUserClaims(uid, { hasUsername: null }); // Remove claim
+        console.warn(`[Server Action] Rolled back custom claim for UID ${uid} due to error.`);
+      }
+    } catch (rollbackError) {
+       console.error(`[Server Action] Error rolling back custom claim for UID ${uid}:`, rollbackError);
+    }
+    return { success: false, message: 'Failed to set username. Please try again.' };
   }
 };

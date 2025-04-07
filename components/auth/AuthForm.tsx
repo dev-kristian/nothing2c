@@ -5,10 +5,11 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
-import Loader from '@/components/Loader';
+import SpinningLoader from '@/components/SpinningLoader';
 import Image from 'next/image';
-import { handleGoogleSignIn } from '@/lib/utils';
-import { useCustomToast } from '@/hooks/useToast';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { toast } from "@/hooks/use-toast";
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
 import { useRouter } from 'next/navigation';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
@@ -19,9 +20,10 @@ import { AuthFormData } from '@/types';
     onSubmit: (data: AuthFormData) => void;
     onPasswordChange?: (password: string) => void;
     onConfirmPasswordChange?: (confirmPassword: string) => void;
-    onAgreeToTermsChange?: (agreed: boolean) => void; 
+    onAgreeToTermsChange?: (agreed: boolean) => void;
     isSubmitDisabled?: boolean;
     loading?: boolean;
+    redirectPath?: string;
   }
 
   interface FirebaseError {
@@ -36,18 +38,19 @@ import { AuthFormData } from '@/types';
     onConfirmPasswordChange,
     onAgreeToTermsChange,
     isSubmitDisabled,
-    loading = false
+    loading = false,
+    redirectPath = '/' // Destructure redirectPath with default
   }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  // Removed rememberMe state
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  const { showToast } = useCustomToast();
+
+  // Removed useCustomToast hook
   const router = useRouter();
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,20 +86,60 @@ import { AuthFormData } from '@/types';
         confirmPassword,
         agreeToTerms
       }),
-      rememberMe
     });
   };
 
   const onGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const redirectPath = await handleGoogleSignIn();
-      showToast("Google Sign In Successful", "Welcome!", "success");
-      router.push(redirectPath);
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      const errorMessage = getFirebaseErrorMessage((error as FirebaseError).code);
-      showToast("Google Sign In Failed", errorMessage, "error");
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      if (user) {
+        const idToken = await user.getIdToken();
+
+        const response = await fetch('/api/auth/session-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error setting session cookie via API:', errorData);
+          toast({
+            title: "Sign In Error",
+            description: "Failed to establish session. Please try again.",
+            variant: "destructive",
+          });
+          return; 
+        }
+
+        toast({
+          title: "Google Sign In Successful",
+          description: "Welcome!",
+          variant: "default", 
+        });
+        window.location.href = redirectPath; 
+
+      } else {
+         console.log("Google Sign In popup closed or did not return a user.");
+         toast({
+            title: "Google Sign In Cancelled",
+            variant: "default", 
+         });
+      }
+    } catch (error: any) {
+      console.error('Error during Google Sign In or session setup:', error);
+      if (!(error instanceof Error && error.message === "Session login failed")) {
+         const errorMessage = getFirebaseErrorMessage(error.code || 'unknown');
+         toast({
+            title: "Google Sign In Failed",
+            description: errorMessage,
+            variant: "destructive",
+         });
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -116,18 +159,27 @@ import { AuthFormData } from '@/types';
             type="email"
             autoComplete="email"
             required
-            className="bg-secondary border-input"
+            className="bg-secondary border-input focus:ring-pink"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        {/* Password Input */}
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm">
-            Password
-          </Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="password" className="text-sm">
+              Password
+            </Label>
+            {!isSignUp && (
+              <Link
+                href="/forgot-password"
+                className="text-sm text-pink hover:text-pink/80 transition-colors"
+              >
+                Forgot Password?
+              </Link>
+            )}
+          </div>
           <div className="relative">
             <Input
               id="password"
@@ -135,7 +187,7 @@ import { AuthFormData } from '@/types';
               type={showPassword ? "text" : "password"}
               autoComplete={isSignUp ? "new-password" : "current-password"}
               required
-              className="bg-secondary border-input pr-10"
+              className="bg-secondary border-input pr-10 focus:ring-pink"
               placeholder="Enter your password"
               value={password}
               onChange={handlePasswordChange}
@@ -155,7 +207,6 @@ import { AuthFormData } from '@/types';
           {isSignUp && <PasswordStrengthIndicator password={password} />}
         </div>
 
-        {/* Confirm Password Input (Sign Up only) */}
         {isSignUp && (
           <div className="space-y-2">
             <Label htmlFor="confirmPassword" className="text-sm">
@@ -168,7 +219,8 @@ import { AuthFormData } from '@/types';
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                className="bg-secondary border-input pr-10"
+                // Added pink focus ring
+                className="bg-secondary border-input pr-10 focus:ring-pink"
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={handleConfirmPasswordChange}
@@ -189,22 +241,6 @@ import { AuthFormData } from '@/types';
         )}
       </div>
 
-      {/* Remember Me (Sign In only) */}
-      {!isSignUp && (
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="remember-me"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-            className="data-[state=checked]:bg-pink data-[state=checked]:text-pink-foreground data-[state=checked]:border-pink" // Added pink classes
-          />
-          <Label htmlFor="remember-me" className="text-sm text-muted-foreground">
-            Remember me
-          </Label>
-        </div>
-      )}
-
-      {/* Terms Agreement (Sign Up only) */}
       {isSignUp && (
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -227,14 +263,13 @@ import { AuthFormData } from '@/types';
         </div>
       )}
 
-      {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full bg-pink text-pink-foreground hover:bg-pink-hover" // Added pink color classes
+        className="w-full bg-pink text-white hover:bg-pink/90"
         disabled={isSubmitDisabled || loading}
       >
         {loading ? (
-          <Loader />
+          <SpinningLoader />
         ) : (
           isSignUp ? 'Sign Up' : 'Sign In'
         )}
@@ -261,7 +296,7 @@ import { AuthFormData } from '@/types';
         disabled={googleLoading}
       >
         {googleLoading ? (
-          <Loader />
+          <SpinningLoader />
         ) : (
           <div className="flex items-center justify-center">
             <Image

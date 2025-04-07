@@ -9,10 +9,10 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import Loader from '@/components/Loader';
+import SpinningLoader from '@/components/SpinningLoader';
 import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/AuthContext';
@@ -42,7 +42,7 @@ function AuthActionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const verificationInitiated = useRef(false);
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
   const { user } = useAuthContext();
 
   useEffect(() => {
@@ -50,7 +50,12 @@ function AuthActionContent() {
       try {
         await applyActionCode(auth, oobCode);
         setVerificationStatus('success');
-        showToast("Email Verified", "Your email has been successfully verified.", "success");
+        // Use standard toast
+        toast({
+          title: "Email Verified",
+          description: "Your email has been successfully verified.",
+          variant: "default", // Or "success" if available
+        });
 
         if (user) {
           try {
@@ -64,7 +69,12 @@ function AuthActionContent() {
             await setDoc(userDocRef, userData, { merge: true });
           } catch (firestoreError) {
             console.error("Error writing to Firestore:", firestoreError);
-            showToast("Firestore Error", "Failed to update user data.", "error");
+            // Use standard toast
+            toast({
+              title: "Firestore Error",
+              description: "Failed to update user data.",
+              variant: "destructive",
+            });
           }
         }
 
@@ -72,7 +82,12 @@ function AuthActionContent() {
       } catch (error) {
         console.error('Error verifying email:', error);
         setVerificationStatus('error');
-        showToast("Verification Failed", "Unable to verify your email.", "error");
+        // Use standard toast
+        toast({
+          title: "Verification Failed",
+          description: "Unable to verify your email.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -94,7 +109,7 @@ function AuthActionContent() {
       setVerificationStatus('invalid');
       setLoading(false);
     }
-  }, [searchParams, showToast, router, user]);
+  }, [searchParams, router, user]); // Removed showToast from dependency array
 
   useEffect(() => {
     try {
@@ -113,17 +128,32 @@ function AuthActionContent() {
       passwordSchema.parse({ password, confirmPassword });
       await confirmPasswordReset(auth, oobCode, password);
       setVerificationStatus('passwordResetSuccess');
-      showToast("Password Reset Successful", "Your password has been successfully reset.", "success");
+      // Use standard toast
+      toast({
+        title: "Password Reset Successful",
+        description: "Your password has been successfully reset.",
+        variant: "default", // Or "success" if available
+      });
       setTimeout(() => router.push('/sign-in'), 3000);
     } catch (error) {
       console.error('Error resetting password:', error);
       if (error instanceof z.ZodError) {
         error.errors.forEach(err => {
-          showToast("Validation Error", err.message, "error");
+          // Use standard toast
+          toast({
+            title: "Validation Error",
+            description: err.message,
+            variant: "destructive",
+          });
         });
       } else {
         setVerificationStatus('passwordResetError');
-        showToast("Password Reset Failed", "An error occurred while resetting your password.", "error");
+        // Use standard toast
+        toast({
+          title: "Password Reset Failed",
+          description: "An error occurred while resetting your password.",
+          variant: "destructive",
+        });
       }
     } finally {
       setLoading(false);
@@ -133,7 +163,7 @@ function AuthActionContent() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
-        <Loader />
+        <SpinningLoader />
       </div>
     );
   }
@@ -142,7 +172,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+          <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
             Email Verification
           </CardTitle>
           <CardDescription className='text-center text-muted-foreground'>
@@ -175,7 +205,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+          <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
             Reset Password
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
@@ -229,12 +259,12 @@ function AuthActionContent() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-pink text-pink-foreground hover:bg-pink-hover"
+              className="w-full bg-pink text-white hover:bg-pink-hover" // Changed text to white
               disabled={!isFormValid || loading}
             >
               {loading ? (
                 <>
-                  Resetting Password   <Loader />
+                  Resetting Password   <SpinningLoader />
                 </>
               ) : (
                 'Reset Password'
@@ -254,7 +284,7 @@ function AuthAction() {
     <Suspense
       fallback={
         <div className="flex justify-center items-center min-h-[300px]">
-          <Loader />
+          <SpinningLoader />
         </div>
       }
     >

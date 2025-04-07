@@ -39,10 +39,8 @@ export const useWatchlist = (): UseWatchlistReturn => {
       } else {
         return { movie: [], tv: [] };
       }
-    },
-    {
-      revalidateIfStale: false,
     }
+    // Removed { revalidateIfStale: false } to allow default SWR revalidation
   );
 
   const addToWatchlist = useCallback(

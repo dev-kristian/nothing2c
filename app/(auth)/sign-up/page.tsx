@@ -6,7 +6,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification, AuthError } from
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/auth/AuthForm';
-import { useCustomToast } from '@/hooks/useToast';
+import { toast } from "@/hooks/use-toast"; // Import the standard toast function
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { z } from 'zod';
@@ -34,13 +34,18 @@ interface AuthFormData {
 export default function SignUp() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const { showToast } = useCustomToast();
+  // Removed useCustomToast hook
 
   const handleSubmit = async (data: AuthFormData) => {
     const { email, password, confirmPassword } = data;
     
     if (!email || !password || !confirmPassword) {
-      showToast("Validation Error", "Please fill in all required fields", "error");
+      // Use the standard toast function
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -55,19 +60,34 @@ export default function SignUp() {
         handleCodeInApp: true,
       });
       
-      showToast("Sign Up Successful", "Verification email sent. Please check your inbox.", "success");
+      // Use the standard toast function
+      toast({
+        title: "Sign Up Successful",
+        description: "Verification email sent. Please check your inbox.",
+        variant: "default", // Or "success" if you have that variant
+      });
       router.push('/verify-email');
     } catch (error) {
       console.error('Error signing up:', error);
       
       if (error instanceof z.ZodError) {
         error.errors.forEach(err => {
-          showToast("Validation Error", err.message, "error");
+          // Use the standard toast function
+          toast({
+            title: "Validation Error",
+            description: err.message,
+            variant: "destructive",
+          });
         });
       } else if (error instanceof Error) {
         const firebaseError = error as AuthError;
         const errorMessage = getFirebaseErrorMessage(firebaseError.code);
-        showToast("Sign Up Failed", errorMessage, "error");
+        // Use the standard toast function
+        toast({
+          title: "Sign Up Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
     } finally {
       setLoading(false);
@@ -77,7 +97,7 @@ export default function SignUp() {
   return (
     <>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center signin-text text-pink"> {/* Added text-pink */}
+        <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
           Create an Account
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">

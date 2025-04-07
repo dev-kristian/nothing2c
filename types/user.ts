@@ -1,5 +1,5 @@
 // types/user.ts
-import { User } from 'firebase/auth';
+import { User, Auth } from 'firebase/auth'; // Added Auth import
 
 // Authentication State (for AuthContext, etc.)
 export interface AuthState {
@@ -8,7 +8,8 @@ export interface AuthState {
   signIn: () => Promise<User | undefined>; // Corrected return type
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
-  initialAuthChecked: boolean; // Add this line
+  initialAuthChecked: boolean;
+  auth: Auth; // Added the auth instance property
 }
 
 export interface AuthFormData {

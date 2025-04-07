@@ -31,35 +31,40 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Treat 'upcoming' as 'movie' for internal logic like watchlist and icons
-  const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv';
+  // Determine the effective media type for internal logic
+  // Treat 'upcoming' as 'movie', otherwise use the provided type
+  const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv' | 'person';
 
   useEffect(() => {
-    // Use internalMediaType for watchlist check
-    if (watchlistItems && internalMediaType) { 
+    // Use internalMediaType for watchlist check, but only if it's movie or tv
+    if (watchlistItems && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
       const isItemInWatchlist = watchlistItems[internalMediaType]?.some(item => item.id === media.id);
       setIsInWatchlist(isItemInWatchlist);
+    } else {
+      setIsInWatchlist(false); // People cannot be in watchlist
     }
-  }, [watchlistItems, internalMediaType, media.id]); // Use internalMediaType in dependency array
+  }, [watchlistItems, internalMediaType, media.id]);
 
   const handleToggleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (isLoading || isUserDataLoading) return;
-    
+
+    // Only proceed if it's a movie or TV show
+    if (isLoading || isUserDataLoading || internalMediaType === 'person') return;
+
     setIsLoading(true);
     try {
-      // Use internalMediaType for watchlist actions
-      if (isInWatchlist) { 
-        await removeFromWatchlist(media.id, internalMediaType);
+      // internalMediaType is already guaranteed to be 'movie' or 'tv' here
+      const mediaTypeForWatchlist = internalMediaType as 'movie' | 'tv';
+      if (isInWatchlist) {
+        await removeFromWatchlist(media.id, mediaTypeForWatchlist);
       } else {
+        // Pass the media object directly; its media_type is now correctly set by the parent component
         await addToWatchlist({
           ...media,
-          // Ensure media_type is 'movie' or 'tv' when adding
-          media_type: internalMediaType, 
+          // media_type is already correct in the 'media' object passed as prop
           addedAt: new Date().toISOString()
-        }, internalMediaType);
+        }, mediaTypeForWatchlist);
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);
@@ -69,8 +74,10 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   };
 
   const handleCardClick = () => {
-    // Use internalMediaType for navigation link as upcoming are movies
-    router.push(`/details/${internalMediaType}/${media.id}`); 
+    // Navigate based on the actual media type
+    const navigateToType = media.media_type === 'person' ? 'person' : internalMediaType;
+    // Assuming a route like /details/person/[id] exists for people
+    router.push(`/details/${navigateToType}/${media.id}`);
   };
 
   const handleImageError = () => {
@@ -204,10 +211,11 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </div>
           )}
 
-          {/* Watchlist Button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+          {/* Watchlist Button - Only show for movies and TV shows */}
+          {internalMediaType !== 'person' && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                 <button
                   onClick={handleToggleWatchlist}
                   disabled={isLoading || isUserDataLoading}
@@ -241,6 +249,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
         </div>
       </motion.div>
 

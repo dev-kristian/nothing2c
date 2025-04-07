@@ -2,7 +2,7 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaPoster from '../MediaPoster';
-import Spinner from '../Spinner';
+import SpinningLoader from '../SpinningLoader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaTypeToggle from '../MediaTypeToggle';
 import { useTrending } from '@/hooks/discover/useTrending'; // Import the hook
@@ -59,7 +59,7 @@ const TrendingSection: React.FC = () => {
   if (isInitialLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Spinner />
+        <SpinningLoader />
       </div>
     );
   }
@@ -186,7 +186,7 @@ const TrendingSection: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <Spinner size={200} />
+          <SpinningLoader />
         </motion.div>
       )}
 
