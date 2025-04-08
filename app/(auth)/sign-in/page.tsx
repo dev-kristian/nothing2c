@@ -1,7 +1,7 @@
 // app/(auth)/signin/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect, Suspense } from 'react'; // Import Suspense
 import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -10,13 +10,15 @@ import AuthForm from '@/components/auth/AuthForm';
 import { toast } from "@/hooks/use-toast";
 import { handleAuthError } from '@/lib/utils';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton for fallback
 
 interface SignInData {
   email: string;
   password: string;
 }
 
-export default function SignIn() {
+// Extracted content component that uses useSearchParams
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function SignIn() {
     if (redirectedFrom) {
       setRedirectPath(redirectedFrom);
     }
+    // Intentionally run only once on mount or when searchParams changes
   }, [searchParams]);
 
   const handleSubmit = async (data: SignInData) => {
@@ -40,7 +43,7 @@ export default function SignIn() {
         toast({
           title: "Email Not Verified",
           description: "Please verify your email to proceed.",
-          variant: "default", 
+          variant: "default",
         });
         router.push('/verify-email');
         return;
@@ -64,13 +67,14 @@ export default function SignIn() {
         const errorData = await response.json();
         console.error('Error setting session cookie via API:', errorData);
         handleAuthError(errorData.error || 'Failed to establish session.');
-        handleAuthError(errorData.error || 'Failed to establish session.');
-        return; 
+        return;
       }
 
+      // Use window.location.href for full page reload after session is set
       window.location.href = redirectPath;
 
     } catch (error: unknown) {
+      // Avoid duplicate error handling if session login already handled it
       if (!(error instanceof Error && error.message === "Session login failed")) {
          handleAuthError(error);
       }
@@ -94,13 +98,13 @@ export default function SignIn() {
           isSignUp={false}
           onSubmit={handleSubmit}
           loading={loading}
-          redirectPath={redirectPath} 
+          redirectPath={redirectPath}
         />
       </CardContent>
       <CardFooter className="flex flex-col space-y-4 pb-8">
         <div className="text-center">
           <span className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            Don't have an account?{' '}
             <Link
               href="/sign-up"
               className="text-pink hover:text-pink/80 transition-colors"
@@ -109,6 +113,37 @@ export default function SignIn() {
             </Link>
           </span>
         </div>
+      </CardFooter>
+    </>
+  );
+}
+
+// Main page component wrapping SignInContent with Suspense
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInFallback />}>
+      <SignInContent />
+    </Suspense>
+  );
+}
+
+// Simple fallback component
+function SignInFallback() {
+  return (
+    <>
+      <CardHeader>
+        <Skeleton className="h-6 w-3/4 mx-auto" />
+        <Skeleton className="h-4 w-1/2 mx-auto mt-2" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full mt-2" />
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col space-y-4 pb-8">
+        <Skeleton className="h-4 w-3/4 mx-auto" />
       </CardFooter>
     </>
   );

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 import { adminDb } from '@/lib/firebase-admin';
-import { UserData } from '@/types'; 
+import { UserData } from '@/types';
 import { Timestamp } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 export async function GET() {
   try {

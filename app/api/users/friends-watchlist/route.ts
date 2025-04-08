@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 import { adminDb } from '@/lib/firebase-admin';
-import { FirestoreWatchlistItem, FriendsWatchlistItem } from '@/types'; 
+import { FirestoreWatchlistItem, FriendsWatchlistItem } from '@/types';
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 const fetchWatchlistForUser = async (userId: string): Promise<{ movie: FirestoreWatchlistItem[], tv: FirestoreWatchlistItem[] }> => {
   try {
