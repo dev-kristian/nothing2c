@@ -2,11 +2,11 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import SearchComponent from '@/components/discover/SearchComponent';
-import SpinningLoader from '@/components/SpinningLoader'; // Changed import
+import SpinningLoader from '@/components/SpinningLoader'; 
 
 const TrendingSection = dynamic(() => import('@/components/discover/TrendingSection'), {
   ssr: false,
-  loading: () => <div className="flex justify-center items-center min-h-[300px]"><SpinningLoader /></div> // Replaced Spinner with SpinningLoader
+  loading: () => <div className="flex justify-center items-center min-h-[300px]"><SpinningLoader /></div> 
 });
 
 export default function Discover() {

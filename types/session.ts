@@ -17,7 +17,7 @@ export interface Session {
       status: 'invited' | 'accepted' | 'declined';
     };
   };
-  participantIds: string[]; // Add this field
+  participantIds: string[]; 
   poll?: {
     id: string;
     movieTitles: string[];
@@ -39,7 +39,7 @@ export interface DatePopularity {
     date: string;
     count: number;
     users: string[];
-    hourBreakdown?: Record<string, number>; 
+    hourlyDetails?: Record<string, { count: number; users: string[] }>; 
   }
   
   export interface DateTimeSelection {

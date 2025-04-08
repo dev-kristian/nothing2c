@@ -11,7 +11,6 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { toast } from "@/hooks/use-toast";
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
-import { useRouter } from 'next/navigation';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { AuthFormData } from '@/types';
 
@@ -26,11 +25,6 @@ import { AuthFormData } from '@/types';
     redirectPath?: string;
   }
 
-  interface FirebaseError {
-    code: string;
-    message: string;
-  }
-  
   export default function AuthForm({ 
     isSignUp, 
     onSubmit, 
@@ -39,19 +33,15 @@ import { AuthFormData } from '@/types';
     onAgreeToTermsChange,
     isSubmitDisabled,
     loading = false,
-    redirectPath = '/' // Destructure redirectPath with default
+    redirectPath = '/'
   }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  // Removed rememberMe state
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Removed useCustomToast hook
-  const router = useRouter();
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
@@ -127,13 +117,18 @@ import { AuthFormData } from '@/types';
          console.log("Google Sign In popup closed or did not return a user.");
          toast({
             title: "Google Sign In Cancelled",
-            variant: "default", 
+          variant: "default",
          });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error during Google Sign In or session setup:', error);
+      let errorCode = 'unknown';
+      if (typeof error === 'object' && error !== null && 'code' in error) {
+        errorCode = (error as { code: string }).code;
+      }
+
       if (!(error instanceof Error && error.message === "Session login failed")) {
-         const errorMessage = getFirebaseErrorMessage(error.code || 'unknown');
+         const errorMessage = getFirebaseErrorMessage(errorCode);
          toast({
             title: "Google Sign In Failed",
             description: errorMessage,
@@ -148,7 +143,6 @@ import { AuthFormData } from '@/types';
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        {/* Email Input */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm">
             Email
@@ -219,7 +213,6 @@ import { AuthFormData } from '@/types';
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                // Added pink focus ring
                 className="bg-secondary border-input pr-10 focus:ring-pink"
                 placeholder="Confirm your password"
                 value={confirmPassword}
@@ -275,7 +268,6 @@ import { AuthFormData } from '@/types';
         )}
       </Button>
 
-      {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
@@ -287,7 +279,6 @@ import { AuthFormData } from '@/types';
         </div>
       </div>
 
-      {/* Google Sign In */}
       <Button
         type="button"
         variant="secondary"

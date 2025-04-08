@@ -1,26 +1,33 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 
 export const useParticipantActions = () => {
-  const { user } = useAuthContext();
-  const { userData } = useUserData();
+  const { user } = useAuthContext(); 
 
   return useCallback(async (
-    sessionId: string, 
+    sessionId: string,
     status: 'accepted' | 'declined'
   ) => {
-    if (!user || !userData) throw new Error('User must be logged in to update status');
+    if (!user) throw new Error('User must be logged in to update status'); 
+
     try {
-      const sessionRef = doc(db, 'sessions', sessionId);
-      await updateDoc(sessionRef, {
-        [`participants.${user.uid}.status`]: status
+      const response = await fetch(`/api/sessions/${sessionId}/participants/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error updating participant status:", response.status, errorData);
+        throw new Error(errorData.error || `Failed to update participant status (status: ${response.status})`);
+      }
+
     } catch (error) {
-      console.error("Error updating participant status: ", error);
-      throw error;
+      console.error("Error calling update participant status API: ", error);
+      throw error; 
     }
-  }, [user, userData]);
+  }, [user]); 
 };

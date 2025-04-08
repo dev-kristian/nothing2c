@@ -4,14 +4,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { LogIn, DraftingCompass } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
-  const router = useRouter();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -36,8 +34,7 @@ export default function LandingHeader() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16 relative nav-container"> {/* Adjusted height to match Navigation */}
-          {/* Logo */}
+        <div className="flex justify-between items-center h-16 relative nav-container">
           <Link href="/" className="group flex items-center space-x-3" aria-label="Nothing2C Home">
             <div className="relative">
               <motion.div

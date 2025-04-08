@@ -56,8 +56,20 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
   };
 
   const acceptFriendRequest = async (request: FriendRequest) => {
-    if (!user?.uid || !currentUsername)
-      throw new Error('Not authenticated');
+    if (!user?.uid || !currentUsername) throw new Error('Not authenticated');
+
+    // --- Optimistic UI ---
+    // Only optimistically update the requests list, as we don't have photoURL for the friends list yet.
+    mutateFriendRequests(
+      (currentData) => ({
+        requests: (currentData?.requests || []).filter(
+          (req) => req.id !== request.id
+        ),
+      }),
+      false // Don't revalidate immediately
+    );
+    // --- End Optimistic UI ---
+
     try {
       const response = await fetch('/api/friends/accept', {
         method: 'POST',
@@ -66,17 +78,26 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
           currentUserId: user.uid,
           requesterId: request.fromUid,
           requesterUsername: request.fromUsername,
-          currentUsername
-        })
+          currentUsername,
+        }),
       });
-      if (!response.ok) throw new Error('Failed to accept friend request');
 
-      await mutateFriendRequests(); 
-      await mutateFriends();
+      if (!response.ok) {
+        throw new Error('Failed to accept friend request');
+      }
+
+      // API call successful, now trigger revalidation to get updated lists from the server
+      mutateFriends(); // Revalidate friends list to add the new friend with correct data
+      mutateFriendRequests(); // Revalidate requests list to confirm removal
 
     } catch (error) {
       console.error('Error accepting friend request:', error);
-      throw error;
+      // --- Rollback on error ---
+      // Trigger revalidation to fetch the correct state from the server
+      mutateFriends();
+      mutateFriendRequests();
+      // --- End Rollback ---
+      throw error; // Re-throw the error to be caught by the calling component
     }
   };
 
@@ -93,9 +114,19 @@ export const useFriends = (currentUsername?: string): UseFriendsReturn => {
       });
       if (!response.ok) throw new Error('Failed to reject friend request');
 
-      await mutateFriendRequests();
+      // Optimistic update for rejection
+      mutateFriendRequests(
+        (currentData) => ({
+          requests: (currentData?.requests || []).filter(
+            (req) => req.id !== request.id
+          ),
+        }),
+        false // Don't revalidate immediately
+      );
 
     } catch (error) {
+      // Rollback on error
+      mutateFriendRequests();
       console.error('Error rejecting friend request:', error);
       throw error;
     }

@@ -21,7 +21,6 @@ const SessionsPage = () => {
   const [filter, setFilter] = useState('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Memoize filtered sessions to prevent unnecessary recalculations
   const filteredSessions = useMemo(() => {
     return sessions.filter(session => {
       if (filter === 'all') return true;
@@ -29,7 +28,6 @@ const SessionsPage = () => {
     });
   }, [sessions, filter]);
 
-  // Sort sessions by date (newest first)
   const sortedSessions = useMemo(() => {
     return [...filteredSessions].sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -66,7 +64,6 @@ const SessionsPage = () => {
 
   return (
     <div className="container max-w-6xl mx-auto px-4 sm:px-6 space-y-6 pt-16 pb-24">
-      {/* Header Section - Styled like SearchComponent */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -254,7 +251,6 @@ const SessionsPage = () => {
                     <Link href={`/watch-together/${session.id}`} className="block">
                       <div className="p-4 sm:p-6">
                         <div className="flex flex-col lg:flex-row justify-between gap-4">
-                          {/* Left column - Session info */}
                           <div className="space-y-3 flex-grow max-w-2xl">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-lg font-semibold text-gray-5-dark dark:text-gray">
@@ -289,7 +285,6 @@ const SessionsPage = () => {
                               )}
                             </div>
                             
-                            {/* Movie poll information */}
                             {session.poll && (
                               <div className="pt-3 border-t border-foreground/10">
                                 <div className="flex items-center space-x-2 text-foreground/70 mb-2">
@@ -317,9 +312,7 @@ const SessionsPage = () => {
                             )}
                           </div>
                           
-                          {/* Right column - Dates and participants */}
                           <div className="lg:w-80 space-y-4 lg:border-l lg:border-foreground/10 lg:pl-6">
-                            {/* Available dates */}
                             {session.userDates && Object.keys(session.userDates).length > 0 && (
                               <div>
                                 <div className="flex items-center space-x-2 text-foreground/70 mb-2">
@@ -362,7 +355,6 @@ const SessionsPage = () => {
                               </div>
                             )}
                             
-                            {/* Participants */}
                             {session.participants && Object.keys(session.participants).length > 0 && (
                               <div className="hidden lg:block">
                                 <div className="flex items-center space-x-2 text-foreground/70 mb-2">
@@ -371,7 +363,7 @@ const SessionsPage = () => {
                                 </div>
                                 
                                 <div className="flex flex-wrap gap-2">
-                                  {Object.entries(session.participants).slice(0, 6).map(([id, participant]: [string, any]) => (
+                                  {Object.entries(session.participants).slice(0, 6).map(([id, participant]: [string, { username: string; status: 'invited' | 'accepted' | 'declined'; }]) => (
                                     <span 
                                       key={id}
                                       className="px-2 py-1 bg-foreground/10 text-xs rounded-full text-foreground/80 flex items-center"
@@ -400,7 +392,6 @@ const SessionsPage = () => {
                           </div>
                         </div>
                         
-                        {/* Mobile view for participants */}
                         {session.participants && Object.keys(session.participants).length > 0 && (
                           <div className="mt-3 pt-3 border-t border-foreground/10 lg:hidden">
                             <div className="flex items-center justify-between">
@@ -414,7 +405,7 @@ const SessionsPage = () => {
                             </div>
                             
                             <div className="flex flex-wrap gap-2 mt-2">
-                              {Object.entries(session.participants).slice(0, 8).map(([id, participant]: [string, any]) => (
+                              {Object.entries(session.participants).slice(0, 8).map(([id, participant]: [string, { username: string; status: 'invited' | 'accepted' | 'declined'; }]) => (
                                 <span 
                                   key={id}
                                   className="px-2 py-1 bg-foreground/10 text-xs rounded-full text-foreground/80 flex items-center"
@@ -442,7 +433,6 @@ const SessionsPage = () => {
                         )}
                       </div>
                       
-                      {/* Card footer with subtle "View details" indicator */}
                       <div className="bg-white dark:bg-black/50 py-2 px-6 text-center text-sm text-foreground/50 border-t border-foreground/10">
                         View session details
                       </div>
@@ -455,7 +445,6 @@ const SessionsPage = () => {
         </AnimatePresence>
       </motion.div>
       
-      {/* Quick tips section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

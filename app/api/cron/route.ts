@@ -3,7 +3,6 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, updateDoc, Timestamp } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
-  // Check for authorization
   if (request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

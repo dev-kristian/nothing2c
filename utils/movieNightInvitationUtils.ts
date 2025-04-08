@@ -1,22 +1,20 @@
-import { FriendsWatchlistItem } from "@/types"; // Use FriendsWatchlistItem
+import { FriendsWatchlistItem } from "@/types";
 import { RefObject, useEffect } from "react";
 
 export function handleAddMovieTitle(
   inputMovieTitle: string,
-  movieTitles: FriendsWatchlistItem[], // Use FriendsWatchlistItem
-  setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>, // Use FriendsWatchlistItem
+  movieTitles: FriendsWatchlistItem[],
+  setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>,
   setInputMovieTitle: React.Dispatch<React.SetStateAction<string>>
 ) {
   if (inputMovieTitle.trim() !== "") {
-    // Ensure the created object matches FriendsWatchlistItem (which extends Media)
     const newMovie: FriendsWatchlistItem = {
-      id: Date.now(), // Use a temporary ID or handle properly if needed
+      id: Date.now(),
       title: inputMovieTitle.trim(),
-      poster_path: null, // Match Media type
-      vote_average: 0, // Match Media type
-      media_type: "movie", // Default or determine based on input?
-      // release_date or first_air_date might be needed depending on Media definition
-      weighted_score: 0, // Add required property from FriendsWatchlistItem
+      poster_path: null,
+      vote_average: 0,
+      media_type: "movie",
+      weighted_score: 0,
     };
     setMovieTitles([...movieTitles, newMovie]);
     setInputMovieTitle("");
@@ -25,8 +23,8 @@ export function handleAddMovieTitle(
 
 export function removeMovieTitle(
   index: number,
-  movieTitles: FriendsWatchlistItem[], // Use FriendsWatchlistItem
-  setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>> // Use FriendsWatchlistItem
+  movieTitles: FriendsWatchlistItem[],
+  setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>
 ) {
   setMovieTitles(movieTitles.filter((_, i) => i !== index));
 }
@@ -34,9 +32,8 @@ export function removeMovieTitle(
 export function handleInputChange(
   e: React.ChangeEvent<HTMLInputElement>,
   setInputMovieTitle: React.Dispatch<React.SetStateAction<string>>,
-  // Assuming friendsWatchlistItems is the correct source data structure
   friendsWatchlistItems: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] },
-  setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>> // Use FriendsWatchlistItem
+  setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>
 ) {
   const value = e.target.value;
   setInputMovieTitle(value);
@@ -44,7 +41,7 @@ export function handleInputChange(
     const allSuggestions = [...friendsWatchlistItems.movie, ...friendsWatchlistItems.tv];
     const filteredSuggestions = allSuggestions
       .filter((item) => item.title?.toLowerCase().includes(value.toLowerCase()))
-      .slice(0, 3); // Limit suggestions
+      .slice(0, 3); 
 
     setSuggestions(filteredSuggestions);
   } else {
@@ -53,18 +50,17 @@ export function handleInputChange(
 }
 
 export function handleSuggestionClick(
-    movie: FriendsWatchlistItem, // Use FriendsWatchlistItem
+    movie: FriendsWatchlistItem,
     setInputMovieTitle: React.Dispatch<React.SetStateAction<string>>,
-    movieTitles: FriendsWatchlistItem[], // Use FriendsWatchlistItem
-    setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>, // Use FriendsWatchlistItem
-    setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>, // Use FriendsWatchlistItem
+    movieTitles: FriendsWatchlistItem[],
+    setMovieTitles: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>,
+    setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>,
     addMovieToPoll?: (movieTitle: string) => Promise<void>
   ) {
     setInputMovieTitle('');
     setSuggestions([]);
 
     if (movieTitles && setMovieTitles) {
-      // Ensure not adding duplicates if needed
       if (!movieTitles.some(existing => existing.id === movie.id && existing.media_type === movie.media_type)) {
          setMovieTitles([...movieTitles, movie]);
       }
@@ -73,14 +69,13 @@ export function handleSuggestionClick(
     if (addMovieToPoll && movie.title) {
       addMovieToPoll(movie.title).catch((error) => {
         console.error('Error adding movie to poll:', error);
-        // Optionally show a toast here
       });
     }
   }
 
 export function useOutsideClickHandler(
   inputContainerRef: RefObject<HTMLDivElement>,
-  setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>> // Use FriendsWatchlistItem
+  setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>
 ) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -1,18 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useCallback } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { FriendsWatchlistItem, FirestoreWatchlistItem } from '@/types'; 
-import { useUserData } from './UserDataContext';
+import { FriendsWatchlistItem } from '@/types';
+import { useUserData } from './UserDataContext'; 
 import useSWR, { useSWRConfig } from 'swr';
 
+type FriendsWatchlistApiResponse = {
+  movie: FriendsWatchlistItem[];
+  tv: FriendsWatchlistItem[];
+};
+
 interface FriendsWatchlistContextType {
-  friendsWatchlistItems: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] };
-  setFriendsWatchlistItems: (data: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }) => void;
+  friendsWatchlistItems: FriendsWatchlistApiResponse;
   isLoading: boolean;
   error: string | null;
-  fetchFriendsWatchlistItems: (mediaType: 'movie' | 'tv') => void;
+  mutateFriendsWatchlist: () => void;
 }
 
 const FriendsWatchlistContext = createContext<FriendsWatchlistContextType | undefined>(undefined);
@@ -25,103 +27,35 @@ export const useFriendsWatchlist = () => {
   return context;
 };
 
+const fetcher = async (url: string): Promise<FriendsWatchlistApiResponse> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `API request failed: ${res.statusText}`);
+  }
+  return res.json();
+};
+
 export const FriendsWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userData, friends, isLoadingFriends, isLoadingRequests } = useUserData();
+  const { userData } = useUserData();
   const { mutate } = useSWRConfig();
 
-  const friendsWatchlistKey = (userData && !isLoadingFriends && !isLoadingRequests)
-    ? `/friendsWatchlist/${userData.uid}/${friends?.map(f => f.uid).join(',')}`
-    : null;
+  const friendsWatchlistKey = userData ? '/api/users/friends-watchlist' : null;
 
-  const { data: friendsWatchlistItems, error: swrError, isLoading } = useSWR<{ movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }>(
+  const { data: friendsWatchlistItems, error: swrError, isLoading } = useSWR<FriendsWatchlistApiResponse>(
     friendsWatchlistKey,
-    async (key) => {
-      if (!key) return { movie: [], tv: [] };
-
-      const fetchFriendsWatchlistItemsForUser = async (userId: string, mediaType: 'movie' | 'tv'): Promise<FirestoreWatchlistItem[]> => {
-        try {
-          const docRef = doc(db, 'watchlists', userId);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            return (data[mediaType] || []) as FirestoreWatchlistItem[];
-          }
-          return [];
-        } catch (error) {
-          console.error(`Error fetching friendsWatchlist items for user ${userId}:`, error);
-          throw error; 
-        }
-      };
-
-      const fetchFriendsWatchlistItems = async (mediaType: 'movie' | 'tv') => {
-        const watchlistCounts: { [id: number]: number } = {};
-        let allUserItems: FirestoreWatchlistItem[] = [];
-
-        if (userData?.uid) {
-          try {
-            const userItems = await fetchFriendsWatchlistItemsForUser(userData.uid, mediaType);
-            allUserItems = [...allUserItems, ...userItems];
-          } catch (userError) {
-            throw userError;
-          }
-        }
-        if (friends && friends.length > 0) {
-          const friendsItemsPromises = friends.map(friend =>
-            fetchFriendsWatchlistItemsForUser(friend.uid, mediaType)
-          );
-          const friendsItemsResults = await Promise.all(friendsItemsPromises);
-          friendsItemsResults.forEach(items => {
-            allUserItems = [...allUserItems, ...items];
-          });
-        }
-
-        const filteredAndCountedItems: FriendsWatchlistItem[] = [];
-        allUserItems.forEach(item => {
-          if (item.media_type === mediaType && typeof item.vote_average === 'number' && item.vote_average > 0) {
-            watchlistCounts[item.id] = (watchlistCounts[item.id] || 0) + 1;
-
-            if (!filteredAndCountedItems.find(existingItem => existingItem.id === item.id)) {
-              filteredAndCountedItems.push({
-                ...item,
-                vote_average: item.vote_average,
-                weighted_score: item.vote_average
-              });
-            }
-          }
-        });
-
-        filteredAndCountedItems.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
-
-        const topItems: FriendsWatchlistItem[] = filteredAndCountedItems.slice(0, 20).map(item => ({
-          ...item,
-          watchlist_count: watchlistCounts[item.id],
-        }));
-
-        return topItems;
-      };
-
-      try {
-        const movie = await fetchFriendsWatchlistItems('movie');
-        const tv = await fetchFriendsWatchlistItems('tv');
-        return { movie, tv };
-      } catch (error) {
-        throw error;
-      }
-    }, {
-    revalidateIfStale: false,
-  }
+    fetcher,
+    {
+      revalidateIfStale: true, 
+      revalidateOnFocus: true,
+    }
   );
 
   const error = swrError
-    ? `Failed to fetch friendsWatchlist items: ${swrError instanceof Error ? swrError.message : 'Unknown error'}`
+    ? `Failed to fetch friends watchlist: ${swrError instanceof Error ? swrError.message : 'Unknown error'}`
     : null;
 
-  const setFriendsWatchlistItems = useCallback((data: { movie: FriendsWatchlistItem[]; tv: FriendsWatchlistItem[] }) => {
-    mutate(friendsWatchlistKey, data, false); 
-  }, [mutate, friendsWatchlistKey]);
-
-  const fetchFriendsWatchlistItems = useCallback(() => {
+  const mutateFriendsWatchlist = useCallback(() => {
     if (friendsWatchlistKey) {
       mutate(friendsWatchlistKey);
     }
@@ -129,11 +63,10 @@ export const FriendsWatchlistProvider: React.FC<{ children: React.ReactNode }> =
 
   return (
     <FriendsWatchlistContext.Provider value={{
-      friendsWatchlistItems: friendsWatchlistItems || { movie: [], tv: [] }, 
-      setFriendsWatchlistItems,
+      friendsWatchlistItems: friendsWatchlistItems || { movie: [], tv: [] },
       isLoading,
       error,
-      fetchFriendsWatchlistItems,
+      mutateFriendsWatchlist, 
     }}>
       {children}
     </FriendsWatchlistContext.Provider>

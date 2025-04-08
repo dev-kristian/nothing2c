@@ -31,17 +31,14 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Determine the effective media type for internal logic
-  // Treat 'upcoming' as 'movie', otherwise use the provided type
   const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv' | 'person';
 
   useEffect(() => {
-    // Use internalMediaType for watchlist check, but only if it's movie or tv
     if (watchlistItems && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
       const isItemInWatchlist = watchlistItems[internalMediaType]?.some(item => item.id === media.id);
       setIsInWatchlist(isItemInWatchlist);
     } else {
-      setIsInWatchlist(false); // People cannot be in watchlist
+      setIsInWatchlist(false); 
     }
   }, [watchlistItems, internalMediaType, media.id]);
 
@@ -49,20 +46,16 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    // Only proceed if it's a movie or TV show
     if (isLoading || isUserDataLoading || internalMediaType === 'person') return;
 
     setIsLoading(true);
     try {
-      // internalMediaType is already guaranteed to be 'movie' or 'tv' here
       const mediaTypeForWatchlist = internalMediaType as 'movie' | 'tv';
       if (isInWatchlist) {
         await removeFromWatchlist(media.id, mediaTypeForWatchlist);
       } else {
-        // Pass the media object directly; its media_type is now correctly set by the parent component
         await addToWatchlist({
           ...media,
-          // media_type is already correct in the 'media' object passed as prop
           addedAt: new Date().toISOString()
         }, mediaTypeForWatchlist);
       }
@@ -74,9 +67,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   };
 
   const handleCardClick = () => {
-    // Navigate based on the actual media type
     const navigateToType = media.media_type === 'person' ? 'person' : internalMediaType;
-    // Assuming a route like /details/person/[id] exists for people
     router.push(`/details/${navigateToType}/${media.id}`);
   };
 
@@ -123,7 +114,6 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-black/30 flex items-center justify-center">
-              {/* Use internalMediaType for icon */}
               {internalMediaType === 'movie' ? ( 
                 <Film className="w-8 h-8 text-white/40" />
               ) : (
@@ -188,7 +178,6 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 flex flex-col items-center justify-center p-4">
-              {/* Use internalMediaType for icon */}
               {internalMediaType === 'movie' ? ( 
                 <Film className="w-10 h-10 text-white/40 mb-2" />
               ) : (
@@ -201,7 +190,6 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </div>
           )}
           
-          {/* Rating Badge */}
           {media.vote_average > 0 && (
             <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
               <Star className={`w-3 h-3 ${media.vote_average >= 7 ? 'text-yellow-400 fill-yellow-400' : 'text-white/70'}`} />
@@ -211,7 +199,6 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </div>
           )}
 
-          {/* Watchlist Button - Only show for movies and TV shows */}
           {internalMediaType !== 'person' && (
             <TooltipProvider>
               <Tooltip>
@@ -253,13 +240,14 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
         </div>
       </motion.div>
 
-      {/* Media Type Indicator */}
-      {/* Media Type Indicator - Show based on original media_type if needed, or internal */}
-      {showMediaType && internalMediaType && ( 
-        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1">
+      {showMediaType && media.media_type && (
+        <div className="absolute top-2 left-2 bg-gray/50 dark:bg-gray-dark/50 backdrop-blur-sm rounded-full px-2 py-1 z-10">
           <span className="text-xs font-medium text-white uppercase tracking-wide">
-            {/* Display 'Movie' or 'TV' based on internal type */}
-            {internalMediaType === 'movie' ? 'Movie' : 'TV'} 
+            {media.media_type === 'movie' ? 'Movie' :
+             media.media_type === 'tv' ? 'TV' :
+             media.media_type === 'person' ? 'Person' :
+             media.media_type === 'upcoming' ? 'Movie' : 
+             null}
           </span>
         </div>
       )}

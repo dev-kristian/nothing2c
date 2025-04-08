@@ -1,4 +1,4 @@
-// components/Navigation.tsx (No changes needed, but included for completeness)
+// components/Navigation.tsx
 'use client'
 
 import Link from 'next/link';
@@ -17,7 +17,7 @@ import {
   Library
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from '@/hooks/use-toast'; // Import the toast function
+import { toast } from '@/hooks/use-toast'; 
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,33 +51,27 @@ export default function Navigation() {
 
   const handleSignOut = async () => {
     try {
-      // 1. Call the backend API to clear the session cookie
       const response = await fetch('/api/auth/session-logout', {
-        method: 'POST', // Assuming POST, adjust if your API uses GET
+        method: 'POST', 
       });
 
-      // 2. Check if server-side logout was successful
       if (!response.ok) {
-        // Server-side logout failed, log error, show toast, and stop the process
         console.error('Server-side logout failed:', response.status, response.statusText);
         toast({
           title: "Sign Out Failed",
           description: "Please try again.",
           variant: "destructive",
         });
-        return; // Stop the sign-out process
+        return;
       }
 
-      // 3. Server-side logout succeeded, now perform Firebase client-side sign out
       await signOut(auth);
 
-      // 4. Redirect the user to the root page
-      router.push('/'); // Changed redirect to root
-      setIsOpen(false); // Close mobile menu if open
-      setIsDropdownOpen(false); // Close user dropdown if open
+      router.push('/'); 
+      setIsOpen(false);
+      setIsDropdownOpen(false);
 
     } catch (error) {
-      // Catch errors from fetch() or signOut()
       console.error('Error during sign out process:', error);
       toast({
         title: "Sign Out Error",
@@ -90,8 +84,7 @@ export default function Navigation() {
   const isActivePath = (path: string) => pathname === path;
 
   return (
-    <> {/* React Fragment wrapper */}
-    {/* Conditionally render the nav bar based on isOpen state */}
+    <>
     {!isOpen && (
       <motion.nav
         initial={{ y: -100 }}
@@ -104,7 +97,6 @@ export default function Navigation() {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16 relative nav-container">
-          {/* Logo */}
           <Link href="/" className="group flex items-center space-x-3" aria-label="Nothing2C Home">
             <div className="relative">
               <motion.div
@@ -140,8 +132,7 @@ export default function Navigation() {
               </span>
             </div>
           </Link>
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4"> {/* Increased space */}
+          <div className="hidden md:flex items-center space-x-4">
             {navigationItems.map(({ href, icon: Icon, label }) => (
               <motion.div
                 key={href}
@@ -152,11 +143,11 @@ export default function Navigation() {
                   href={href}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300
                     ${isActivePath(href)
-                      ? 'bg-pink text-white' // Solid pink background, white text
+                      ? 'bg-pink text-white' 
                       : 'hover:bg-foreground/5 dark:hover:bg-foreground/10'
                     }`}
                 >
-                  <Icon className={`h-4 w-4 ${isActivePath(href) ? 'text-white' : ''}`} /> {/* White icon color */}
+                  <Icon className={`h-4 w-4 ${isActivePath(href) ? 'text-white' : ''}`} />
                   <span className="font-medium">{label}</span>
                 </Link>
               </motion.div>
@@ -241,48 +232,42 @@ export default function Navigation() {
             )}
           </div>
 
-          {/* Mobile Menu Button - Conditionally render based on isOpen state */}
           {!isOpen && (
             <motion.button
               className="md:hidden p-2 rounded-full hover:bg-foreground/5 dark:hover:bg-foreground/10
                        transition-colors duration-300"
               onClick={() => setIsOpen(!isOpen)}
             whileTap={{ scale: 0.9 }}
-            aria-label="Open menu" // Add aria-label for accessibility
+            aria-label="Open menu"
           >
-              {/* Always show Menu icon, remove animation */}
               <Menu className="h-6 w-6" />
             </motion.button>
           )}
         </div>
       </div>
       </motion.nav>
-    )} {/* Close conditional rendering for nav bar */}
+    )}
 
-      {/* Mobile Navigation - Sidebar (Moved outside nav) */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden" // Reverted z-index to 40
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />
 
-            {/* Sidebar Menu */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 left-0 h-full w-[80%] max-w-xs bg-white dark:bg-black shadow-lg z-50 md:hidden flex flex-col" // Reverted z-index to 50
+              className="fixed top-0 left-0 h-full w-[80%] max-w-xs bg-white dark:bg-black shadow-lg z-50 md:hidden flex flex-col"
             >
-              {/* Sidebar Header */}
               <div className="p-4 flex justify-between items-center border-b border-foreground/10">
                  <span className="font-semibold">Menu</span>
                  <motion.button
@@ -296,7 +281,6 @@ export default function Navigation() {
                  </motion.button>
               </div>
 
-              {/* Navigation Links - Scrollable */}
               <div className="flex-grow p-4 space-y-2 overflow-y-auto">
                 {navigationItems.map(({ href, icon: Icon, label }) => (
                   <motion.div
@@ -319,9 +303,8 @@ export default function Navigation() {
 
                 </motion.div>
               ))}
-              </div> {/* Close scrollable div */}
+              </div>
 
-              {/* Bottom Section (Sign Out/In) */}
               <div className="p-4 border-t border-foreground/10">
                 {user ? (
                   <motion.button
@@ -346,11 +329,11 @@ export default function Navigation() {
                     </Link>
                   </motion.div>
                 )}
-              </div> {/* Close bottom section div */}
-            </motion.div> {/* Close Sidebar Menu div */}
+              </div> 
+            </motion.div>
           </>
         )}
       </AnimatePresence>
-    </> // Close React Fragment wrapper
+    </> 
   );
 }

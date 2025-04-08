@@ -15,14 +15,12 @@ interface SeasonCarouselProps {
 
 const SeasonCarousel: React.FC<SeasonCarouselProps> = ({ 
   seasons, 
-  tmdbId,
   fetchSeasonDetails 
 }) => {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [selectedSeasonDetails, setSelectedSeasonDetails] = useState<SeasonDetails | null>(null);
 
   const handleSeasonSelect = async (seasonNumber: number) => {
-    // Toggle off if clicking the same season
     if (selectedSeason === seasonNumber) {
       setSelectedSeason(null);
       setSelectedSeasonDetails(null);
@@ -53,7 +51,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
       >
         <SectionHeader title="Seasons" subtitle="Explore episodes season by season" />
         
-        {/* Season carousel with Apple-like aesthetics */}
         <div className="flex space-x-5 p-2 pb-4 px-4 snap-x snap-mandatory">
           {validSeasons.map((season) => (
             <motion.div
@@ -91,7 +88,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                   </div>
                 )}
                 
-                {/* Selected indicator */}
                 {selectedSeason === season.season_number && (
                   <div className="absolute inset-0 border-2 border-pink rounded-2xl"></div>
                 )}
@@ -106,7 +102,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
         </div>
       </motion.div>
 
-      {/* Season Details - Apple-like aesthetics */}
       {selectedSeasonDetails && (
         <motion.div 
           className="mt-8 mx-auto"
@@ -114,7 +109,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0], delay: 0.1 }}
         >
-          {/* Season Header - Apple-like Card */}
           <div className="rounded-2xl bg-system-background-tertiary dark:bg-system-background-tertiary-dark backdrop-blur-apple border border-border/50 dark:border-gray-800/40 overflow-hidden shadow-apple dark:shadow-apple-dark">
             <div className="p-5 md:p-6">
               <div className="flex flex-col md:flex-row gap-6">
@@ -128,7 +122,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                     </Badge>
                   </div>
 
-                  {/* Season Stats - Modern Row */}
                   <div className="flex flex-wrap gap-6 text-xs text-muted-foreground">
                     <div className="flex items-center">
                       <svg className="w-4 h-4 mr-1.5 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +157,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
             </div>
           </div>
 
-          {/* Episodes List - Apple-like Cards */}
           <div className="mt-6 space-y-4">
             {selectedSeasonDetails.episodes.map((episode) => (
               <motion.div
@@ -175,7 +167,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                 whileHover={{ scale: 1.01, y: -2 }}
               >
                 <div className="flex h-24 md:h-28">
-                  {/* Episode Thumbnail */}
                   <div className="relative w-40 md:w-48 overflow-hidden rounded-l-xl">
                     {episode.still_path ? (
                       <Image
@@ -194,7 +185,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                       </div>
                     )}
                     
-                    {/* Episode number badge */}
                     <div className="absolute bottom-2 left-2">
                       <Badge className="bg-pink/90 text-white text-xs backdrop-blur-sm">
                         Ep {episode.episode_number}
@@ -202,7 +192,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                     </div>
                   </div>
 
-                  {/* Episode Details */}
                   <div className="flex-1 p-4 flex flex-col  justify-between relative  ">
                     <div>
                       <div className="flex items-start  justify-between ">
@@ -237,7 +226,6 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                         
                       </div>
 
-                      {/* Episode Overview with elegant solution for overflow */}
                       <div className="relative mt-1 overflow-hidden ">
                         <p className="text-xs text-foreground/90  line-clamp-1 md:line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                           {episode.overview}

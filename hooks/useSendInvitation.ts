@@ -8,8 +8,8 @@ interface SendInvitationArgs {
   body: string;
   icon: string;
   clickAction: string;
-  recipients: string[]; // Array of user UIDs
-  sessionId: string;    // Add session ID for deep linking
+  recipients: string[]; 
+  sessionId: string;
 }
 
 async function sendInvitationFetcher(url: string, { arg }: { arg: SendInvitationArgs }) {

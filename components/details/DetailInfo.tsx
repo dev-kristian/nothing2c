@@ -48,7 +48,7 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
   };
 
   const getRatingClass = (rating: number | undefined) => {
-    if (!rating) return 'text-muted-foreground'; // Changed from text-gray-500
+    if (!rating) return 'text-muted-foreground';
     if (rating >= 8) return 'text-emerald-400';
     if (rating >= 6) return 'text-amber-400';
     return 'text-red-400';
@@ -61,7 +61,6 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
       className="relative overflow-hidden"
     >
       <div className="rounded-3xl space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> 
-        {/* Title Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -69,11 +68,11 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
         >
           <div className="flex flex-col sm:flex-row items-start sm:justify-between">
             <div className="space-y-4 w-full sm:w-auto">
-              <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-foreground"> {/* text-white -> text-foreground */}
+              <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-foreground">
                 {title}
               </h1>
               {tagline && (
-                <p className="text-lg sm:text-2xl text-muted-foreground font-light"> {/* text-white/60 -> text-muted-foreground */}
+                <p className="text-lg sm:text-2xl text-muted-foreground font-light">
                   {tagline}
                 </p>
               )}
@@ -84,20 +83,17 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
                 <span className={getRatingClass(voteAverage)}>
                   {voteAverage?.toFixed(1)}
                 </span>
-                <span className="text-muted-foreground text-lg sm:text-2xl ml-2">/ 10</span> {/* text-white/30 -> text-muted-foreground */}
+                <span className="text-muted-foreground text-lg sm:text-2xl ml-2">/ 10</span>
               </div>
-              <div className="text-sm text-muted-foreground"> {/* text-white/50 -> text-muted-foreground */}
+              <div className="text-sm text-muted-foreground">
                 {voteCount.toLocaleString()} ratings
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Content Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-[2.5fr,1.5fr] gap-8 md:gap-12 lg:gap-16">
-          {/* Left Column - Main Content */}
           <div className="space-y-12">
-            {/* Key Info */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <KeyInfo
                 label="Release Date"
@@ -116,17 +112,15 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
               />
             </div>
 
-            {/* Overview */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">About</h3> {/* text-white/40 -> text-muted-foreground */}
-              <p className="text-lg sm:text-xl leading-relaxed text-foreground font-light"> {/* text-white/80 -> text-foreground */}
+              <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">About</h3>
+              <p className="text-lg sm:text-xl leading-relaxed text-foreground font-light">
                 {overview}
               </p>
             </div>
 
-            {/* Genres */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">Genres</h3> {/* text-white/40 -> text-muted-foreground */}
+              <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">Genres</h3>
               <div className="flex flex-wrap gap-3">
                 {genres.split(', ').map(genre => (
                   <motion.span
@@ -143,24 +137,22 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
             </div>
           </div>
 
-          {/* Right Column - Stats */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             className="space-y-8"
           >
-            {/* Conditionally render the Details/Information card using ternary */}
             {(!isMovie || (isMovie && ((budget && budget !== 0) || (revenue && revenue !== 0))))
             ? (
-              <div className="bg-card backdrop-blur-xl rounded-2xl overflow-hidden"> {/* bg-white/[0.08] -> bg-card */}
-                <div className="px-6 py-4 border-b border-border  bg-secondary backdrop-blur-sm"> {/* border-white/[0.06] -> border-border */}
-                  <h3 className="text-sm font-medium text-muted-foreground  tracking-wider uppercase"> {/* text-white/40 -> text-muted-foreground */}
+              <div className="bg-card backdrop-blur-xl rounded-2xl overflow-hidden"> 
+                <div className="px-6 py-4 border-b border-border  bg-secondary backdrop-blur-sm">
+                  <h3 className="text-sm font-medium text-muted-foreground  tracking-wider uppercase">
                   {isMovie ? "Movie Details" : "Series Information"}
                 </h3>
               </div>
 
-              <div className="divide-y divide-border"> {/* divide-white/[0.06] -> divide-border */}
+              <div className="divide-y divide-border">
                 {!isMovie ? (
                   <>
                     <StatRow
@@ -186,7 +178,6 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
                       label="Revenue"
                       value={revenue && revenue !== 0 ? formatNumber(revenue) : 'N/A'}
                     />
-                    {/* Conditional Return StatRow */}
                     {(budget && revenue && budget !== 0 && revenue !== 0) ? (
                       <StatRow
                         icon={TrendingUp}
@@ -194,17 +185,16 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
                         value={`${((revenue / budget - 1) * 100).toFixed(1)}%`}
                         highlight={revenue > budget}
                       />
-                    ) : null} {/* Explicitly return null */}
+                    ) : null}
                   </>
                 )}
               </div>
             </div>
-            ) : null } {/* Explicitly return null if condition is false */}
+            ) : null }
 
-            {/* Status Badge */}
-            <div className="flex items-center justify-between bg-secondary backdrop-blur-sm px-6 py-4 bg-card backdrop-blur-xl rounded-2xl"> {/* bg-white/[0.08] -> bg-card */}
-              <span className="text-sm text-muted-foreground  tracking-wider uppercase">Status</span> {/* text-white/40 -> text-muted-foreground */}
-              <span className="text-sm font-medium text-foreground">{status}</span> {/* Added text-foreground */}
+            <div className="flex items-center justify-between bg-secondary backdrop-blur-sm px-6 py-4 bg-card backdrop-blur-xl rounded-2xl">
+              <span className="text-sm text-muted-foreground  tracking-wider uppercase">Status</span>
+              <span className="text-sm font-medium text-foreground">{status}</span> 
             </div>
           </motion.div>
         </div>
@@ -223,11 +213,11 @@ const KeyInfo: React.FC<{
   icon: Icon
 }) => (
   <div className="space-y-2">
-    <div className="flex items-center gap-2 text-muted-foreground"> {/* text-white/40 -> text-muted-foreground */}
+    <div className="flex items-center gap-2 text-muted-foreground">
       <Icon size={16} />
       <span className="text-xs tracking-wider uppercase">{label}</span>
     </div>
-    <p className="text-base sm:text-lg font-light text-foreground"> {/* Added text-foreground */}
+    <p className="text-base sm:text-lg font-light text-foreground">
       {value}
     </p>
   </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { toast } from "@/hooks/use-toast"; // Import the standard toast function
+import { toast } from "@/hooks/use-toast";
 import { useUserData } from '@/context/UserDataContext';
 import { requestForToken, onMessageListener } from '@/lib/firebaseMessaging';
 import NotificationSubscriptionUI from './NotificationSubscriptionUI';
@@ -10,7 +10,6 @@ const NotificationSubscription = () => {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [isIOS166OrHigher, setIsIOS166OrHigher] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  // Removed useCustomToast hook
   const { userData, updateNotificationStatus } = useUserData();
   const [showDetails, setShowDetails] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -55,7 +54,6 @@ const NotificationSubscription = () => {
       const setupMessaging = async () => {
         const unsubscribe = await onMessageListener((payload: NotificationPayload) => {
           console.log('New foreground notification:', payload);
-          // Use standard toast
           toast({
             title: payload?.notification?.title || "New Notification",
             description: payload?.notification?.body || "You have a new notification.",
@@ -72,7 +70,7 @@ const NotificationSubscription = () => {
 
       setupMessaging();
     }
-  }, [isSupported]); // Removed showToast from dependency array
+  }, [isSupported]); 
 
   const handleUpdateNotificationStatus = async (status: NotificationStatus) => {
     try {
@@ -80,7 +78,6 @@ const NotificationSubscription = () => {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Failed to update notification status. Please try again.";
       console.error("Error updating notification status:", error);
-      // Use standard toast
       toast({
         title: "Error Updating Status",
         description: errorMessage,
@@ -91,11 +88,10 @@ const NotificationSubscription = () => {
 
   const handleSubscribe = async () => {
     if (!isSupported) {
-      // Use standard toast
       toast({
         title: "Notifications Not Supported",
         description: "Push notifications are not available on this device or browser.",
-        variant: "default", // Or "warning" if available
+        variant: "default", 
       });
       await handleUpdateNotificationStatus("unsupported");
       return;
@@ -116,16 +112,14 @@ const NotificationSubscription = () => {
               body: JSON.stringify({ token }),
             });
             await handleUpdateNotificationStatus("allowed");
-            // Use standard toast
             toast({
               title: "Notifications Enabled",
               description: "You'll now receive updates from Nothing<sup>2C</sup>!",
-              variant: "default", // Or "success" if available
+              variant: "default",
             });
           } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : "Failed to enable notifications. Please try again later.";
             console.error("Error enabling notifications:", error);
-            // Use standard toast
             toast({
               title: "Subscription Error",
               description: errorMessage,
@@ -135,20 +129,18 @@ const NotificationSubscription = () => {
         }
       } else {
         await handleUpdateNotificationStatus("denied");
-        // Use standard toast
         toast({
           title: "Permission Denied",
           description: "Please allow notifications in your browser settings to receive updates.",
-          variant: "default", // Or "warning" if available
+          variant: "default", 
         });
       }
     } else {
       await handleUpdateNotificationStatus("unsupported");
-      // Use standard toast
       toast({
         title: "Notifications Not Supported",
         description: "Your browser doesn't support push notifications.",
-        variant: "default", // Or "warning" if available
+        variant: "default",
       });
     }
   };

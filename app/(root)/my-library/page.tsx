@@ -10,7 +10,7 @@ import { Bookmark, Users } from 'lucide-react';
 interface TabButtonProps {
   active: boolean;
   onClick: () => void;
-  icon: 'bookmark' | 'users'; // Removed 'calendar'
+  icon: 'bookmark' | 'users';
   label: string;
 }
 
@@ -57,7 +57,6 @@ export default function Home() {
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => {
-  // Simplified type for iconComponents
   const iconComponents: Record<'bookmark' | 'users', JSX.Element> = { 
     bookmark: <Bookmark size={16} />,
     users: <Users size={16} />,

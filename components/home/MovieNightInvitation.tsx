@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from "@/hooks/use-toast"; // Import the standard toast function
+import { toast } from "@/hooks/use-toast";
 import { useUserData } from '@/context/UserDataContext';
 import { useSession } from '@/context/SessionContext';
 import { useSendInvitation } from '@/hooks/useSendInvitation';
@@ -176,10 +176,9 @@ SectionHeader.displayName = "SectionHeader";
 
 export default function MovieNightInvitation() {
   const router = useRouter();
-  // Removed useCustomToast hook
   const { userData, isLoading: userLoading, friends, isLoadingFriends } = useUserData();
   const { createSession, createPoll } = useSession();
-  const { sendInvitation, error: invitationError } = useSendInvitation();
+  const { sendInvitation } = useSendInvitation(); // Removed unused invitationError
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
   const [sendNotification, setSendNotification] = useState(true);
   const [mediaTitles, setMediaTitles] = useState<FriendsWatchlistItem[]>([]);
@@ -210,7 +209,6 @@ export default function MovieNightInvitation() {
 
   const completeSession = useCallback(async () => {
     if (userLoading || !userData) {
-      // Use standard toast
       toast({
         title: "Error",
         description: "User data not available. Please try again.",
@@ -221,32 +219,64 @@ export default function MovieNightInvitation() {
   
     try {
       setIsCreating(true);
-      const newSession = await createSession(selectedDates, selectedFriends);
-      
-      if (mediaTitles.length > 0 && newSession) {
-        await createPoll(newSession.id, mediaTitles.map(item => item.title || ''));
+      const sessionId = await createSession(selectedDates, selectedFriends);
+
+      if (mediaTitles.length > 0 && sessionId) {
+        let pollCreated = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+        const retryDelay = 500;
+
+        while (!pollCreated && attempts < maxAttempts) {
+          attempts++;
+          try {
+             await createPoll(sessionId, mediaTitles.map(item => item.title || ''));
+             pollCreated = true; 
+           } catch (pollError: unknown) { // Changed type to unknown
+             let errorMessage = 'An unknown error occurred during poll creation.';
+             if (pollError instanceof Error) {
+               errorMessage = pollError.message;
+             } else if (typeof pollError === 'string') {
+               errorMessage = pollError;
+             }
+             
+             const isNotFoundError = errorMessage.includes('Session not found') || errorMessage.includes('status: 404');
+ 
+             if (isNotFoundError && attempts < maxAttempts) {
+              console.warn(`Poll creation failed (attempt ${attempts}): Session not found. Retrying in ${retryDelay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+            } else {
+              throw pollError;
+            }
+          }
+        }
+        if (!pollCreated) {
+           throw new Error(`Failed to create poll for session ${sessionId} after ${maxAttempts} attempts.`);
+        }
       }
-  
-      if (sendNotification && selectedFriends.length > 0) {
-        await sendInvitation(selectedFriends, newSession.id);
-        if (invitationError) throw new Error(invitationError);
+
+      if (sendNotification && selectedFriends.length > 0 && sessionId) {
+        await sendInvitation(selectedFriends, String(sessionId));
       }
-  
-      // Use standard toast
+
       toast({
         title: "Session Created",
         description: "Your watch party session has been created successfully!",
-        variant: "default", // Or "success" if available
+        variant: "default",
       });
-  
+
       setSelectedDates([]);
       setMediaTitles([]);
       setSelectedFriends([]);
-      router.push(`/watch-together/${newSession.id}`);
-  
+      if (sessionId) { 
+          router.push(`/watch-together/${String(sessionId)}`);
+      } else {
+          console.error("Session ID was unexpectedly missing after creation attempt.");
+          router.push('/watch-together');
+      }
+
     } catch (error) {
       console.error('Error completing session:', error);
-      // Use standard toast
       toast({
         title: "Error",
         description: "Failed to complete the session. Please try again.",
@@ -262,11 +292,9 @@ export default function MovieNightInvitation() {
     mediaTitles, 
     selectedFriends, 
     sendNotification, 
-    // Removed showToast from dependency array
-    createSession, 
-    createPoll, 
-    sendInvitation, 
-    invitationError, 
+    createSession,
+    createPoll,
+    sendInvitation,
     router
   ]);
 
@@ -289,7 +317,6 @@ export default function MovieNightInvitation() {
     }
   }, [inputMediaTitle, handleAddMedia]);
 
-  // Filter friends based on search query
   const filteredFriends = useMemo(() => {
     if (!friends) return [];
     if (!friendSearchQuery.trim()) return friends;
@@ -306,7 +333,6 @@ export default function MovieNightInvitation() {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-6"
     >
-      {/* Header */}
       <div className="text-center mb-6 md:mb-8">
         <h2 className="text-xl md:text-2xl font-semibold tracking-tight mb-2">Create Watch Party</h2>
         <p className="text-sm text-foreground/60">
@@ -314,9 +340,7 @@ export default function MovieNightInvitation() {
         </p>
       </div>
 
-      {/* Main content */}
       <div className="space-y-6">
-        {/* Calendar section */}
         <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<Calendar className="w-5 h-5" />} 
@@ -340,7 +364,6 @@ export default function MovieNightInvitation() {
           </div>
         </section>
 
-        {/* Media poll section */}
         <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<div className="flex"><Film className="w-5 h-5" /><Tv className="w-5 h-5 -ml-1" /></div>} 
@@ -432,7 +455,6 @@ export default function MovieNightInvitation() {
           </div>
         </section>
         
-        {/* Friends section */}
         <section className="frosted-panel p-4 sm:p-6 rounded-xl border border-foreground/10">
           <SectionHeader 
             icon={<Users className="w-5 h-5" />} 
@@ -440,7 +462,6 @@ export default function MovieNightInvitation() {
             subtitle="Select friends to join your watch party"
           />
           
-          {/* Friend search input */}
           {friends && friends.length > 6 && (
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
@@ -537,7 +558,6 @@ export default function MovieNightInvitation() {
         </section>
       </div>
 
-      {/* Footer actions */}
       <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
         <Button
           onClick={handleCancel}

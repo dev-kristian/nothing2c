@@ -4,13 +4,12 @@ import { useSearchParams } from 'next/navigation';
 import useSWRInfinite from 'swr/infinite';
 import { Media } from '@/types/media';
 
-// Define a union type for the possible media types
 export type DiscoverMediaType = 'movie' | 'tv' | 'upcoming';
 
 interface ApiResponse {
   results: Media[];
   total_pages: number;
-  page?: number; // Add optional page property
+  page?: number;
 }
 
 interface UseTrendingReturn {
@@ -26,34 +25,30 @@ interface UseTrendingReturn {
 }
 
 const fetcher = async (url: string, mediaType: DiscoverMediaType, page: number): Promise<ApiResponse> => {
-  // Use the correct API endpoint based on mediaType
   const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
   
   let requestOptions: RequestInit = {};
-  let finalUrl = url; // Use the endpoint passed in the key
+  let finalUrl = url; 
 
   if (mediaType === 'upcoming') {
-    // Upcoming uses GET and page as a query param
-    finalUrl = `${endpoint}?page=${page}`; // Construct URL with query param
+    finalUrl = `${endpoint}?page=${page}`; 
     requestOptions = {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      // No body for GET
     };
   } else {
-    // Trending uses POST with mediaType and page in the body
     requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mediaType, page }),
     };
-    finalUrl = endpoint; // Use the base trending endpoint
+    finalUrl = endpoint;
   }
 
   const response = await fetch(finalUrl, requestOptions);
 
   if (!response.ok) {
-    const errorData = await response.text(); // Get more error details
+    const errorData = await response.text();
     throw new Error(`Failed to fetch data from ${endpoint}: ${response.statusText} - ${errorData}`);
   }
 
@@ -64,17 +59,15 @@ export const useTrending = (): UseTrendingReturn => {
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type');
 
-  // Determine initial media type, including 'upcoming'
   const getInitialMediaType = (): DiscoverMediaType => {
     if (initialType === 'movie' || initialType === 'tv' || initialType === 'upcoming') {
       return initialType;
     }
-    return 'movie'; // Default to 'movie'
+    return 'movie';
   };
 
   const [mediaType, setMediaTypeState] = useState<DiscoverMediaType>(getInitialMediaType);
 
-  // Update state if searchParams change
   useEffect(() => {
     const currentUrlType = searchParams.get('type');
     if (currentUrlType === 'movie' || currentUrlType === 'tv' || currentUrlType === 'upcoming') {
@@ -85,10 +78,8 @@ export const useTrending = (): UseTrendingReturn => {
   }, [searchParams, mediaType]);
 
   const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
-    // Stop fetching if the previous page had no results
     if (previousPageData && !previousPageData.results.length) return null;
     
-    // Key includes the API endpoint and mediaType to ensure correct fetching and caching
     const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
     return [endpoint, mediaType, pageIndex + 1]; 
   };
@@ -103,7 +94,6 @@ export const useTrending = (): UseTrendingReturn => {
     mutate,
   } = useSWRInfinite<ApiResponse, Error>(getKey, ([url, type, page]) => fetcher(url, type, page), {
     revalidateFirstPage: false,
-    // Keep previous data visible while loading new mediaType
     keepPreviousData: true, 
   });
 
@@ -112,19 +102,15 @@ export const useTrending = (): UseTrendingReturn => {
     isLoading || (size > 0 && apiResponses && typeof apiResponses[size - 1] === 'undefined');
   const isEmpty = apiResponses?.[0]?.results.length === 0;
 
-  // Adjust 'isReachingEnd' logic based on mediaType
   const isReachingEnd = useMemo(() => {
     if (!apiResponses || isEmpty) return true;
 
     const lastResponse = apiResponses[apiResponses.length - 1];
-    if (!lastResponse) return true; // Should not happen if !isEmpty, but safety check
+    if (!lastResponse) return true; 
 
     if (mediaType === 'upcoming') {
-      // For upcoming, check if the current page is the last page reported by the API
-      // Ensure page is defined before comparing (satisfies TypeScript)
       return lastResponse.page !== undefined && lastResponse.page >= lastResponse.total_pages;
     } else {
-      // For movie/tv, rely on the number of results returned
       return lastResponse.results.length < 20;
     }
   }, [apiResponses, isEmpty, mediaType]);
@@ -151,18 +137,15 @@ export const useTrending = (): UseTrendingReturn => {
   const hasMore = !isReachingEnd;
 
   const errorMessage = error
-    ? `An error occurred: ${error.message}` // Provide more specific error
+    ? `An error occurred: ${error.message}` 
     : null;
 
   const refetch = useCallback(() => {
-    // Reset size to 1 and trigger revalidation
     setSize(1).then(() => mutate()); 
   }, [mutate, setSize]);
 
-  // Function to handle media type change, resetting pagination
   const handleSetMediaType = useCallback((type: DiscoverMediaType) => {
     setMediaTypeState(type);
-    // Reset SWR state by setting size to 1 when type changes
     setSize(1); 
   }, [setMediaTypeState, setSize]);
 
@@ -174,7 +157,7 @@ export const useTrending = (): UseTrendingReturn => {
     hasMore,
     loadMore,
     mediaType,
-    setMediaType: handleSetMediaType, // Use the new handler
+    setMediaType: handleSetMediaType, 
     refetch,
   };
 };

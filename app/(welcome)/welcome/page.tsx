@@ -46,7 +46,7 @@ function WelcomePage() {
           return;
         }
 
-        const freshIdToken = await getIdToken(user, true); // Force refresh
+        const freshIdToken = await getIdToken(user, true);
 
         const response = await fetch('/api/auth/session-login', {
           method: 'POST',

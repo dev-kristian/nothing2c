@@ -7,7 +7,7 @@ import { useUserData } from '@/context/UserDataContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Plus, Check, Film } from 'lucide-react';
 import YouTubeEmbed from './YoutubeEmbed'
-import HostEmbed from './HostEmbed' // Use original name for clarity
+import HostEmbed from './HostEmbed' 
 import DetailInfo from './DetailInfo'
 import { Button } from '@/components/ui/button'
 
@@ -42,7 +42,6 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
 
   return (
     <div className="relative min-h-screen bg-background text-foreground pt-6">
-      {/* Backdrop Image with Gradient */}
       <div className="absolute inset-0 ">
         <Image
           src={`https://image.tmdb.org/t/p/original${details.backdrop_path}`}
@@ -52,25 +51,20 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
           className="object-cover"
           sizes="100vw"
         />
-        {/* Light theme gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background/90 dark:hidden" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/70 dark:hidden" />
-        {/* Dark theme gradient */}
         <div className="absolute inset-0 hidden bg-gradient-to-b from-black/90 via-black/70 to-black/90 dark:block" />
         <div className="absolute inset-0 hidden bg-gradient-to-r from-black via-black/80 to-black/70 dark:block" />
       </div>
 
-      {/* Main Content */}
       <div className="relative ">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
-            {/* Left Column - Poster and Actions */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="w-full lg:w-1/4 shrink-0 space-y-4"
             >
-              {/* Poster */}
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl 
                             bg-card backdrop-blur-sm">
                 {details.poster_path ? (
@@ -89,7 +83,6 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-2">
                 {trailer && (
                   <Button 
@@ -102,9 +95,8 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                   </Button>
                 )}
 
-                {/* Show Watch Now Button for both Movies and TV Shows */}
                 <Button
-                  onClick={() => setShowFlickyEmbed(!showFlickyEmbed)} // Toggle visibility
+                  onClick={() => setShowFlickyEmbed(!showFlickyEmbed)} 
                   className="w-full bg-pink hover:bg-pink/90 text-white
                            border-0 h-12 rounded-xl"
                   aria-expanded={showFlickyEmbed}
@@ -133,9 +125,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
               </div>
             </motion.div>
 
-            {/* Right Column - Conditionally renders Details or Player */}
             <div className="w-full lg:w-3/4 pb-8">
-              {/* Conditionally render DetailInfo or HostEmbed */}
               {!showFlickyEmbed ? (
                 <DetailInfo
                   title={title!}
@@ -156,15 +146,15 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                   status={details.status}
                 />
               ) : (
-                // Render HostEmbed for both Movies and TV Shows
                 <HostEmbed
                   tmdbId={details.id}
-                  // Pass initial season/episode and the seasons array for TV shows
+                  title={title || ''}
+                  mediaType={isMovie ? 'movie' : 'tv'} 
                   initialData={!isMovie ? {
                     season: 1,
                     episode: 1,
                     totalSeasons: details.number_of_seasons,
-                    seasons: details.seasons // Pass the seasons array
+                    seasons: details.seasons
                   } : undefined}
                 />
               )}
@@ -173,14 +163,13 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
         </div>
       </div>
 
-      {/* Modal Overlay for Trailer */}
       <AnimatePresence>
         {showTrailer && trailer && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background/90 dark:bg-black/90 backdrop-blur-xl" // Ensure trailer modal is on top
+            className="fixed inset-0 z-50 bg-background/90 dark:bg-black/90 backdrop-blur-xl"
           >
             <YouTubeEmbed
               videoId={trailer.key}
@@ -188,7 +177,6 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
             />
           </motion.div>
         )}
-        {/* Removed HostEmbed from AnimatePresence */}
       </AnimatePresence>
     </div>
   );

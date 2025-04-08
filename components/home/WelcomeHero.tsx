@@ -3,7 +3,8 @@
 import { useUserData } from '@/context/UserDataContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react'; // Removed useState, useEffect
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 interface PosterImageProps {
   path: string;
@@ -12,17 +13,41 @@ interface PosterImageProps {
   showRating?: boolean;
 }
 
+const WelcomeHeroSkeleton = () => (
+  <div className="relative overflow-hidden rounded-3xl animate-pulse">
+    <div className="frosted-panel border-0 py-8 px-6 sm:py-10 sm:px-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+        <div className="space-y-4 w-full">
+          <Skeleton className="h-8 w-48 rounded-full" />
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-5 w-1/2" />
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Skeleton className="h-10 w-24 rounded-lg" />
+          </div>
+        </div>
+        <div className="hidden md:block">
+          <div className="relative h-48 w-48 lg:h-56 lg:w-56 flex-shrink-0 ml-4">
+            <Skeleton className="absolute top-0 left-0 h-32 w-24 rounded-lg transform -rotate-6 z-10" />
+            <Skeleton className="absolute top-4 right-0 h-36 w-24 rounded-lg transform rotate-6 z-20" />
+            <Skeleton className="absolute bottom-0 left-8 h-32 w-24 rounded-lg transform -rotate-3 z-0" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+
 export function WelcomeHero() {
-  const { userData, watchlistItems } = useUserData();
+  const { userData, watchlistItems, isLoading } = useUserData(); // Added isLoading
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
+  // Removed mounted state
+
   const topRatedPosters = useMemo(() => {
-    const allItems = [...watchlistItems.movie, ...watchlistItems.tv];
+    // Handle case where watchlistItems might be initially empty during loading
+    const movies = watchlistItems?.movie || [];
+    const tvShows = watchlistItems?.tv || [];
+    const allItems = [...movies, ...tvShows];
     
     const sortedItems = [...allItems].sort((a, b) => 
       (b.vote_average || 0) - (a.vote_average || 0)
@@ -51,20 +76,9 @@ export function WelcomeHero() {
     greetingEmoji = "🌤️";
   }
 
-  if (!mounted) {
-    return (
-      <div className="relative overflow-hidden rounded-3xl">
-        <div className="frosted-panel border-0 py-8 px-6">
-          <div className="flex flex-col items-start justify-between">
-            <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl font-medium">
-                Welcome
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // Show skeleton if loading OR if essential userData is not yet available
+  if (isLoading || !userData) {
+    return <WelcomeHeroSkeleton />;
   }
 
   return (

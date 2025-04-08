@@ -1,31 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { 
-  Search, Loader2, UserPlus, UserMinus, Users, 
-  Bell, Clock, UserCheck, X, Check, MoreHorizontal,
-  ChevronLeft, ArrowRight
-} from 'lucide-react';
-import { toast } from "@/hooks/use-toast"; // Import the standard toast function
+import React, { useState, useRef, useEffect } from 'react'; 
+import { Users, Bell, Search, ChevronRight, Loader2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FriendsList, RequestsList, SearchUsers } from '@/components/social';
 import { useUserData } from '@/context/UserDataContext';
+import { toast } from "@/hooks/use-toast";
 import { Friend, FriendRequest, FriendSearchResult, FriendSearchResultWithStatus } from '@/types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import router from 'next/router';
 
 type ApiError = {
   message: string;
   status?: number;
 };
+
+const socialCategories = [
+  {
+    id: 'friends',
+    label: 'Friends',
+    icon: Users,
+    component: FriendsList,
+  },
+  {
+    id: 'requests',
+    label: 'Requests',
+    icon: Bell,
+    component: RequestsList,
+  },
+  {
+    id: 'search',
+    label: 'Search',
+    icon: Search,
+    component: SearchUsers,
+  },
+];
 
 export default function SocialPage() {
   const {
@@ -34,86 +41,74 @@ export default function SocialPage() {
     friendRequests,
     isLoadingFriends,
     isLoadingRequests,
-    sendFriendRequest,
     acceptFriendRequest,
     rejectFriendRequest,
     removeFriend,
+    sendFriendRequest,
   } = useUserData();
-  
-  // Removed useCustomToast hook
+
+  const [activeCategory, setActiveCategory] = useState(socialCategories[0].id);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FriendSearchResultWithStatus[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState('friends');
-  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [searched, setSearched] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isInputFocused, setIsInputFocused] = useState(false); 
 
-  const [scrolled, setScrolled] = useState(false);
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
+  const [removingFriends, setRemovingFriends] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (showSearchPanel && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
-    }
-  }, [showSearchPanel]);
+
+  const getAvatarGradient = () => {
+    return 'from-pink to-pink/80'; 
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || !userData?.uid) {
-      // Use standard toast
       toast({
         title: 'Search Error',
         description: 'Please enter a username to search',
-        variant: 'default', // Or 'info' if available
+        variant: 'default',
       });
       return;
     }
-    
+
     setIsSearching(true);
     setSearchResults([]);
-    
+    setSearched(true);
+    setActiveCategory('search'); 
+
     try {
       const params = new URLSearchParams();
       params.append('username', searchQuery.trim());
       params.append('currentUserId', userData.uid);
 
       const response = await fetch(`/api/friends/search?${params.toString()}`);
-      
+
       if (!response.ok) throw new Error('Failed to search users');
-      
+
       const data = await response.json();
       const filteredResults = data.users.filter((user: FriendSearchResult) =>
         user.uid !== userData.uid && !friends.some(friend => friend.uid === user.uid)
       );
-      
+
       setSearchResults(filteredResults);
       if (filteredResults.length === 0) {
-        // Use standard toast
         toast({
           title: 'No Results',
-          description: 'No users found with that username',
+          description: 'No users found matching your search criteria.',
           variant: 'default',
         });
       }
     } catch (error: unknown) {
       const apiError = error as ApiError;
       console.error('Search error:', error);
-      // Use standard toast
       toast({
         title: 'Search Error',
         description: apiError.message || 'Failed to search for users. Please try again.',
-        variant: 'destructive', // Or 'warning' if available
+        variant: 'destructive',
       });
     } finally {
       setIsSearching(false);
@@ -122,35 +117,33 @@ export default function SocialPage() {
 
   const handleSendFriendRequest = async (targetUser: FriendSearchResult) => {
     if (!userData) {
-      // Use standard toast
       toast({
         title: 'Authentication Error',
         description: 'You must be logged in to send friend requests',
-        variant: 'destructive', // Or 'warning' if available
+        variant: 'destructive',
       });
       return;
     }
-    
+
     setPendingRequests(prev => new Set(prev).add(targetUser.uid));
-    
+
     try {
       await sendFriendRequest(targetUser);
-      // Use standard toast
+
       toast({
         title: 'Friend Request Sent',
         description: `Friend request sent to ${targetUser.username}`,
-        variant: 'default', // Or 'success' if available
+        variant: 'default',
       });
-      setSearchResults(prev => 
-        prev.map(user => 
-          user.uid === targetUser.uid 
-            ? { ...user, requestStatus: { exists: true, type: 'sent' } } 
+      setSearchResults(prev =>
+        prev.map(user =>
+          user.uid === targetUser.uid
+            ? { ...user, requestStatus: { exists: true, type: 'sent' } }
             : user
         )
       );
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      // Use standard toast
       toast({
         title: 'Request Failed',
         description: apiError.message || 'Failed to send friend request. Please try again.',
@@ -165,22 +158,18 @@ export default function SocialPage() {
     }
   };
 
-  const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
-  
-  const handleAcceptRequest = async (request: FriendRequest) => {
+
+   const handleAcceptRequest = async (request: FriendRequest) => {
     setProcessingRequests(prev => new Set(prev).add(request.id));
     try {
       await acceptFriendRequest(request);
-      // Use standard toast
       toast({
         title: 'Friend Request Accepted',
         description: `You are now friends with ${request.fromUsername}`,
-        variant: 'default', // Or 'success' if available
+        variant: 'default',
       });
-      setActiveTab('friends');
     } catch (error: unknown) {
-      const apiError = error as ApiError;
-      // Use standard toast
+       const apiError = error as ApiError;
       toast({
         title: 'Error',
         description: apiError.message || 'Failed to accept friend request. Please try again.',
@@ -199,15 +188,13 @@ export default function SocialPage() {
     setProcessingRequests(prev => new Set(prev).add(request.id));
     try {
       await rejectFriendRequest(request);
-      // Use standard toast
       toast({
         title: 'Friend Request Rejected',
         description: `Friend request from ${request.fromUsername} was rejected`,
-        variant: 'default', // Or 'info' if available
+        variant: 'default',
       });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      // Use standard toast
       toast({
         title: 'Error',
         description: apiError.message || 'Failed to reject friend request. Please try again.',
@@ -222,21 +209,17 @@ export default function SocialPage() {
     }
   };
 
-  const [removingFriends, setRemovingFriends] = useState<Set<string>>(new Set());
-  
   const handleRemoveFriend = async (friend: Friend) => {
     setRemovingFriends(prev => new Set(prev).add(friend.uid));
     try {
       await removeFriend(friend);
-      // Use standard toast
       toast({
         title: 'Friend Removed',
         description: `${friend.username} has been removed from your friends list`,
-        variant: 'default', // Or 'success' if available
+        variant: 'default',
       });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      // Use standard toast
       toast({
         title: 'Error',
         description: apiError.message || 'Failed to remove friend. Please try again.',
@@ -251,458 +234,230 @@ export default function SocialPage() {
     }
   };
 
-  const closeSearch = () => {
-    setShowSearchPanel(false);
+  const handleClearSearch = () => {
     setSearchQuery('');
-    setSearchResults([]);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   };
 
-  const getAvatarGradient = (username: string) => {
-    const colors = [
-      'from-pink-500 to-purple-500',
-      'from-pink-500 to-orange-400',
-      'from-purple-600 to-blue-500',
-      'from-blue-500 to-teal-400',
-      'from-teal-500 to-green-400'
-    ];
-    
-    const sum = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[sum % colors.length];
-  };
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
 
   return (
-    <div className="min-h-screen">
-      <header 
-        className={`sticky top-0 z-10 transition-all duration-300 ${
-          scrolled ? 'backdrop-blur-xl bg-background/80 shadow-sm' : ''
-        }`}
+    <div className="container-6xl mx-auto px-2 md:px-4 py-4 md:py-8">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7 }}
+        className="text-center w-full mb-3 sm:mb-4 md:mb-6"
       >
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="h-16 md:h-20 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => router.back()}
-                className="md:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-                aria-label="Go back"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              
-              <h1 className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-                Social
-              </h1>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => setShowSearchPanel(!showSearchPanel)}
-                variant="ghost"
-                size="icon"
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-                aria-label="Search for friends"
-              >
-                <Search className="h-5 w-5 text-muted-foreground" />
-              </Button>
-
-              <Button 
-                onClick={() => {
-                  setShowSearchPanel(true);
-                  setTimeout(() => searchInputRef.current?.focus(), 300);
-                }}
-                variant="ghost"
-                size="icon"
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-                aria-label="Add friend"
-              >
-                <UserPlus className="h-5 w-5 text-muted-foreground" />
-              </Button>
-              
-              {friendRequests.length > 0 && (
-                <div 
-                  className="relative cursor-pointer" 
-                  onClick={() => setActiveTab('requests')}
-                >
-                  <Button 
-                    variant="ghost"
-                    size="icon"
-                    className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-                    aria-label={`${friendRequests.length} friend requests`}
-                  >
-                    <Bell className="h-5 w-5 text-muted-foreground" />
-                  </Button>
-                  <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-pink hover:bg-pink"
-                  >
-                    {friendRequests.length}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <AnimatePresence>
-        {showSearchPanel && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden bg-muted/50 backdrop-blur-lg border-b border-border"
-          >
-            <div className="container mx-auto px-4 py-6">
-              <div className="relative max-w-2xl mx-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search for people by username..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12 rounded-xl bg-background/60 focus-visible:ring-pink/30"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                />
-                
-                <Button 
-                  onClick={handleSearch}
-                  disabled={isSearching || !searchQuery.trim()}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 rounded-lg h-10 bg-pink hover:bg-pink/90 text-white"
-                >
-                  {isSearching ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Search"
-                  )}
-                </Button>
-              </div>
-              
-              <div className="flex justify-end mt-4 max-w-2xl mx-auto">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={closeSearch}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Close
-                </Button>
-              </div>
-              
-              <div className="mt-4 max-w-2xl mx-auto">
-                {isSearching ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-card/80 animate-pulse">
-                        <div className="w-12 h-12 rounded-full bg-muted"></div>
-                        <div className="flex-1">
-                          <div className="h-4 w-1/3 bg-muted rounded"></div>
-                          <div className="h-3 w-1/2 bg-muted/50 rounded mt-2"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <div className="space-y-2 max-h-[300px] overflow-auto">
-                    {searchResults.map((user) => (
-                      <div key={user.uid} className="flex items-center justify-between p-3 rounded-xl bg-card/80 backdrop-blur hover:bg-card/90 transition-colors">
-                        
-                        <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(user.username)} flex items-center justify-center text-white text-lg font-medium shadow-sm`}>
-                            {user.username.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">{user.username}</p>
-                            {user.email && <p className="text-sm text-muted-foreground truncate max-w-[180px] sm:max-w-xs">{user.email}</p>}
-                          </div>
-                        </div>
-                        
-                        {user.requestStatus?.exists ? (
-                          <div className="px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium flex items-center">
-                            {user.requestStatus.type === 'sent' ? (
-                              <>
-                                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                                Pending
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                Received
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <Button
-                            onClick={() => handleSendFriendRequest(user)}
-                            disabled={pendingRequests.has(user.uid)}
-                            className="rounded-full px-4 py-2 bg-pink hover:bg-pink/90 text-white text-sm font-medium transition-colors"
-                          >
-                            {pendingRequests.has(user.uid) ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Add Friend
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : searchQuery.trim() && (
-                  <div className="text-center py-8 bg-card/80 backdrop-blur rounded-xl">
-                    <UserMinus className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="text-muted-foreground">No users found matching "{searchQuery}"</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <main className="container mx-auto px-4 sm:px-6 py-6">
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="w-full"
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-muted-foreground text-xs sm:text-sm font-medium mb-1"
         >
-          <div className="flex justify-center mb-6">
-            <TabsList className="bg-muted/50 backdrop-blur p-1 rounded-xl">
-              <TabsTrigger 
-                value="friends" 
-                className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Friends
-                <Badge className="ml-2 bg-muted text-foreground">
-                  {friends.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="requests" 
-                className="rounded-lg px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Requests
-                {friendRequests.length > 0 && (
-                  <Badge className="ml-2 bg-pink/10 text-pink dark:bg-pink/20">
-                    {friendRequests.length}
-                  </Badge>
+          Connect with friends and discover new ones
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.1,
+            duration: 0.5,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
+        >
+          <span className="text-foreground">Your </span>
+          <span className="text-pink font-semibold">Social</span> 
+          <span className="text-foreground"> Hub</span>
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        className="relative w-full max-w-xl mx-auto mb-8" 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: 0.2,
+          duration: 0.6,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="w-full">
+          <div
+            className={`
+              frosted-panel p-0 rounded-full shadow-lg overflow-hidden
+              transition-all duration-300 ease-out
+              ${isInputFocused ? 'ring-1 ring-pink/50 shadow-xl' : ''} {/* Reverted to ring-pink */}
+            `}
+          >
+            <div className="flex items-center p-1 sm:p-1.5 md:p-2">
+              <div className="flex-shrink-0 pl-2 sm:pl-3">
+                <Search
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors duration-300 ${
+                    isInputFocused ? 'text-pink' : 'text-muted-foreground' 
+                  }`}
+                />
+              </div>
+              
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                placeholder="Search people..."
+                aria-label="Search for people by username"
+                className="flex-grow bg-transparent text-foreground placeholder-foreground/50 border-none 
+                          py-1.5 sm:py-2 px-1.5 sm:px-2 md:px-3 text-xs sm:text-sm md:text-base focus:outline-none focus:ring-0"
+              />
+              
+              <AnimatePresence>
+                {searchQuery && (
+                  <motion.button
+                    type="button"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={handleClearSearch}
+                    className="flex-shrink-0 p-1 sm:p-1.5 text-foreground/50 hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </motion.button>
                 )}
-              </TabsTrigger>
-            </TabsList>
+              </AnimatePresence>
+              
+              
+              <div className="h-5 sm:h-6 w-px bg-foreground/10 mx-0.5 sm:mx-1"></div>
+              
+              <motion.button
+                type="submit"
+                disabled={isSearching || !searchQuery.trim()}
+                aria-label="Search"
+                className={`
+                  flex-shrink-0 bg-pink hover:bg-pink/90 text-white {/* Reverted to bg-pink and text-white */}
+                  transition-all duration-300 rounded-2xl py-1 sm:py-1.5 px-2.5 sm:px-3 md:px-4 mx-0.5 sm:mx-1
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center sm:space-x-2">
+                  {isSearching ? (
+                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  )}
+                  <span className="hidden sm:inline text-2xs sm:text-xs md:text-sm">Search</span>
+                </div>
+              </motion.button>
+            </div>
           </div>
+        </form>
+        <div className="mt-2 text-center text-2xs sm:text-xs text-foreground/40 hidden sm:block">
+          <span>Press </span>
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-foreground/10 font-mono text-foreground/70">
+            ⌘K
+          </kbd>
+          <span> or </span>
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-foreground/10 font-mono text-foreground/70">
+            Ctrl+K
+          </kbd>
+          <span> to search</span>
+        </div>
+      </motion.div>
 
-          <TabsContent value="friends" className="focus-visible:outline-none focus-visible:ring-0">
-            {isLoadingFriends ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="frosted-panel rounded-2xl p-5 shadow-sm animate-pulse">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-muted"></div>
-                      <div className="flex-1">
-                        <div className="h-5 w-1/2 bg-muted rounded"></div>
-                        <div className="h-4 w-3/4 bg-muted/50 rounded mt-2"></div>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-border flex justify-between">
-                      <div className="h-9 w-24 bg-muted rounded-full"></div>
-                      <div className="h-9 w-9 bg-muted rounded-full"></div>
-                    </div>
-                  </div>
-                ))}
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full md:w-64 space-y-1 flex-shrink-0">
+          {socialCategories.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveCategory(id)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
+                activeCategory === id
+                  ? 'bg-pink text-white' 
+                  : 'hover:bg-muted text-foreground' 
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Icon className="h-5 w-5" />
+                <span className="font-medium">{label}</span>
+                {id === 'requests' && friendRequests.length > 0 && (
+                 <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    activeCategory === id ? 'bg-white/20 text-white' : 'bg-gray/20 text-muted-foreground'
+                   }`}>
+                     {friendRequests.length}
+                   </span>
+                )}
+                 {id === 'friends' && (
+                   <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    activeCategory === id ? 'bg-white/20 text-white' : 'bg-gray/20 text-muted-foreground'
+                   }`}>
+                     {friends.length}
+                   </span>
+                )}
               </div>
-            ) : friends.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {friends.map((friend) => (
-                  <motion.div
-                    key={friend.uid}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="frosted-panel rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarGradient(friend.username)} flex items-center justify-center text-white text-xl font-medium shadow-md`}>
-                        {friend.username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-lg truncate text-foreground">{friend.username}</h3>
-                        {friend.email && (
-                          <p className="text-muted-foreground text-sm truncate">{friend.email}</p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-border flex justify-between items-center">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="rounded-full px-4 text-foreground hover:bg-muted"
-                      >
-                        View Profile
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                            <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl p-1">
-                        <DropdownMenuItem 
-                            onClick={() => handleRemoveFriend(friend)}
-                            disabled={removingFriends.has(friend.uid)}
-                            className="flex items-center cursor-pointer rounded-lg text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-900/30"
-                          >
-                            {removingFriends.has(friend.uid) ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <UserMinus className="h-4 w-4 mr-2" />
-                            )}
-                            Remove Friend
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center py-16 text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Users className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-medium text-foreground mb-2">No Friends Yet</h3>
-                <p className="text-muted-foreground max-w-sm mb-6">
-                  Search for users and send friend requests to connect with others.
-                </p>
-                <Button 
-                  onClick={() => setShowSearchPanel(true)}
-                  className="rounded-full px-6 py-2 bg-pink hover:bg-pink/90 text-white"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Find Friends
-                </Button>
-              </motion.div>
-            )}
-          </TabsContent>
+              <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${
+                activeCategory === id ? 'rotate-90' : ''
+              }`} />
+            </button>
+          ))}
+        </div>
 
-          <TabsContent value="requests" className="focus-visible:outline-none focus-visible:ring-0">
-            {isLoadingRequests ? (
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="frosted-panel rounded-2xl p-4 shadow-sm animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-muted"></div>
-                      <div className="flex-1">
-                        <div className="h-5 w-1/3 bg-muted rounded"></div>
-                        <div className="h-4 w-1/4 bg-muted/50 rounded mt-2"></div>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="h-10 w-24 rounded-full bg-muted"></div>
-                        <div className="h-10 w-24 rounded-full bg-muted"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : friendRequests.length > 0 ? (
-              <div className="space-y-4">
-                {friendRequests.map((request) => (
-                  <motion.div
-                    key={request.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="frosted-panel rounded-2xl p-4 shadow-sm"
-                  >
-                    
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(request.fromUsername)} flex items-center justify-center text-white text-lg font-medium shadow-sm`}>
-                          {request.fromUsername.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{request.fromUsername}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Wants to connect with you
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-auto">
-                        <Button
-                          onClick={() => handleAcceptRequest(request)}
-                          disabled={processingRequests.has(request.id)}
-                          className="rounded-full px-5 py-2 bg-pink hover:bg-pink/90 text-white"
-                        >
-                          {processingRequests.has(request.id) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4 mr-2" />
-                              Accept
-                            </>
-                          )}
-                        </Button>
-                        
-                        <Button
-                          onClick={() => handleRejectRequest(request)}
-                          disabled={processingRequests.has(request.id)}
-                          variant="outline"
-                          className="rounded-full border-border"
-                        >
-                          {processingRequests.has(request.id) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <X className="h-4 w-4 mr-2" />
-                              Decline
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center py-16 text-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Bell className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-medium text-foreground mb-2">No Friend Requests</h3>
-                <p className="text-muted-foreground max-w-sm mb-6">
-                  You don't have any pending friend requests at the moment.
-                </p>
-                <Button 
-                  onClick={() => setActiveTab('friends')}
-                  variant="outline" 
-                  className="rounded-full"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  View Friends
-                </Button>
-              </motion.div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </main>
+        <div className="flex-1 min-h-[500px] bg-background/50 rounded-lg border border-accent/10 p-6 overflow-hidden">
+           {activeCategory === 'friends' && (
+             <FriendsList
+              friends={friends}
+              isLoadingFriends={isLoadingFriends}
+              removingFriends={removingFriends}
+              handleRemoveFriend={handleRemoveFriend}
+               getAvatarGradient={getAvatarGradient}
+               onShowSearch={() => setActiveCategory('search')}
+             />
+           )}
+           {activeCategory === 'requests' && (
+             <RequestsList
+              friendRequests={friendRequests}
+              isLoadingRequests={isLoadingRequests}
+              processingRequests={processingRequests}
+              handleAcceptRequest={handleAcceptRequest}
+              handleRejectRequest={handleRejectRequest}
+               getAvatarGradient={getAvatarGradient}
+               onShowFriends={() => setActiveCategory('friends')}
+             />
+           )}
+           {activeCategory === 'search' && (
+             <SearchUsers
+               searchResults={searchResults}
+               isSearching={isSearching}
+               pendingRequests={pendingRequests}
+               handleSendFriendRequest={handleSendFriendRequest}
+               getAvatarGradient={getAvatarGradient}
+               searchQuery={searchQuery} 
+               searched={searched} 
+             />
+           )}
+         </div>
+
+      </div>
     </div>
   );
 }

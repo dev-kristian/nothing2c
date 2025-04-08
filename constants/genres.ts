@@ -46,7 +46,6 @@ export const MOVIE_GENRES: Genre[] = [
   { id: 37, name: 'Western' },
 ];
 
-// Combine and deduplicate genres for 'multi' type
 const combinedGenres = [...TV_GENRES, ...MOVIE_GENRES];
 const uniqueGenreIds = new Set<number>();
 export const MULTI_GENRES: Genre[] = combinedGenres.filter((genre) => {
@@ -55,7 +54,7 @@ export const MULTI_GENRES: Genre[] = combinedGenres.filter((genre) => {
   }
   uniqueGenreIds.add(genre.id);
   return true;
-}).sort((a, b) => a.name.localeCompare(b.name)); // Optional: sort alphabetically
+}).sort((a, b) => a.name.localeCompare(b.name));
 
 export const GENRES_BY_TYPE: { [key: string]: Genre[] } = {
   tv: TV_GENRES,

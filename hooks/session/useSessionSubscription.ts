@@ -21,18 +21,16 @@ export const useSessionSubscription = () => {
 
   useEffect(() => {
     if (!user || !userData) return;
-    if (isSubscribed.current) return; // Prevent duplicate subscriptions
+    if (isSubscribed.current) return;
   
     const sessionsRef = collection(db, 'sessions');
     
-    // Single query using participantIds
     const sessionsQuery = query(
       sessionsRef,
       where('participantIds', 'array-contains', user.uid),
       orderBy('createdAt', 'desc')
     );
     
-    // Set up the listener
     const unsubscribe = onSnapshot(sessionsQuery, (querySnapshot) => {
       const sessionsList: Session[] = querySnapshot.docs.map((doc) => {
         const data = doc.data();
@@ -68,7 +66,6 @@ export const useSessionSubscription = () => {
           return [username, userDates];
         });
   
-        // Ensure participants is always defined
         const participants = data.participants || {
           [data.createdByUid]: {
             username: data.createdBy,
@@ -76,7 +73,6 @@ export const useSessionSubscription = () => {
           }
         };
         
-        // Include participantIds from the data or create a default array
         const participantIds = data.participantIds || Object.keys(participants);
         
         return {
@@ -86,7 +82,7 @@ export const useSessionSubscription = () => {
           createdByUid: data.createdByUid || '',
           userDates: Object.fromEntries(userDates),
           participants,
-          participantIds, // Added this line to include participantIds
+          participantIds,
           poll: data.poll ? {
             id: data.poll.id,
             movieTitles: data.poll.movieTitles || [],
@@ -96,19 +92,16 @@ export const useSessionSubscription = () => {
         };
       });
       
-      // Sort sessions by creation date (newest first)
       sessionsList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       
       setSessions(sessionsList);
     }, (error) => {
       console.error("Error fetching sessions:", error);
-      isSubscribed.current = false; // Reset on error
+      isSubscribed.current = false;
     });
   
-    // Mark as subscribed after setting up the listener
     isSubscribed.current = true;
     
-    // Cleanup
     return () => {
       unsubscribe();
       isSubscribed.current = false;

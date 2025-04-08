@@ -56,12 +56,10 @@ const SessionPage = () => {
 
   return (
     <div className="p-2 md:p-4 max-w-7xl mx-auto">
-      {/* Session Header */}
       <SessionHeader session={session} datePopularity={datePopularity} />
 
       <SessionParticipants session={session} />
       
-      {/* Calendar Section */}
       <div className="mb-8">
         <div className="flex items-center">
           <h2 className="text-xl font-semibold text-label dark:text-label-dark">Select Your Availability</h2>
@@ -79,7 +77,6 @@ const SessionPage = () => {
           />
       </div>
       
-      {/* Top Availability Section */}
       <div className="mb-8">
         <div className="flex items-center ">
           <h2 className="text-xl font-semibold text-label dark:text-label-dark">Top Availability</h2>
@@ -91,7 +88,6 @@ const SessionPage = () => {
         <TopAvailability datePopularity={datePopularity} />
       </div>
 
-      {/* Media Suggestions Section */}
       {session?.poll && (
         <div className="mb-8">
           <div className="flex items-center">

@@ -1,6 +1,7 @@
 // types/context.ts
 import { Timestamp } from 'firebase/firestore';
-import { Media, UserData, Friend, FriendRequest, NotificationStatus, DateTimeSelection, Session, SearchResult } from './';
+import { Media, UserData, Friend, FriendRequest, DateTimeSelection, Session, SearchResult } from './';
+import { KeyedMutator } from 'swr';
 
 export type TopWatchlistItem = FirestoreWatchlistItem;
 
@@ -13,7 +14,7 @@ export interface UserDataContextType {
     };
     addToWatchlist: (item: Media, mediaType: 'movie' | 'tv') => Promise<void>;
     removeFromWatchlist: (id: number, mediaType: 'movie' | 'tv') => Promise<void>;
-    updateNotificationStatus: (status: NotificationStatus) => Promise<void>;
+    mutateUserData: KeyedMutator<UserData | null>; 
     friends: Friend[];
     friendRequests: FriendRequest[];
     isLoadingFriends: boolean;
@@ -22,6 +23,7 @@ export interface UserDataContextType {
     acceptFriendRequest: (request: FriendRequest) => Promise<void>;
     rejectFriendRequest: (request: FriendRequest) => Promise<void>;
     removeFriend: (friend: Friend) => Promise<void>;
+    updateNotificationStatus: (status: 'allowed' | 'denied' | 'unsupported') => Promise<void>; 
   }
 
 export interface MediaState {
@@ -65,9 +67,8 @@ export interface FirestoreWatchlistItem {
   video?: boolean;
 }
 
-// Add for SessionContext
 export interface SessionContextType {
-  createSession: (dates: DateTimeSelection[], selectedFriends: Friend[]) => Promise<Session>;
+  createSession: (dates: DateTimeSelection[], selectedFriends: Friend[]) => Promise<string>;
   createPoll: (sessionId: string, movieTitles: string[]) => Promise<void>;
   updateUserDates: (sessionId: string, dates: DateTimeSelection[]) => Promise<void>;
   toggleVote: (sessionId: string, movieTitle: string) => Promise<void>;
@@ -78,19 +79,16 @@ export interface SessionContextType {
   isLoading: boolean;
 }
 
-// For Firestore
 export interface FirestoreUserDate {
   date: Timestamp;
   hours: Timestamp[] | 'all';
 }
 
-// For client-side
 export interface UserDate {
   date: string;
   hours: string[] | 'all';
 }
 
-// Add for SearchContext
 export interface SearchState {
     results: SearchResult[];
     isLoading: boolean;

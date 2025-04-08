@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin'; 
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { DecodedIdToken } from 'firebase-admin/auth';
+import { Timestamp } from 'firebase-admin/firestore';
 
 interface UserProfile {
   uid: string;
   email: string;
   createdAt: FirebaseFirestore.Timestamp;
-  setupCompleted: boolean; // Renamed field
+  setupCompleted: boolean; 
 }
 
 export async function POST(request: NextRequest) {
@@ -35,25 +36,25 @@ export async function POST(request: NextRequest) {
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();
 
-    let setupCompleted = false; // Renamed variable
+    let setupCompleted = false; 
 
     if (!userDoc.exists) {
       console.log(`Creating new user profile for UID: ${uid}`);
       const newUserProfile: UserProfile = {
         uid: uid,
         email: email,
-        createdAt: new Date() as any,
-        setupCompleted: false, // Renamed field
+        createdAt: Timestamp.fromDate(new Date()),
+        setupCompleted: false,
       };
       await userRef.set(newUserProfile);
-      setupCompleted = newUserProfile.setupCompleted; // Renamed field
+      setupCompleted = newUserProfile.setupCompleted;
     } else {
       const existingProfile = userDoc.data() as UserProfile;
-      setupCompleted = existingProfile.setupCompleted ?? false; // Renamed field
-      console.log(`User profile found for UID: ${uid}, setupCompleted: ${setupCompleted}`); // Renamed field
+      setupCompleted = existingProfile.setupCompleted ?? false;
+      console.log(`User profile found for UID: ${uid}, setupCompleted: ${setupCompleted}`);
     }
 
-    return NextResponse.json({ setupCompleted }); // Renamed field
+    return NextResponse.json({ setupCompleted });
 
   } catch (error) {
     console.error('Error in /api/users POST handler:', error);

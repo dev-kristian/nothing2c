@@ -1,7 +1,7 @@
 'use server';
 
-import { adminDb, adminAuth } from '@/lib/firebase-admin'; // Assuming admin DB and Auth are initialized here
-import { FieldValue } from 'firebase-admin/firestore'; // For serverTimestamp
+import { adminDb, adminAuth } from '@/lib/firebase-admin'; 
+import { FieldValue } from 'firebase-admin/firestore';
 
 interface ValidationResult {
   isValid: boolean;
@@ -71,8 +71,6 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
   }
 };
 
-// --- New Server Action ---
-
 interface SetUsernameResult {
   success: boolean;
   message: string;
@@ -91,15 +89,13 @@ export const setUsernameAndClaim = async (uid: string, username: string): Promis
   const finalUsername = username.trim().toLowerCase();
 
   try {
-    // 1. Update Firestore document
     const userRef = adminDb.collection('users').doc(uid);
     await userRef.update({
       username: finalUsername,
       setupCompleted: true,
-      updatedAt: FieldValue.serverTimestamp(), // Use FieldValue for server timestamp
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // 2. Set custom claim
     await adminAuth.setCustomUserClaims(uid, { hasUsername: true });
 
     console.log(`[Server Action] Successfully set username and claim for UID: ${uid}`);
@@ -107,11 +103,10 @@ export const setUsernameAndClaim = async (uid: string, username: string): Promis
 
   } catch (error) {
     console.error(`[Server Action] Error setting username and claim for UID ${uid}:`, error);
-    // Attempt to revert custom claim if Firestore update failed after claim was set (best effort)
     try {
       const user = await adminAuth.getUser(uid);
       if (user.customClaims?.hasUsername) {
-        await adminAuth.setCustomUserClaims(uid, { hasUsername: null }); // Remove claim
+        await adminAuth.setCustomUserClaims(uid, { hasUsername: null }); 
         console.warn(`[Server Action] Rolled back custom claim for UID ${uid} due to error.`);
       }
     } catch (rollbackError) {

@@ -1,8 +1,6 @@
 // lib/utils.ts
 import { clsx, ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { getFirebaseErrorMessage } from './firebaseErrors';
 import { toast } from "@/hooks/use-toast"; 
 
@@ -10,11 +8,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Removed checkOrCreateUserProfile and handleGoogleSignIn functions
-// as this logic is now handled within useAuth hook and AuthForm component.
-
 export const handleAuthError = (
-  error: any,
+  error: unknown,
   defaultMessage: string = 'An unexpected error occurred. Please try again.'
 ) => {
   let errorMessage = defaultMessage;

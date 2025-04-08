@@ -4,7 +4,8 @@
 import React, { createContext, useContext } from 'react';
 import { useWatchlist } from '@/hooks/user/useWatchlist';
 import { useFriends } from '@/hooks/user/useFriends';
-import { UserDataContextType } from '@/types';
+import { useNotification } from '@/hooks/user/useNotification'; 
+import { UserDataContextType, UserData } from '@/types';
 import { useUserData as useUserDataHook } from '@/hooks/user/useUserData';
 
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
@@ -17,21 +18,31 @@ export const useUserData = () => {
   return context;
 };
 
+import { KeyedMutator } from 'swr'; 
+
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userData, updateNotificationStatus } = useUserDataHook();
-  const { watchlistItems, addToWatchlist, removeFromWatchlist } = useWatchlist(); 
+  const { userData, isLoading: isLoadingUserData, mutateUserData } = useUserDataHook() as { // Removed error: userDataError
+    userData: UserData | null;
+    isLoading: boolean;
+    // error: Error | undefined; // Removed error type definition
+    mutateUserData: KeyedMutator<UserData | null>;
+  };
+  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist(); // Removed error: watchlistError
   const { friends, friendRequests, isLoadingFriends, isLoadingRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend } =
     useFriends(userData?.username);
+  const { updateNotificationStatus } = useNotification(); 
+
+  const isLoading = isLoadingUserData || isLoadingWatchlist || isLoadingFriends || isLoadingRequests;
 
   return (
     <UserDataContext.Provider
       value={{
         userData,
-        isLoading: false, 
-        watchlistItems, 
+        isLoading: isLoading,
+        watchlistItems,
         addToWatchlist,
         removeFromWatchlist,
-        updateNotificationStatus,
+        mutateUserData,
         friends,
         friendRequests,
         isLoadingFriends,
@@ -39,7 +50,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         sendFriendRequest,
         acceptFriendRequest,
         rejectFriendRequest,
-        removeFriend
+        removeFriend,
+        updateNotificationStatus 
       }}
     >
       {children}

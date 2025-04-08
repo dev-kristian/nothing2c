@@ -6,8 +6,9 @@ import { Users, Heart, Popcorn, TrendingUp, Film, Tv } from 'lucide-react';
 import Link from 'next/link';
 import MediaTypeToggle from '@/components/MediaTypeToggle';
 import MediaPoster from '@/components/MediaPoster';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card'; // Added CardHeader, CardContent
 import useSWR from 'swr';
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 const MemoizedMediaPoster = React.memo(MediaPoster);
 
@@ -37,15 +38,34 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
     return stats.sort((a: GenreWithCount, b: GenreWithCount) => b.count - a.count).slice(0, 5);
   }, [genreData, friendsWatchlistItems, mediaType]);
 
-  if (!genreData?.genres) return null;
+  // Skeleton for GenreStats while genreData is loading
+  if (!genreData?.genres) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/4" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="w-5 h-5 text-pink" />
-        <h3 className="text-lg font-semibold">Top Community Genres</h3>
-      </div>
-      <div className="space-y-3">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-pink" />
+          <h3 className="text-lg font-semibold">Top Community Genres</h3>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
         {genreStats.map((genre) => (
           <div key={genre.id} className="flex items-center justify-between">
             <span className="text-sm text-foreground/80">{genre.name}</span>
@@ -55,10 +75,76 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
             </div>
           </div>
         ))}
-      </div>
+      </CardContent>
     </Card>
   );
 }
+
+// Skeleton component for the entire Community Section
+const CommunitySkeleton = () => {
+  const gridCols = "grid-cols-2 md:grid-cols-3"; // Match the actual grid
+  const posterCount = 6; // Number of poster skeletons to show
+
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-32 rounded-full" />
+        </div>
+      </div>
+
+      {/* Stats Section Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Stat Card 1 Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={`stat1-skel-${i}`} className="flex items-center justify-between">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/4" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        {/* Stat Card 2 Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Skeleton className="h-5 w-12" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <div className="space-y-1">
+              <Skeleton className="h-5 w-12" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Friends Watchlist Grid Skeleton */}
+      <div className={`grid ${gridCols} gap-4 md:gap-6`}>
+        {Array.from({ length: posterCount }).map((_, index) => (
+          <div key={`poster-skel-${index}`} className="space-y-2">
+            <Skeleton className="aspect-[2/3] rounded-lg" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export function CommunitySection() {
   const { friendsWatchlistItems, isLoading } = useFriendsWatchlist();
@@ -95,11 +181,7 @@ export function CommunitySection() {
   }, [mediaType]);
 
   if (isLoading) {
-    return (
-      <div className="frosted-panel flex justify-center items-center py-12">
-        <div className="w-6 h-6 border-2 border-pink/20 border-t-pink rounded-full animate-spin" />
-      </div>
-    );
+    return <CommunitySkeleton />;
   }
 
   return (
@@ -112,10 +194,15 @@ export function CommunitySection() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <MediaTypeToggle 
-            mediaType={mediaType} 
-            onMediaTypeChange={setMediaType}
-            compact={true} 
+          <MediaTypeToggle
+            mediaType={mediaType}
+            onMediaTypeChange={(newType) => {
+              if (newType === 'movie' || newType === 'tv') {
+                setMediaType(newType);
+              }
+              // Ignore 'upcoming' type if received
+            }}
+            compact={true}
           />
         </div>
       </div>

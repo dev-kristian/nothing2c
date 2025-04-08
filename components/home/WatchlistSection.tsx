@@ -1,4 +1,3 @@
-// Simplified animation approach for WatchlistSection.tsx
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -7,8 +6,9 @@ import { Clock, X, Loader2, AlertTriangle, ChevronDown, Search, Filter } from 'l
 import { useDebounce } from '@/hooks/useDebounce';
 import MediaPoster from '@/components/MediaPoster';
 import MediaTypeToggle from '@/components/MediaTypeToggle';
+import { DiscoverMediaType } from '@/hooks/discover/useTrending';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Define interface for EmptyState props
 interface EmptyStateProps {
   mediaType: 'movie' | 'tv';
   searchQuery: string;
@@ -17,17 +17,29 @@ interface EmptyStateProps {
 
 const MemoizedMediaPoster = React.memo(MediaPoster);
 
-export function WatchlistSection() {
-  const { watchlistItems } = useUserData();
+const WatchlistSkeleton = ({ count = 8, gridCols }: { count?: number, gridCols: string }) => (
+  <div className={`grid ${gridCols} gap-4 md:gap-6`}>
+    {Array.from({ length: count }).map((_, index) => (
+      <div key={`skeleton-${index}`} className="space-y-2">
+        <Skeleton className="aspect-[2/3] rounded-lg" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+    ))}
+  </div>
+);
 
-  const [mediaType, setMediaType] = useState<'movie' | 'tv'>('movie');
+
+export function WatchlistSection() {
+  const { watchlistItems, isLoading: isUserDataLoading } = useUserData();
+
+  const [mediaType, setMediaType] = useState<DiscoverMediaType>('movie');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'rating' | 'title'>('rating');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Define batch sizes - simplified as grid handles visual layout
   const initialBatchSize = 8;
   const batchSize = 8;
 
@@ -38,7 +50,6 @@ export function WatchlistSection() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Grid columns defined directly with Tailwind responsive classes
   const gridCols = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
 
   useEffect(() => {
@@ -54,40 +65,17 @@ export function WatchlistSection() {
   // Reset visible items when media type changes
   useEffect(() => {
     setVisibleItems(initialBatchSize);
-    
-    // Small delay to ensure DOM is updated before reconnecting observer
-    const timer = setTimeout(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && filteredAndSortedItems.length > visibleItems && !isLoadingMore) {
-            loadMoreItems();
-          }
-        },
-        { threshold: 0.1, rootMargin: '100px' }
-      );
-      
-      const currentLoader = loaderRef.current;
-      if (currentLoader) {
-        observer.observe(currentLoader);
-      }
-      
-      return () => {
-        if (currentLoader) {
-          observer.unobserve(currentLoader);
-        }
-        observer.disconnect();
-      };
-    }, 300);
-    
-    return () => clearTimeout(timer);
   }, [mediaType, initialBatchSize]);
 
-  // Reset visible items when sort or search changes
+  // Reset visible items when sorting or filtering changes
   useEffect(() => {
     setVisibleItems(initialBatchSize);
   }, [sortBy, debouncedSearchQuery, initialBatchSize]);
 
   const filteredAndSortedItems = useMemo(() => {
+    if (mediaType !== 'movie' && mediaType !== 'tv') {
+      return [];
+    }
     const items = [...watchlistItems[mediaType]];
     if (debouncedSearchQuery) {
       return items.filter(item =>
@@ -113,19 +101,16 @@ export function WatchlistSection() {
     });
   }, [watchlistItems, mediaType, debouncedSearchQuery, sortBy]);
 
-  // Load more items function
   const loadMoreItems = useCallback(() => {
     if (isLoadingMore) return;
     setIsLoadingMore(true);
     
-    // Use setTimeout to simulate loading and prevent UI freezing
     setTimeout(() => {
       setVisibleItems(prev => prev + batchSize);
       setIsLoadingMore(false);
     }, 300);
   }, [isLoadingMore, batchSize]);
 
-  // Set up intersection observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -149,8 +134,10 @@ export function WatchlistSection() {
     };
   }, [filteredAndSortedItems.length, visibleItems, isLoadingMore, loadMoreItems, sortBy, debouncedSearchQuery]);
 
-  const handleMediaTypeChange = useCallback((newMediaType: 'movie' | 'tv') => {
-    setMediaType(newMediaType);
+  const handleMediaTypeChange = useCallback((newMediaType: DiscoverMediaType) => {
+    if (newMediaType === 'movie' || newMediaType === 'tv') {
+      setMediaType(newMediaType);
+    }
     setVisibleItems(initialBatchSize);
   }, [initialBatchSize]);
 
@@ -165,9 +152,12 @@ export function WatchlistSection() {
            sortBy === 'title' ? 'A-Z' : 'Sort By';
   }, [sortBy]);
 
-  // Show items up to the current visible count
   const displayItems = filteredAndSortedItems.slice(0, visibleItems);
   const hasMoreItems = filteredAndSortedItems.length > visibleItems;
+
+  // Determine overall loading state (context loading OR loading more items)
+  const isLoading = isUserDataLoading || (isLoadingMore && displayItems.length === 0);
+
 
   return (
     <div className="space-y-6">
@@ -175,7 +165,7 @@ export function WatchlistSection() {
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Your Watchlist</h2>
           <p className="text-sm text-foreground/60">
-            {watchlistItems[mediaType].length} {mediaType === 'movie' ? 'movies' : 'shows'} saved
+            {(mediaType === 'movie' || mediaType === 'tv') ? watchlistItems[mediaType].length : 0} {mediaType === 'movie' ? 'movies' : 'shows'} saved
           </p>
         </div>
         
@@ -245,9 +235,11 @@ export function WatchlistSection() {
         </div>
       </div>
 
-      {displayItems.length > 0 ? (
+      {isLoading ? (
+         <WatchlistSkeleton count={initialBatchSize} gridCols={gridCols} />
+      ) : displayItems.length > 0 ? (
         <div className="transition-opacity duration-300 ease-in-out">
-          <div className={`grid ${gridCols} gap-4 md:gap-6`}> {/* Use the gridCols variable */}
+          <div className={`grid ${gridCols} gap-4 md:gap-6`}>
             {displayItems.map((media, index) => (
               <div key={`${media.id}-${index}`} className="hover-lift">
                 <MemoizedMediaPoster media={media} />
@@ -282,7 +274,7 @@ export function WatchlistSection() {
         </div>
       ) : (
         <EmptyState 
-          mediaType={mediaType} 
+          mediaType={mediaType as 'movie' | 'tv'}
           searchQuery={searchQuery} 
           onClearSearch={handleClearSearch} 
         />
@@ -291,7 +283,6 @@ export function WatchlistSection() {
   );
 }
 
-// Simplified EmptyState component
 const EmptyState: React.FC<EmptyStateProps> = ({ mediaType, searchQuery, onClearSearch }) => (
   <div className="frosted-panel text-center py-12 transition-opacity duration-300 ease-in-out">
     <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center rounded-full bg-pink/10">

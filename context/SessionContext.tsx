@@ -26,11 +26,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateParticipantStatus = useParticipantActions();
   const sessions = useSessionSubscription();
   
-  // Update loading state when sessions data changes
   useEffect(() => {
-    // Only set isLoading to false when we know data fetch has completed
     if (sessions !== undefined) {
-      // Small delay to ensure UI transitions smoothly
       const timer = setTimeout(() => {
         setIsLoading(false);
       }, 100);
@@ -46,7 +43,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addMovieToPoll,
     removeMovieFromPoll,
     updateParticipantStatus,
-    sessions: sessions || [], // Ensure sessions is always an array
+    sessions: sessions || [], 
     isLoading
   }), [
     createSession,
