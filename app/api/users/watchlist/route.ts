@@ -53,12 +53,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request body. Requires item (with id) and mediaType ("movie" or "tv").' }, { status: 400 });
     }
 
-    const watchlistDocRef = getWatchlistDocRef(userProfile.uid);
-    const itemToAdd = {
-      ...item,
-      addedAt: Timestamp.now()
+    // Explicitly construct the object to add, based on Media type + addedAt
+    const itemToAdd: Media & { addedAt: Timestamp } = {
+      id: item.id,
+      vote_average: item.vote_average,
+      // Optional fields from Media type
+      ...(item.title && { title: item.title }),
+      ...(item.name && { name: item.name }),
+      ...(item.poster_path && { poster_path: item.poster_path }),
+      ...(item.overview && { overview: item.overview }),
+      ...(item.genre_ids && { genre_ids: item.genre_ids }),
+      ...(item.release_date && { release_date: item.release_date }),
+      ...(item.first_air_date && { first_air_date: item.first_air_date }),
+      // Add media_type and server-side timestamp
+      media_type: mediaType, // Ensure media_type is saved
+      addedAt: Timestamp.now(),
     };
 
+    // Clean the object just in case any undefined values slipped through
+    Object.keys(itemToAdd).forEach(key => {
+      if (itemToAdd[key as keyof typeof itemToAdd] === undefined) {
+        delete itemToAdd[key as keyof typeof itemToAdd];
+      }
+    });
+
+
+    const watchlistDocRef = getWatchlistDocRef(userProfile.uid);
     await watchlistDocRef.update({
       [mediaType]: FieldValue.arrayUnion(itemToAdd)
     });
@@ -104,11 +124,16 @@ export async function DELETE(request: Request) {
 
     if (!itemToRemove) {
       console.warn(`Item with ID ${id} not found in ${mediaType} watchlist for user ${userProfile.uid}`);
-      return NextResponse.json({ message: 'Item not found in watchlist or already removed' }, { status: 200 }); 
+      // Item not found, but return success as the state is effectively 'removed'
+      return NextResponse.json({ message: 'Item not found in watchlist or already removed' }, { status: 200 });
     }
 
+    // Filter the array manually to remove the item by ID
+    const filteredArray = currentArray.filter((item: Media & { addedAt?: Timestamp }) => item.id !== numericId);
+
+    // Update the document with the filtered array
     await watchlistDocRef.update({
-      [mediaType]: FieldValue.arrayRemove(itemToRemove)
+      [mediaType]: filteredArray
     });
 
     return NextResponse.json({ message: 'Item removed from watchlist' }, { status: 200 });
