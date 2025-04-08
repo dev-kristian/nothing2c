@@ -3,7 +3,7 @@
 import React from 'react';
 import { Friend } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserMinus, Users, MoreHorizontal } from 'lucide-react'; 
+import { Loader2, UserMinus, Users, MoreHorizontal, UserX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils'; 
 
 interface FriendsListProps {
   friends: Friend[];
@@ -81,39 +82,53 @@ export const FriendsList: React.FC<FriendsListProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative bg-card/50 border border-accent/10 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow" 
+          className={cn(
+            "relative bg-card/50 border border-accent/10 rounded-2xl p-4 shadow-sm transition-shadow",
+            friend.exists !== false && "hover:shadow-md" 
+          )}
         >
-          <div className="absolute top-2 right-2 z-10"> 
+          <div className="absolute top-2 right-2 z-10">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted"> 
-                  <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-xl p-1 bg-background border-accent/10">
-                <DropdownMenuItem
-                  onClick={() => handleRemoveFriend(friend)}
-                  disabled={removingFriends.has(friend.uid)}
-                  className="flex items-center cursor-pointer rounded-lg text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                >
-                  {removingFriends.has(friend.uid) ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted">
+                    <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl p-1 bg-background border-accent/10">
+                  <DropdownMenuItem
+                    onClick={() => handleRemoveFriend(friend)}
+                    disabled={removingFriends.has(friend.uid)}
+                    className="flex items-center cursor-pointer rounded-lg text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                  >
+                    {removingFriends.has(friend.uid) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
                     <UserMinus className="h-4 w-4 mr-2" />
                   )}
-                  Remove Friend
+                  {friend.exists !== false ? 'Remove Friend' : 'Remove Entry'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(friend.username)} flex items-center justify-center text-white text-lg font-medium shadow-md flex-shrink-0`}>
-              {friend.username.charAt(0).toUpperCase()}
-            </div>
+            {friend.exists !== false ? (
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(friend.username)} flex items-center justify-center text-white text-lg font-medium shadow-md flex-shrink-0`}>
+                {friend.username.charAt(0).toUpperCase()}
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
+                <UserX className="h-6 w-6" />
+              </div>
+            )}
 
             <div className="flex-1 min-w-0 pt-1">
-              <h3 className="font-medium text-base truncate text-foreground">{friend.username}</h3>
+              <h3 className={cn(
+                "font-medium text-base truncate",
+                friend.exists !== false ? "text-foreground" : "text-muted-foreground italic"
+              )}>
+                {friend.username}
+              </h3>
             </div>
           </div>
         </motion.div>

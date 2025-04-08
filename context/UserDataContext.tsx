@@ -21,13 +21,12 @@ export const useUserData = () => {
 import { KeyedMutator } from 'swr'; 
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userData, isLoading: isLoadingUserData, mutateUserData } = useUserDataHook() as { // Removed error: userDataError
+  const { userData, isLoading: isLoadingUserData, mutateUserData } = useUserDataHook() as { 
     userData: UserData | null;
     isLoading: boolean;
-    // error: Error | undefined; // Removed error type definition
     mutateUserData: KeyedMutator<UserData | null>;
   };
-  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist(); // Removed error: watchlistError
+  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist(); 
   const { friends, friendRequests, isLoadingFriends, isLoadingRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend } =
     useFriends(userData?.username);
   const { updateNotificationStatus } = useNotification(); 

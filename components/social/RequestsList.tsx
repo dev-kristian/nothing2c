@@ -3,8 +3,9 @@
 import React from 'react';
 import { FriendRequest } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bell, Check, X, Users } from 'lucide-react';
+import { Loader2, Bell, Check, X, Users, UserX } from 'lucide-react'; 
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface RequestsListProps {
   friendRequests: FriendRequest[];
@@ -85,11 +86,24 @@ export const RequestsList: React.FC<RequestsListProps> = ({
         >
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(request.fromUsername)} flex items-center justify-center text-white text-lg font-medium shadow-sm`}>
-                {request.fromUsername.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{request.fromUsername}</p>
+              {/* Conditional Avatar */}
+              {request.exists !== false ? (
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getAvatarGradient(request.fromUsername)} flex items-center justify-center text-white text-lg font-medium shadow-sm flex-shrink-0`}>
+                  {request.fromUsername.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
+                  <UserX className="h-6 w-6" /> {/* Placeholder Icon */}
+                </div>
+              )}
+              {/* Conditional Username Display */}
+              <div className="flex-1 min-w-0">
+                <p className={cn(
+                  "font-medium",
+                  request.exists !== false ? "text-foreground" : "text-muted-foreground italic"
+                )}>
+                  {request.fromUsername} {/* Will display "unknown user" if exists is false */}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Wants to connect with you
                 </p>
@@ -97,13 +111,17 @@ export const RequestsList: React.FC<RequestsListProps> = ({
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
+              {/* Disable Accept button if user doesn't exist */}
               <Button
                 onClick={() => handleAcceptRequest(request)}
-                disabled={processingRequests.has(request.id)}
-                className="rounded-full px-5 py-2 bg-pink hover:bg-pink/90 text-white"
+                disabled={processingRequests.has(request.id) || request.exists === false}
+                className={cn(
+                  "rounded-full px-5 py-2 text-white",
+                  request.exists !== false ? "bg-pink hover:bg-pink/90" : "bg-muted text-muted-foreground cursor-not-allowed"
+                )}
                 size="sm"
               >
-                {processingRequests.has(request.id) ? (
+                {processingRequests.has(request.id) && request.exists !== false ? ( // Only show loader if processing and user exists
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
@@ -113,11 +131,12 @@ export const RequestsList: React.FC<RequestsListProps> = ({
                 )}
               </Button>
 
+              {/* Reject button remains enabled */}
               <Button
                 onClick={() => handleRejectRequest(request)}
                 disabled={processingRequests.has(request.id)}
                 variant="outline"
-                className="rounded-full border-pink text-white hover:bg-pink/10" 
+                className="rounded-full border-pink text-pink hover:bg-pink/10" // Adjusted text color
                 size="sm"
               >
                 {processingRequests.has(request.id) ? (
