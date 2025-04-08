@@ -1,12 +1,12 @@
-'use client'
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { DetailsData, VideoData } from '@/types';
+import { DetailsData, VideoData, Media } from '@/types'; // Use Media type
 import { format } from 'date-fns';
 import { useUserData } from '@/context/UserDataContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Check, Film } from 'lucide-react';
-import YouTubeEmbed from './YoutubeEmbed'
+import { Play, Plus, Check, Film, Loader2 } from 'lucide-react'; // Import Loader2
+import YouTubeEmbed from './YoutubeEmbed';
 import HostEmbed from './HostEmbed' 
 import DetailInfo from './DetailInfo'
 import { Button } from '@/components/ui/button'
@@ -19,9 +19,27 @@ interface DetailPageWrapperProps {
 const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }) => {
   const [showTrailer, setShowTrailer] = useState(false);
   const [showFlickyEmbed, setShowFlickyEmbed] = useState(false);
-  const { userData, addToWatchlist, removeFromWatchlist } = useUserData();
-  
+  // Get watchlistItems and loading state from useUserData
+  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isUserDataLoading } = useUserData();
+  const [isProcessingWatchlist, setIsProcessingWatchlist] = useState(false);
+
   const isMovie = 'title' in details;
+  const mediaType = isMovie ? 'movie' : 'tv';
+  // Local state for immediate UI feedback
+  const [localIsInWatchlist, setLocalIsInWatchlist] = useState(false);
+
+  // Sync local state with watchlistItems from context
+  useEffect(() => {
+    if (watchlistItems && details?.id) {
+      const items = watchlistItems[mediaType]; // Get the correct array (movie or tv)
+      const contextIsInWatchlist = items?.some(item => item.id === details.id);
+      setLocalIsInWatchlist(!!contextIsInWatchlist);
+    } else {
+      setLocalIsInWatchlist(false);
+    }
+    // Depend on watchlistItems object directly for changes
+  }, [watchlistItems, details?.id, mediaType]);
+
   const title = isMovie ? details.title : details.name;
   const releaseDate = isMovie ? details.release_date : details.first_air_date;
   const formattedReleaseDate = releaseDate 
@@ -30,13 +48,52 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
 
   const trailer = videos.find(video => video.type === 'Trailer' && video.site === 'YouTube');
-  const isInWatchlist = userData?.watchlist[isMovie ? 'movie' : 'tv'][details.id.toString()];
+  // We use localIsInWatchlist for the button state
 
-  const handleWatchlistClick = () => {
-    if (isInWatchlist) {
-      removeFromWatchlist(details.id, isMovie ? 'movie' : 'tv');
-    } else {
-      addToWatchlist(details, isMovie ? 'movie' : 'tv');
+  const handleWatchlistClick = async () => {
+    // Use the context's isLoading flag as well
+    if (isProcessingWatchlist || isUserDataLoading) return;
+
+    setIsProcessingWatchlist(true);
+    const currentMediaId = details.id; // Store id in case details change somehow
+
+    try {
+      if (localIsInWatchlist) {
+        await removeFromWatchlist(currentMediaId, mediaType);
+        setLocalIsInWatchlist(false);
+      } else {
+        // Construct the payload strictly conforming to the Media type
+        const mediaPayload: Media & { addedAt: string } = {
+          // Fields directly from Media type definition
+          id: details.id,
+          vote_average: details.vote_average, // Required in Media
+          poster_path: details.poster_path, // Optional in Media
+          overview: details.overview, // Optional in Media (assuming string is okay)
+          genre_ids: details.genres?.map(g => g.id) || [], // Optional in Media
+
+          // Conditionally add title/name based on mediaType
+          ...(isMovie ? { title: details.title } : { name: details.name }),
+
+          // Conditionally add release_date/first_air_date
+          ...(isMovie ? { release_date: details.release_date } : { first_air_date: details.first_air_date }),
+
+          // Add required fields for watchlist functionality
+          media_type: mediaType,
+          addedAt: new Date().toISOString(),
+        };
+        // Note: Fields like backdrop_path, popularity, vote_count, original_title/name, adult, video
+        // are NOT part of the Media type and are intentionally omitted.
+
+        await addToWatchlist(mediaPayload as Media, mediaType); // Pass the correctly typed payload
+        setLocalIsInWatchlist(true);
+      }
+    } catch (error) {
+      console.error("Error updating watchlist:", error);
+      // Optionally: show a toast notification for the error
+      // Revert local state on error? Depends on desired UX.
+      // setLocalIsInWatchlist(!localIsInWatchlist);
+    } finally {
+      setIsProcessingWatchlist(false);
     }
   };
 
@@ -106,21 +163,26 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                 </Button>
 
                 <Button
-                  variant={isInWatchlist ? "outline" : "secondary"}
                   onClick={handleWatchlistClick}
-                  className="w-full h-12 rounded-xl"
+                  disabled={isProcessingWatchlist || isUserDataLoading}
+                  className={`w-full h-12 rounded-xl flex items-center justify-center transition-colors duration-200 ${
+                    localIsInWatchlist
+                      ? 'bg-pink hover:bg-pink/90 text-white' // Style when added
+                      : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground' // Style when not added
+                  } ${isProcessingWatchlist ? 'cursor-not-allowed opacity-70' : ''}`}
                 >
-                  {isInWatchlist ? (
-                    <>
-                      <Check className="w-5 h-5 mr-2" />
-                      In Watchlist
-                    </>
+                  {isProcessingWatchlist ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : localIsInWatchlist ? (
+                    <Check className="w-5 h-5 mr-2" />
                   ) : (
-                    <>
-                      <Plus className="w-5 h-5 mr-2" />
-                      Add to Watchlist
-                    </>
+                    <Plus className="w-5 h-5 mr-2" />
                   )}
+                  {isProcessingWatchlist
+                    ? 'Processing...'
+                    : localIsInWatchlist
+                    ? 'In Watchlist'
+                    : 'Add to Watchlist'}
                 </Button>
               </div>
             </motion.div>
