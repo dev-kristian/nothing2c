@@ -25,16 +25,28 @@ export async function GET(request: NextRequest) {
     const friendsList = friendsDoc.data().friendsList;
     const friendIds = Object.keys(friendsList);
 
-    const friendsData = await Promise.all(
-      friendIds.map(async (friendId) => {
-        const userDoc = await getDoc(doc(db, 'users', friendId));
+    const friendsDataPromises = friendIds.map(async (friendId) => {
+      const userDocRef = doc(db, 'users', friendId);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
         const userData = userDoc.data();
         return {
           uid: userDoc.id,
-          username: userData?.username,
+          username: userData?.username || 'unknown user',
+          photoURL: userData?.photoURL || undefined,
+          exists: true,
         };
-      })
-    );
+      } else {
+        return {
+          uid: friendId,
+          username: "unknown user",
+          exists: false,
+        };
+      }
+    });
+
+    const friendsData = await Promise.all(friendsDataPromises);
 
     return NextResponse.json({ friends: friendsData });
   } catch (error) {

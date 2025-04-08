@@ -33,13 +33,11 @@ export interface Session {
     movieTitles: string[];
     votes: { [username: string]: string[] };
   }
-  
 export interface DatePopularity {
-    hours: string[] | 'all';
+    hours: Record<string, { count: number; users: string[] }>; 
     date: string;
     count: number;
     users: string[];
-    hourlyDetails?: Record<string, { count: number; users: string[] }>; 
   }
   
   export interface DateTimeSelection {

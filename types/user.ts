@@ -43,9 +43,10 @@ export interface UserProfile {
 }
 
 export interface Friend {
-  photoURL: string;
+  photoURL?: string;
   uid: string;
   username: string;
+  exists?: boolean; 
 }
 
 export interface FriendRequest {
@@ -53,7 +54,8 @@ export interface FriendRequest {
   fromUid: string;
   fromUsername: string;
   status: 'pending' | 'accepted' | 'rejected';
-  timestamp: string; 
+  timestamp: string;
+  exists?: boolean;
 }
 
 export interface UserFriends {

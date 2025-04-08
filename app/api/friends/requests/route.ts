@@ -1,7 +1,6 @@
-// app/api/friends/requests/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'; 
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,15 +17,36 @@ export async function GET(request: NextRequest) {
     const requestsRef = collection(db, 'users', userId, 'friendRequests');
     const q = query(requestsRef, where('status', '==', 'pending'));
     const querySnapshot = await getDocs(q);
-    
-    const requests = querySnapshot.docs.map(doc => {
-      const data = doc.data();
+
+    const requestsPromises = querySnapshot.docs.map(async (requestDoc) => {
+      const data = requestDoc.data();
+      const fromUid = data.fromUid;
+      let exists = true;
+      let fromUsername = data.fromUsername;
+
+      if (fromUid) {
+        const userDocRef = doc(db, 'users', fromUid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) {
+          exists = false;
+          fromUsername = "unknown user";
+        }
+      } else {
+        exists = false;
+        fromUsername = "unknown user";
+      }
+
       return {
-        id: doc.id,
-        ...data,
-        timestamp: data.timestamp?.toDate().toISOString() || new Date().toISOString()
+        id: requestDoc.id,
+        fromUid: fromUid || null, 
+        fromUsername: fromUsername,
+        status: data.status,
+        timestamp: data.timestamp?.toDate().toISOString() || new Date().toISOString(),
+        exists: exists,
       };
     });
+
+    const requests = await Promise.all(requestsPromises);
 
     return NextResponse.json({ requests });
   } catch (error) {

@@ -1,8 +1,14 @@
-import { format } from 'date-fns';
+import { format, getHours } from 'date-fns';
 import { DatePopularity } from '@/types';
 
+type HourlyCounts = Record<string, { count: number; users: string[] }>;
+
+type PopularityAccumulator = Omit<DatePopularity, 'hours'> & {
+  hours: HourlyCounts; 
+};
+
 export const calculateDatePopularity = (userDates: { [username: string]: { date: string, hours: string[] | 'all' }[] }): DatePopularity[] => {
-  const popularity: { [key: string]: Omit<DatePopularity, 'hours'> & { hours: string[] | 'all', hourlyDetails: Record<string, { count: number; users: string[] }> } } = {};
+  const popularity: { [key: string]: PopularityAccumulator } = {};
 
   Object.entries(userDates).forEach(([username, dates]) => {
     dates.forEach(date => {
@@ -13,8 +19,7 @@ export const calculateDatePopularity = (userDates: { [username: string]: { date:
           date: dateString,
           count: 0,
           users: [],
-          hours: date.hours, 
-          hourlyDetails: {}
+          hours: {} 
         };
       }
 
@@ -23,44 +28,40 @@ export const calculateDatePopularity = (userDates: { [username: string]: { date:
           popularity[dateString].users.push(username);
       }
 
-
-      const currentHourlyDetails = popularity[dateString].hourlyDetails;
+      const currentHourlyCounts = popularity[dateString].hours;
 
       if (Array.isArray(date.hours)) {
-        date.hours.forEach(hourString => {
-          const hourKey = new Date(hourString).getHours().toString();
-          if (!currentHourlyDetails[hourKey]) {
-            currentHourlyDetails[hourKey] = { count: 0, users: [] };
-          }
-          currentHourlyDetails[hourKey].count++;
-          if (!currentHourlyDetails[hourKey].users.includes(username)) {
-              currentHourlyDetails[hourKey].users.push(username);
+        date.hours.forEach(hourTimestampString => {
+          const hourDate = new Date(hourTimestampString);
+          if (!isNaN(hourDate.getTime())) {
+            const hourKey = getHours(hourDate).toString();
+            if (!currentHourlyCounts[hourKey]) {
+              currentHourlyCounts[hourKey] = { count: 0, users: [] };
+            }
+            currentHourlyCounts[hourKey].count++;
+            if (!currentHourlyCounts[hourKey].users.includes(username)) {
+              currentHourlyCounts[hourKey].users.push(username);
+            }
+          } else {
+            console.warn(`Invalid date string encountered: ${hourTimestampString}`);
           }
         });
       } else if (date.hours === 'all') {
         for (let i = 0; i < 24; i++) {
           const hourKey = i.toString();
-          if (!currentHourlyDetails[hourKey]) {
-            currentHourlyDetails[hourKey] = { count: 0, users: [] };
+          if (!currentHourlyCounts[hourKey]) {
+            currentHourlyCounts[hourKey] = { count: 0, users: [] };
           }
-          currentHourlyDetails[hourKey].count++;
-           if (!currentHourlyDetails[hourKey].users.includes(username)) {
-               currentHourlyDetails[hourKey].users.push(username);
-           }
+          currentHourlyCounts[hourKey].count++;
+          if (!currentHourlyCounts[hourKey].users.includes(username)) {
+            currentHourlyCounts[hourKey].users.push(username);
+          } 
         }
-      }
-
-      const currentAggregatedHours = popularity[dateString].hours;
-
-      if (date.hours === 'all') {
-        popularity[dateString].hours = 'all';
-      } else if (Array.isArray(date.hours) && Array.isArray(currentAggregatedHours)) {
-        const combinedHours = new Set([...currentAggregatedHours, ...date.hours]);
-        popularity[dateString].hours = Array.from(combinedHours);
-      }
+      } 
     });
-  });
+  }); 
 
   const result: DatePopularity[] = Object.values(popularity);
+  
   return result.sort((a, b) => b.count - a.count);
 };
