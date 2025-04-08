@@ -37,9 +37,9 @@ const TopAvailability: React.FC<TopAvailabilityProps> = ({ datePopularity }) => 
     }
     
     return Object.entries(date.hours)
-      .map(([hour, hourData]) => ({ 
-        hour: parseInt(hour), 
-        count: (hourData as HourData).count || 0
+      .map(([hour, hourData]) => ({
+        hour: parseInt(hour),
+        count: ((hourData as unknown) as HourData).count || 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
