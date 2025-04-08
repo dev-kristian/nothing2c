@@ -303,6 +303,27 @@ export default function Navigation() {
 
                 </motion.div>
               ))}
+                {/* Add Settings link for mobile */}
+                {user && (
+                  <motion.div
+                    key="/settings"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link
+                      href="/settings"
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                        ${isActivePath('/settings')
+                          ? 'bg-pink/10 text-pink'
+                          : 'hover:bg-foreground/5 dark:hover:bg-foreground/10'
+                        }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span className="font-medium">Settings</span>
+                    </Link>
+                  </motion.div>
+                )}
               </div>
 
               <div className="p-4 border-t border-foreground/10">

@@ -9,8 +9,8 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import SpinningLoader from '@/components/SpinningLoader';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react'; // Import Loader2
+// Removed SpinningLoader import
 import { z } from 'zod';
 import { toast } from "@/hooks/use-toast";
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
@@ -84,9 +84,9 @@ function AuthActionContent() {
           description: "Unable to verify your email.",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
-      }
+        setLoading(false); // Stop loading on error
+      } 
+      // Keep loading=true on success until redirect
     };
 
     const mode = searchParams.get('mode');
@@ -147,16 +147,24 @@ function AuthActionContent() {
           description: "An error occurred while resetting your password.",
           variant: "destructive",
         });
+        setLoading(false); // Stop loading on error
       }
-    } finally {
-      setLoading(false);
-    }
+    } 
+    // Keep loading=true on success until redirect
   };
 
-  if (loading) {
+  // Keep showing loader on success states until redirect
+  if (loading || verificationStatus === 'success' || verificationStatus === 'passwordResetSuccess') {
     return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <SpinningLoader />
+      <div className="flex flex-col justify-center items-center min-h-[300px] space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-pink" />
+        <p className="text-muted-foreground">
+          {verificationStatus === 'success' 
+            ? "Email verified. Redirecting..." 
+            : verificationStatus === 'passwordResetSuccess' 
+              ? "Password reset. Redirecting..." 
+              : "Processing..."}
+        </p>
       </div>
     );
   }
@@ -253,15 +261,10 @@ function AuthActionContent() {
             <Button
               type="submit"
               className="w-full bg-pink text-white hover:bg-pink-hover" 
-              disabled={!isFormValid || loading}
+              disabled={!isFormValid} // Loading state handled by the main loader now
             >
-              {loading ? (
-                <>
-                  Resetting Password   <SpinningLoader />
-                </>
-              ) : (
-                'Reset Password'
-              )}
+              {/* Button loader removed as main loader persists */}
+              Reset Password
             </Button>
           </form>
         </CardContent>
@@ -277,7 +280,7 @@ function AuthAction() {
     <Suspense
       fallback={
         <div className="flex justify-center items-center min-h-[300px]">
-          <SpinningLoader />
+          <Loader2 className="h-8 w-8 animate-spin text-pink" />
         </div>
       }
     >

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
-import SpinningLoader from '@/components/SpinningLoader';
+// Removed SpinningLoader import
 import Image from 'next/image';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -262,10 +262,9 @@ import { AuthFormData } from '@/types';
         disabled={isSubmitDisabled || loading}
       >
         {loading ? (
-          <SpinningLoader />
-        ) : (
-          isSignUp ? 'Sign Up' : 'Sign In'
-        )}
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : null}
+        {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
       </Button>
 
       <div className="relative">
@@ -273,7 +272,7 @@ import { AuthFormData } from '@/types';
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-card text-muted-foreground">
+          <span className="px-2 text-muted-foreground">
             Or continue with
           </span>
         </div>
@@ -287,7 +286,7 @@ import { AuthFormData } from '@/types';
         disabled={googleLoading}
       >
         {googleLoading ? (
-          <SpinningLoader />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <div className="flex items-center justify-center">
             <Image

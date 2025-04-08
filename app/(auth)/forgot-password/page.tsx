@@ -8,7 +8,8 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import SpinningLoader from '@/components/SpinningLoader';
+import { Loader2 } from 'lucide-react'; // Import Loader2
+// Removed SpinningLoader import
 
 const ForgotPasswordPage = (): JSX.Element => {
   const [email, setEmail] = useState<string>('');
@@ -68,12 +69,9 @@ const ForgotPasswordPage = (): JSX.Element => {
             disabled={loading}
           >
             {loading ? (
-              <>
-                Sending &nbsp; <SpinningLoader />
-              </>
-            ) : (
-              'Send Reset Link'
-            )}
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {loading ? 'Sending...' : 'Send Reset Link'}
           </Button>
         </form>
       </CardContent>
