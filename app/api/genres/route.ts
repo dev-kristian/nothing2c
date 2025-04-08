@@ -7,7 +7,7 @@ export const runtime = 'edge';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type'); // 'movie' or 'tv'
+  const type = searchParams.get('type');
 
   if (!type || (type !== 'movie' && type !== 'tv')) {
     return NextResponse.json({ error: 'Invalid or missing type parameter' }, { status: 400 });

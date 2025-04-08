@@ -1,15 +1,14 @@
 // types/user.ts
-import { User, Auth } from 'firebase/auth'; // Added Auth import
+import { User, Auth } from 'firebase/auth';
 
-// Authentication State (for AuthContext, etc.)
 export interface AuthState {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<User | undefined>; // Corrected return type
+  signIn: () => Promise<User | undefined>; 
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   initialAuthChecked: boolean;
-  auth: Auth; // Added the auth instance property
+  auth: Auth; 
 }
 
 export interface AuthFormData {
@@ -20,7 +19,6 @@ export interface AuthFormData {
   agreeToTerms?: boolean;
 }
 
-// Basic User Data (from Firebase Auth)
 export interface UserData {
   username: string;
   email?: string; 
@@ -35,7 +33,6 @@ export interface UserData {
   notification?: NotificationStatus;
 }
 
-// User Profile (for storing additional user information)
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -45,12 +42,10 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-// Friend-related types
 export interface Friend {
   photoURL: string;
   uid: string;
   username: string;
-  email?: string;
 }
 
 export interface FriendRequest {
@@ -68,11 +63,9 @@ export interface UserFriends {
   receivedRequests: { [uid: string]: boolean };
 }
 
-// Search-related types
 export interface FriendSearchResult {
   uid: string;
   username: string;
-  email?: string;
 }
 
 export interface FriendSearchResultWithStatus extends FriendSearchResult {

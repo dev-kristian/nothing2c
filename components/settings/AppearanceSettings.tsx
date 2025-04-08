@@ -2,15 +2,11 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-// Removed useState, useEffect import as they are no longer needed for mounting check
 import { Sun, Moon, Laptop, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function AppearanceSettings() {
   const { theme, setTheme } = useTheme()
-  // Removed mounted state and useEffect
-
-  // The useTheme hook from next-themes handles hydration, so the mounted check is not needed.
 
   const themeOptions = [
     {
@@ -66,9 +62,7 @@ export default function AppearanceSettings() {
                   `}
                   onClick={() => setTheme(option.id as 'light' | 'dark' | 'system')}
                 >
-                  {/* Preview area */}
                   <div className={`h-32 ${option.preview} relative`}>
-                    {/* Sample UI elements to show theme preview */}
                     <div className="absolute inset-0 flex flex-col p-4">
                       <div className={`w-24 h-3 rounded-full mb-2 ${option.id === 'dark' ? 'bg-gray-700' : option.id === 'light' ? 'bg-gray-200' : 'bg-gradient-to-r from-gray-200 to-gray-700'}`}></div>
                       <div className={`w-16 h-3 rounded-full mb-3 ${option.id === 'dark' ? 'bg-gray-700' : option.id === 'light' ? 'bg-gray-200' : 'bg-gradient-to-r from-gray-200 to-gray-700'}`}></div>
@@ -79,7 +73,6 @@ export default function AppearanceSettings() {
                       <div className={`w-full h-3 rounded-full ${option.id === 'dark' ? 'bg-gray-800' : option.id === 'light' ? 'bg-gray-100' : 'bg-gradient-to-r from-gray-100 to-gray-800'}`}></div>
                     </div>
                     
-                    {/* Selected indicator */}
                     {isActive && (
                       <div className="absolute top-2 right-2 bg-pink rounded-full p-1">
                         <Check className="h-3 w-3 text-white" />
@@ -87,7 +80,6 @@ export default function AppearanceSettings() {
                     )}
                   </div>
                   
-                  {/* Label area */}
                   <div className="p-4 bg-background">
                     <div className="flex items-center space-x-2">
                       <Icon className={`h-4 w-4 ${isActive ? 'text-pink' : ''}`} />
@@ -96,7 +88,6 @@ export default function AppearanceSettings() {
                     <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
                   </div>
                   
-                  {/* Interactive overlay */}
                   <motion.div 
                     className="absolute inset-0 bg-pink/5 opacity-0 cursor-pointer"
                     whileHover={{ opacity: 1 }}
@@ -108,7 +99,6 @@ export default function AppearanceSettings() {
             })}
           </div>
         </div>
-        
       </div>
     </div>
   )

@@ -5,7 +5,7 @@ import MediaPoster from '../MediaPoster';
 import SpinningLoader from '../SpinningLoader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaTypeToggle from '../MediaTypeToggle';
-import { useTrending } from '@/hooks/discover/useTrending'; // Import the hook
+import { useTrending } from '@/hooks/discover/useTrending'; 
 
 const TrendingSection: React.FC = () => {
   const {
@@ -152,7 +152,7 @@ const TrendingSection: React.FC = () => {
           <MediaTypeToggle
             mediaType={mediaType}
             onMediaTypeChange={setMediaType}
-            showUpcoming={true} // Add this prop
+            showUpcoming={true}
           />
         </motion.div>
       </motion.div>

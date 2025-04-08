@@ -21,12 +21,10 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
     if (currentToken) {
       console.log('Token:', currentToken);
       
-      // Get current user UID
       const auth = getAuth();
       const user = auth.currentUser;
       
       if (user) {
-        // Subscribe to user-specific topic
         await fetch('/api/subscribe-to-topic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

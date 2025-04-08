@@ -12,7 +12,7 @@ import { CardHeader, CardTitle, CardDescription, CardContent } from "@/component
 import SpinningLoader from '@/components/SpinningLoader';
 import { Eye, EyeOff } from 'lucide-react';
 import { z } from 'zod';
-import { toast } from "@/hooks/use-toast"; // Import the standard toast function
+import { toast } from "@/hooks/use-toast";
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/AuthContext';
@@ -42,7 +42,6 @@ function AuthActionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const verificationInitiated = useRef(false);
-  // Removed useCustomToast hook
   const { user } = useAuthContext();
 
   useEffect(() => {
@@ -50,11 +49,10 @@ function AuthActionContent() {
       try {
         await applyActionCode(auth, oobCode);
         setVerificationStatus('success');
-        // Use standard toast
         toast({
           title: "Email Verified",
           description: "Your email has been successfully verified.",
-          variant: "default", // Or "success" if available
+          variant: "default",
         });
 
         if (user) {
@@ -69,7 +67,6 @@ function AuthActionContent() {
             await setDoc(userDocRef, userData, { merge: true });
           } catch (firestoreError) {
             console.error("Error writing to Firestore:", firestoreError);
-            // Use standard toast
             toast({
               title: "Firestore Error",
               description: "Failed to update user data.",
@@ -82,7 +79,6 @@ function AuthActionContent() {
       } catch (error) {
         console.error('Error verifying email:', error);
         setVerificationStatus('error');
-        // Use standard toast
         toast({
           title: "Verification Failed",
           description: "Unable to verify your email.",
@@ -109,7 +105,7 @@ function AuthActionContent() {
       setVerificationStatus('invalid');
       setLoading(false);
     }
-  }, [searchParams, router, user]); // Removed showToast from dependency array
+  }, [searchParams, router, user]);
 
   useEffect(() => {
     try {
@@ -128,18 +124,16 @@ function AuthActionContent() {
       passwordSchema.parse({ password, confirmPassword });
       await confirmPasswordReset(auth, oobCode, password);
       setVerificationStatus('passwordResetSuccess');
-      // Use standard toast
       toast({
         title: "Password Reset Successful",
         description: "Your password has been successfully reset.",
-        variant: "default", // Or "success" if available
+        variant: "default", 
       });
       setTimeout(() => router.push('/sign-in'), 3000);
     } catch (error) {
       console.error('Error resetting password:', error);
       if (error instanceof z.ZodError) {
         error.errors.forEach(err => {
-          // Use standard toast
           toast({
             title: "Validation Error",
             description: err.message,
@@ -148,7 +142,6 @@ function AuthActionContent() {
         });
       } else {
         setVerificationStatus('passwordResetError');
-        // Use standard toast
         toast({
           title: "Password Reset Failed",
           description: "An error occurred while resetting your password.",
@@ -172,7 +165,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
+          <CardTitle className="text-center text-muted-foreground"> 
             Email Verification
           </CardTitle>
           <CardDescription className='text-center text-muted-foreground'>
@@ -205,7 +198,7 @@ function AuthActionContent() {
     return (
       <div>
         <CardHeader>
-          <CardTitle className="text-center text-muted-foreground"> {/* Added text-pink */}
+          <CardTitle className="text-center text-muted-foreground">
             Reset Password
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
@@ -259,7 +252,7 @@ function AuthActionContent() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-pink text-white hover:bg-pink-hover" // Changed text to white
+              className="w-full bg-pink text-white hover:bg-pink-hover" 
               disabled={!isFormValid || loading}
             >
               {loading ? (

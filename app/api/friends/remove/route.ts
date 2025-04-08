@@ -17,28 +17,24 @@ export async function POST(request: NextRequest) {
 
     const batch = writeBatch(db);
 
-    // Remove from current user's friends list
     const currentUserFriendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
     batch.update(currentUserFriendsRef, {
       [`friendsList.${friendId}`]: deleteField(),
       totalFriends: increment(-1)
     });
 
-    // Remove from friend's friends list
     const friendFriendsRef = doc(db, 'users', friendId, 'friends', 'data');
     batch.update(friendFriendsRef, {
       [`friendsList.${currentUserId}`]: deleteField(),
       totalFriends: increment(-1)
     });
 
-    // Clean up friend request documents
     const sentRequestRef = doc(db, 'users', friendId, 'friendRequests', currentUserId);
     batch.delete(sentRequestRef);
 
     const receivedRequestRef = doc(db, 'users', currentUserId, 'friendRequests', friendId);
     batch.delete(receivedRequestRef);
 
-    // Clean up any pending requests in friends data
     batch.update(currentUserFriendsRef, {
       [`sentRequests.${friendId}`]: deleteField(),
       [`receivedRequests.${friendId}`]: deleteField()

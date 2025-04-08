@@ -28,9 +28,10 @@ export async function GET(request: NextRequest) {
     const friendsData = await Promise.all(
       friendIds.map(async (friendId) => {
         const userDoc = await getDoc(doc(db, 'users', friendId));
+        const userData = userDoc.data();
         return {
           uid: userDoc.id,
-          ...userDoc.data()
+          username: userData?.username,
         };
       })
     );

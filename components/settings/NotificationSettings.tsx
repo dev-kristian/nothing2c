@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Bell, BellOff } from 'lucide-react';
 import { useUserData } from '@/context/UserDataContext';
-import { toast } from "@/hooks/use-toast"; // Import the standard toast function
+import { useNotification } from '@/hooks/user/useNotification';
+import { toast } from "@/hooks/use-toast";
 import { requestForToken } from '@/lib/firebaseMessaging';
 import { getAuth } from 'firebase/auth';
+import SpinningLoader from '../SpinningLoader'; 
 
 export default function NotificationSettings() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); 
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
-  const { userData, updateNotificationStatus } = useUserData();
-  // Removed useCustomToast hook
+  const { userData, mutateUserData } = useUserData();
+  const { updateNotificationStatus } = useNotification();
 
   useEffect(() => {
     const checkSupport = () => {
@@ -26,7 +29,6 @@ export default function NotificationSettings() {
     setIsLoading(true);
     try {
       if (!isSupported) {
-        // Use standard toast
         toast({
           title: "Not Supported",
           description: "Push notifications are not supported in your browser.",
@@ -35,12 +37,10 @@ export default function NotificationSettings() {
         return;
       }
 
-      // Get current user UID
       const auth = getAuth();
       const user = auth.currentUser;
       
       if (!user) {
-        // Use standard toast
         toast({
           title: "Error",
           description: "You must be logged in to manage notifications.",
@@ -56,7 +56,6 @@ export default function NotificationSettings() {
           const token = await requestForToken();
           if (token) {
             try {
-              // Subscribe to user-specific topic only
               const response = await fetch('/api/subscribe-to-topic', {
                 method: 'POST',
                 headers: {
@@ -64,7 +63,7 @@ export default function NotificationSettings() {
                 },
                 body: JSON.stringify({ 
                   token,
-                  topic: `user_${user.uid}` // Only user-specific topic
+                  topic: `user_${user.uid}`
                 }),
               });
               
@@ -73,16 +72,20 @@ export default function NotificationSettings() {
                 throw new Error(data.error || 'Failed to subscribe to notifications');
               }
       
-              await updateNotificationStatus("allowed");
-              // Use standard toast
+              setIsUpdatingStatus(true);
+              try {
+                await updateNotificationStatus("allowed");
+                mutateUserData(); 
+              } finally {
+                setIsUpdatingStatus(false);
+              }
               toast({
                 title: "Notifications Enabled",
                 description: "You'll now receive updates from Nothing<sup>2C</sup>!",
-                variant: "default", // Or "success" if available
+                variant: "default", 
               });
             } catch (error) {
               console.error("Error enabling notifications:", error);
-              // Use standard toast
               toast({
                 title: "Error",
                 description: "Failed to enable notifications. Please try again.",
@@ -91,16 +94,20 @@ export default function NotificationSettings() {
             }
           }
         } else {
-          await updateNotificationStatus("denied");
-          // Use standard toast
+          setIsUpdatingStatus(true);
+          try {
+            await updateNotificationStatus("denied");
+            mutateUserData();
+          } finally {
+            setIsUpdatingStatus(false);
+          }
           toast({
             title: "Permission Denied",
             description: "Please allow notifications in your browser settings.",
-            variant: "default", // Or "warning" if available
+            variant: "default",
           });
         }
       } else {
-        // Unsubscribe from notifications
         try {
           const token = await requestForToken();
           if (token) {
@@ -111,7 +118,7 @@ export default function NotificationSettings() {
               },
               body: JSON.stringify({ 
                 token,
-                topic: `user_${user.uid}` // Only user-specific topic
+                topic: `user_${user.uid}`
               }),
             });
             
@@ -124,8 +131,13 @@ export default function NotificationSettings() {
           console.error("Error unsubscribing from notifications:", error);
         }
 
-        await updateNotificationStatus("denied");
-        // Use standard toast
+        setIsUpdatingStatus(true);
+        try {
+          await updateNotificationStatus("denied");
+          mutateUserData();
+        } finally {
+          setIsUpdatingStatus(false);
+        }
         toast({
           title: "Notifications Disabled",
           description: "You won't receive any notifications from Nothing <sup>2C</sup>.",
@@ -134,7 +146,6 @@ export default function NotificationSettings() {
       }
     } catch (error) {
       console.error("Error toggling notifications:", error);
-      // Use standard toast
       toast({
         title: "Error",
         description: "An error occurred while updating notification settings.",
@@ -177,12 +188,18 @@ export default function NotificationSettings() {
               Receive notifications about new movie nights, friend requests, and updates
             </p>
           </div>
-          <Switch
-            checked={userData?.notification === "allowed"}
-            onCheckedChange={handleToggleNotifications}
-            disabled={isLoading || !isSupported}
-            className="data-[state=checked]:bg-pink"
-          />
+          {isUpdatingStatus ? (
+            <div className="flex items-center justify-center h-6 w-10">
+              <SpinningLoader size={20} />
+            </div>
+          ) : (
+            <Switch
+              checked={userData?.notification === "allowed"}
+              onCheckedChange={handleToggleNotifications}
+              disabled={isLoading || !isSupported} 
+              className="data-[state=checked]:bg-pink"
+            />
+          )}
         </div>
 
         {!isSupported && (
@@ -191,12 +208,6 @@ export default function NotificationSettings() {
               Push notifications are not supported in your current browser. 
               Try using a modern browser like Chrome or Firefox.
             </p>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="mt-3 text-sm text-foreground/70">
-            Updating notification settings...
           </div>
         )}
       </div>

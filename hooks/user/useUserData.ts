@@ -1,75 +1,43 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { UserData } from '@/types';
+import useSWR from 'swr';
+
+// Define a fetcher function for SWR
+const fetcher = async (url: string): Promise<UserData> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch user data: ${response.statusText}`);
+  }
+  const data = await response.json();
+  // Potentially convert date strings back to Date objects if needed by the rest of the app
+  // For now, assuming the UserData type or consumers handle string dates from JSON
+  if (data.createdAt) data.createdAt = new Date(data.createdAt);
+  if (data.updatedAt) data.updatedAt = new Date(data.updatedAt);
+  return data as UserData;
+};
 
 export const useUserData = () => {
   const { user } = useAuthContext();
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const userKey = user ? '/api/users/me' : null; // Only fetch if user is authenticated
 
-  useEffect(() => {
-    if (!user) {
-      setUserData(null);
-      setIsLoading(false);
-      return;
+  const { data: userData, error, isLoading, mutate } = useSWR<UserData, Error>(
+    userKey,
+    fetcher,
+    {
+      // Optional SWR configuration (e.g., revalidation settings)
+      // revalidateOnFocus: false, // Example: disable revalidation on window focus
     }
+  );
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const watchlistDocRef = doc(db, 'users', user.uid, 'userMovieData', 'watchlist');
+  // The updateNotificationStatus function is removed as it's handled by useNotification hook
 
-    const unsubscribe = onSnapshot(userDocRef, async (docSnapshot) => {
-      if (!docSnapshot.exists()) {
-        const defaultUserData: UserData = {
-          username: '',
-          email: user.email || undefined,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          setupCompleted: false,
-          uid: user.uid,
-          watchlist: { movie: {}, tv: {} }
-        };
-        await setDoc(userDocRef, defaultUserData);
-        setUserData(defaultUserData);
-        setIsLoading(false);
-        return;
-      }
-
-      const userInfo = docSnapshot.data();
-      const watchlistSnapshot = await getDoc(watchlistDocRef);
-      const watchlistData = watchlistSnapshot.exists() ? watchlistSnapshot.data() : { watchlist: { movie: {}, tv: {} } };
-
-      setUserData({
-        username: userInfo.username,
-        email: userInfo.email,
-        createdAt: userInfo.createdAt?.toDate(),
-        updatedAt: userInfo.updatedAt?.toDate(),
-        setupCompleted: userInfo.setupCompleted,
-        uid: userInfo.uid,
-        notification: userInfo.notification,
-        ...watchlistData
-      } as UserData);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const updateNotificationStatus = async (status: 'allowed' | 'denied' | 'unsupported') => {
-    if (!user) throw new Error("User not logged in");
-
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { notification: status }, { merge: true });
-      setUserData(prev => prev ? { ...prev, notification: status } : null);
-    } catch (error) {
-      console.error("Error updating notification status:", error);
-      throw error;
-    }
+  return {
+    userData: userData || null, // Return null if data is not yet loaded or user is logged out
+    isLoading,
+    error,
+    mutateUserData: mutate // Expose mutate function if needed for manual cache updates
   };
-
-  return { userData, isLoading, updateNotificationStatus };
 };

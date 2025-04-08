@@ -23,7 +23,6 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Maximum number of recipients to prevent abuse
     const MAX_RECIPIENTS = 50;
     if (recipients.length > MAX_RECIPIENTS) {
       return NextResponse.json({ 
@@ -32,13 +31,11 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    // Create notification message
     const notification = {
       title,
       body,
     };
 
-    // Create webpush configuration
     const webpush = {
       notification: {
         icon,
@@ -49,9 +46,7 @@ export async function POST(request: Request) {
       },
     };
 
-    // Send to each recipient individually using their user-specific topic
     const sendPromises = recipients.map(uid => {
-      // Safety check: Ensure uid is a string and not empty
       if (typeof uid !== 'string' || !uid) {
         console.error('Invalid recipient UID:', uid);
         return Promise.resolve(null);

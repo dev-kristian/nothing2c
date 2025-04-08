@@ -1,6 +1,44 @@
 // app/api/search/route.ts
-
 import { NextResponse } from 'next/server'
+
+interface MediaItem {
+  id: number;
+  title?: string; 
+  name?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  overview: string;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average: number;
+  popularity: number;
+}
+
+interface PersonItem {
+  id: number;
+  name: string;
+  profile_path?: string | null;
+  known_for_department: string;
+  popularity: number;
+}
+
+type TmdbResultItem = MediaItem | PersonItem;
+
+type SearchResultItem = (MediaItem | PersonItem) & { media_type: 'movie' | 'tv' | 'person' };
+
+interface TmdbApiResponse<T extends TmdbResultItem> {
+  page: number;
+  results: T[];
+  total_pages: number;
+  total_results: number;
+}
+
+interface FinalApiResponse {
+  page: number;
+  results: SearchResultItem[];
+  total_pages: number;
+  total_results: number;
+}
 
 const TMDB_API_KEY = process.env.NEXT_PRIVATE_TMDB_API_KEY
 
@@ -42,7 +80,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    let finalData: any; 
+    let finalData: FinalApiResponse;
 
     if (!query && type === 'multi') {
 
@@ -59,13 +97,13 @@ export async function GET(request: Request) {
         throw new Error(`Failed to fetch multi-discover data from TMDB (Movie: ${movieResponse.status}, TV: ${tvResponse.status})`);
       }
 
-      const movieData = movieResponse.ok ? await movieResponse.json() : { results: [], total_pages: 0, total_results: 0 };
-      const tvData = tvResponse.ok ? await tvResponse.json() : { results: [], total_pages: 0, total_results: 0 };
+      const movieData: TmdbApiResponse<MediaItem> = movieResponse.ok ? await movieResponse.json() : { page: 1, results: [], total_pages: 0, total_results: 0 };
+      const tvData: TmdbApiResponse<MediaItem> = tvResponse.ok ? await tvResponse.json() : { page: 1, results: [], total_pages: 0, total_results: 0 };
 
-      const movieResults = movieData.results.map((item: any) => ({ ...item, media_type: 'movie' }));
-      const tvResults = tvData.results.map((item: any) => ({ ...item, media_type: 'tv' }));
+      const movieResults: SearchResultItem[] = movieData.results.map((item: MediaItem) => ({ ...item, media_type: 'movie' }));
+      const tvResults: SearchResultItem[] = tvData.results.map((item: MediaItem) => ({ ...item, media_type: 'tv' }));
 
-      const combinedResults = [...movieResults, ...tvResults];
+      const combinedResults: SearchResultItem[] = [...movieResults, ...tvResults];
 
       combinedResults.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
@@ -93,13 +131,22 @@ export async function GET(request: Request) {
         throw new Error(`Failed to fetch data from TMDB: ${response.status} - ${response.statusText}`);
       }
 
-      finalData = await response.json(); 
+      const fetchedData = await response.json();
 
-      if (finalData.results) {
+      finalData = {
+        page: fetchedData.page,
+        results: [],
+        total_pages: fetchedData.total_pages,
+        total_results: fetchedData.total_results
+      };
+
+      if (fetchedData.results) {
         if (type === 'person') {
-          finalData.results = finalData.results.map((item: any) => ({ ...item, media_type: 'person' }));
+          finalData.results = fetchedData.results.map((item: PersonItem): SearchResultItem => ({ ...item, media_type: 'person' }));
         } else if (type === 'movie' || type === 'tv') {
-          finalData.results = finalData.results.map((item: any) => ({ ...item, media_type: type }));
+          finalData.results = fetchedData.results.map((item: MediaItem): SearchResultItem => ({ ...item, media_type: type as 'movie' | 'tv' }));
+        } else {
+           finalData.results = fetchedData.results;
         }
       }
     }

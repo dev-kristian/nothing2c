@@ -3,15 +3,15 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Film, Tv, Calendar } from 'lucide-react'; // Add Calendar
-import { DiscoverMediaType } from '@/hooks/discover/useTrending'; // Import the type
+import { Film, Tv, Calendar } from 'lucide-react';
+import { DiscoverMediaType } from '@/hooks/discover/useTrending';
 
 interface MediaTypeToggleProps {
-  mediaType: DiscoverMediaType; // Use the imported type
-  onMediaTypeChange: (type: DiscoverMediaType) => void; // Use the imported type
+  mediaType: DiscoverMediaType;
+  onMediaTypeChange: (type: DiscoverMediaType) => void; 
   size?: 'default' | 'sm';
   compact?: boolean; 
-  showUpcoming?: boolean; // Add prop to control upcoming visibility
+  showUpcoming?: boolean;
 }
 
 export default function MediaTypeToggle({ 
@@ -19,9 +19,9 @@ export default function MediaTypeToggle({
   onMediaTypeChange,
   size = 'default',
   compact = false,
-  showUpcoming = false // Default to false
+  showUpcoming = false 
 }: MediaTypeToggleProps) {
-  const isSmall = size === 'sm' || compact; // Use either size='sm' or compact=true
+  const isSmall = size === 'sm' || compact; 
   
   return (
     <div 

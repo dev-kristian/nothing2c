@@ -5,17 +5,14 @@ import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronDown, User, MessageSquare, Plus } from 'lucide-react';
-import DOMPurify from 'dompurify'; // Import DOMPurify
+import DOMPurify from 'dompurify'; 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import SectionHeader from './SectionHeader'; // Import the new component
+import SectionHeader from './SectionHeader'; 
 
-// --- Configuration ---
 const REVIEWS_PER_PAGE = 5;
-const INITIAL_VISIBLE_LINES = 3; // Increased for better readability
+const INITIAL_VISIBLE_LINES = 3; 
 const LINE_HEIGHT_APPROX = 1.625;
 
-// --- Helper Functions ---
 const getAvatarUrl = (path: string | null | undefined): string | null => {
   if (!path) return null;
   return path.startsWith('/https')
@@ -23,18 +20,13 @@ const getAvatarUrl = (path: string | null | undefined): string | null => {
     : `https://image.tmdb.org/t/p/w92${path}`;
 };
 
-// Function to sanitize HTML content
 const sanitizeHTML = (htmlString: string): string => {
-  // Check if running in a browser environment before using DOMPurify
   if (typeof window !== 'undefined') {
     return DOMPurify.sanitize(htmlString, { USE_PROFILES: { html: true } });
   }
-  // Return the original string if not in a browser (e.g., during SSR)
-  // Consider server-side sanitization if needed, but basic return is often sufficient
   return htmlString; 
 };
 
-// --- Main Component: ReviewsSection ---
 interface ReviewsSectionProps {
   reviews: Review[];
   mediaTitle?: string;
@@ -43,7 +35,6 @@ interface ReviewsSectionProps {
 const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = 'this title' }) => {
   const [visibleCount, setVisibleCount] = useState(REVIEWS_PER_PAGE);
 
-  // Sort reviews by date (most recent first)
   const sortedReviews = useMemo(() => {
     if (!reviews?.length) return [];
     return [...reviews].sort((a, b) => {
@@ -71,12 +62,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = '
 
   return (
     <section className="py-4">
-      {/* Use the new SectionHeader component */}
       <SectionHeader 
         title="Reviews" 
         subtitle={`${sortedReviews.length} ${sortedReviews.length === 1 ? 'Review' : 'Reviews'}`} 
       />
-      {/* Add mb-6 here to match spacing in other components */}
       <div className="space-y-4 mt-6"> 
         <AnimatePresence initial={false}>
           {visibleReviews.map((review, index) => (
@@ -92,7 +81,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = '
       {hasMoreReviews && (
         <div className="mt-8 flex justify-center">
           <Button
-            variant="secondary" // Changed from outline with overrides
+            variant="secondary" 
             onClick={handleShowMoreReviews}
             className="transition-colors duration-300 group text-sm px-6 py-3 rounded-xl focus:ring-2 focus:ring-primary/30 shadow-apple-sm hover:shadow-apple" // Removed pink classes, adjusted focus ring
           >
@@ -105,35 +94,30 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = '
   );
 };
 
-// --- Sub-Component: NoReviewsState ---
 interface NoReviewsStateProps {
   mediaTitle: string;
 }
 
 const NoReviewsState: React.FC<NoReviewsStateProps> = ({ mediaTitle }) => (
   <section className="mt-12 mb-8 font-sans">
-    {/* Use the new SectionHeader component */}
     <SectionHeader title="Reviews" />
-    {/* Add mt-6 here for consistency */}
-    {/* Combine the className attributes */}
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="mt-6 rounded-2xl bg-system-background-secondary dark:bg-system-background-secondary-dark  p-10 flex flex-col items-center justify-center text-center gap-4 shadow-apple dark:shadow-apple-dark backdrop-blur-apple"
     >
-      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2"> {/* bg-pink/10 -> bg-primary/10 */}
-        <MessageSquare className="w-7 h-7 text-primary" /> {/* text-pink -> text-primary */}
+      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+        <MessageSquare className="w-7 h-7 text-primary" /> 
       </div>
       <p className="text-foreground text-lg font-medium">No Reviews Yet</p>
       <p className="text-label-secondary dark:text-label-secondary-dark text-sm max-w-xs">
-        There are no reviews available for "{mediaTitle}" at the moment.
+        There are no reviews available for &quot;{mediaTitle}&quot; at the moment.
       </p>
     </motion.div>
   </section>
 );
 
-// --- Sub-Component: ReviewCard ---
 interface ReviewCardProps {
   review: Review;
   index: number;
@@ -156,14 +140,13 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
   useEffect(() => {
     const checkTruncation = () => {
       if (contentRef.current) {
-        const singleLineHeight = 16 * LINE_HEIGHT_APPROX; // 16px font size
+        const singleLineHeight = 16 * LINE_HEIGHT_APPROX; 
         const maxHeight = singleLineHeight * INITIAL_VISIBLE_LINES;
         const actualHeight = contentRef.current.scrollHeight;
         setNeedsTruncation(actualHeight > maxHeight + 8);
       }
     };
 
-    // Debounce function to improve performance
     let timeoutId: NodeJS.Timeout;
     const debouncedCheck = () => {
       clearTimeout(timeoutId);
@@ -172,12 +155,13 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
 
     debouncedCheck();
     const observer = new ResizeObserver(debouncedCheck);
-    if (contentRef.current) observer.observe(contentRef.current);
+    const node = contentRef.current; // Capture the ref value
+    if (node) observer.observe(node);
     window.addEventListener('resize', debouncedCheck);
 
     return () => {
       clearTimeout(timeoutId);
-      if (contentRef.current) observer.unobserve(contentRef.current);
+      if (node) observer.unobserve(node); // Use the captured value in cleanup
       window.removeEventListener('resize', debouncedCheck);
       observer.disconnect();
     };
@@ -185,7 +169,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
-  // Animation Variants & Transitions
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -249,14 +232,13 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
       className="bg-system-background-tertiary dark:bg-system-background-tertiary-dark rounded-2xl overflow-hidden shadow-apple dark:shadow-apple-dark transition-all duration-300 hover:shadow-apple-lg dark:hover:shadow-apple-dark-lg"
     >
       <div className="p-6">
-        {/* Card Header */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-5 dark:bg-gray-5-dark flex-shrink-0  flex items-center justify-center shadow-apple-sm">
               {avatarUrl ? (
                 <Image src={avatarUrl} alt={authorName} fill className="object-cover" sizes="48px" unoptimized />
               ) : (
-                <User className="w-6 h-6 text-muted-foreground" /> // text-gray-2 dark:text-gray-2-dark -> text-muted-foreground
+                <User className="w-6 h-6 text-muted-foreground" />
               )}
             </div>
             <div className="min-w-0">
@@ -269,7 +251,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
           {rating !== null && rating !== undefined && <RatingStars rating={rating} />}
         </div>
 
-        {/* Review Content Area */}
         <div className="relative">
           <motion.div
              className="overflow-hidden"
@@ -278,7 +259,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
               variants={contentVariants}
               transition={contentTransition}
           >
-            {/* Render sanitized HTML content */}
             <div
               ref={contentRef}
               id={contentId}
@@ -287,7 +267,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
             />
           </motion.div>
 
-          {/* Fade overlay */}
           {needsTruncation && (
             <motion.div
               className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-system-background-tertiary dark:from-system-background-tertiary-dark to-transparent pointer-events-none"
@@ -298,7 +277,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
           )}
         </div>
 
-        {/* Expand/Collapse Button */}
         {needsTruncation && (
           <button
             onClick={toggleExpand}
@@ -320,7 +298,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
   );
 };
 
-// --- Sub-Component: RatingStars ---
 interface RatingStarsProps {
   rating: number;
 }
@@ -331,19 +308,18 @@ const RatingStars: React.FC<RatingStarsProps> = ({ rating }) => {
   const hasHalfStar = starValue % 1 >= 0.3;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
-  // Removed hardcoded colors
 
   return (
     <div className="flex gap-1 items-center flex-shrink-0 bg-gray-6 dark:bg-gray-6-dark px-3 py-1.5 rounded-full shadow-apple-inner" title={`Rated ${rating}/10`}>
       <span className="text-xs font-medium text-label-secondary dark:text-label-secondary-dark mr-1">{(rating / 2).toFixed(1)}</span>
       {[...Array(fullStars)].map((_, i) => (
-        <Star key={`full-${i}`} fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} /> // Use currentColor for fill, text-pink -> text-primary
+        <Star key={`full-${i}`} fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} />
       ))}
       {hasHalfStar && (
         <div className="relative">
-          <Star className="w-4 h-4 text-pink" strokeWidth={1.5} /> {/* text-pink -> text-primary */}
+          <Star className="w-4 h-4 text-pink" strokeWidth={1.5} /> 
           <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
-            <Star fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} /> {/* Use currentColor for fill, text-pink -> text-primary */}
+            <Star fill="currentColor" className="w-4 h-4 text-pink" strokeWidth={1.5} />
           </div>
         </div>
       )}

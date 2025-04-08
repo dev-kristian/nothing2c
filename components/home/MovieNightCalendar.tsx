@@ -194,13 +194,14 @@ export default function MovieNightCalendar({
     }
 
     return days;
-  }, [currentDate, datePopularity, selectedDates, userDates, activeUsername, handleDateClick]);
+  }, [currentDate, selectedDates, userDates, activeUsername, handleDateClick]);
 
   const renderHours = useCallback(() => {
     if (!selectedDate) return null;
   
     const selectedDateTimes = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
+    const hourPopularityDetails = popularityForDate?.hourlyDetails; // Use hourlyDetails
     const isAllHoursSelected = selectedDateTimes?.hours === 'all';
     
     // Group hours by AM/PM
@@ -210,7 +211,7 @@ export default function MovieNightCalendar({
     const renderHourGroup = (hours: number[]) => (
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {hours.map(hour => {
-          const hourPopularity = popularityForDate?.hours[hour];
+          const hourPopularity = hourPopularityDetails?.[hour]; // Access details for the specific hour
           const isActiveUserSelected = isAllHoursSelected || 
             (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
   
@@ -232,8 +233,10 @@ export default function MovieNightCalendar({
                     try {
                       const hourFromString = new Date(h).getHours();
                       return hourFromString === hour;
-                    } catch (e) {
-                      return parseInt(h) === hour;
+                    } catch { // Remove unused 'e'
+                      // Attempt to parse as integer if Date parsing fails
+                      const parsedInt = parseInt(h);
+                      return !isNaN(parsedInt) && parsedInt === hour;
                     }
                   }
                   return false;
@@ -268,7 +271,7 @@ export default function MovieNightCalendar({
               key={hour}
               onClick={() => handleHourClick(hour)}
               className={hourClasses}
-              title={hourPopularity && typeof hourPopularity === 'object' && hourPopularity !== null && Array.isArray((hourPopularity as any).users) ? `Selected by: ${(hourPopularity as any).users.join(', ')}` : ''}
+              title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''} // Use defined type
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

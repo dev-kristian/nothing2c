@@ -18,14 +18,6 @@ export default async function RootLayout({
     redirect('/sign-in');
   }
 
-  // Middleware already handles redirecting users without usernames to /welcome.
-  // Users with usernames should be allowed into root routes.
-  // The /welcome page itself should manage completion steps.
-  // if (!profileStatus.setupCompleted) {
-  //   console.log('[Root Layout] Profile not complete, redirecting to /welcome');
-  //   redirect('/welcome');
-  // }
-
   return (
     <>
       <div className="flex flex-col h-screen">

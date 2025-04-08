@@ -26,7 +26,6 @@ export async function POST(request: Request) {
     
     const topic = body.topic;
     
-    // Safety check: Only allow user-specific topics
     if (!topic || !topic.startsWith('user_')) {
       return NextResponse.json({ 
         success: false, 

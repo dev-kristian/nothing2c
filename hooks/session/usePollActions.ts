@@ -1,97 +1,66 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, getDoc, deleteField } from 'firebase/firestore';
-import { Session } from '@/types';
+
+const callPollApi = async (url: string, method: string, body?: Record<string, unknown>) => {
+  const response = await fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error(`API Error (${method} ${url}):`, response.status, errorData);
+    throw new Error(errorData.error || `API request failed (status: ${response.status})`);
+  }
+  return response.status === 204 ? null : await response.json();
+};
+
 
 export const usePollActions = () => {
-  const { user } = useAuthContext();
-  const { userData } = useUserData();
+  const { user } = useAuthContext(); 
 
   const createPoll = useCallback(async (sessionId: string, movieTitles: string[]) => {
-    if (!user || !userData) throw new Error('User must be logged in to create a poll');
+    if (!user) throw new Error('User must be logged in to create a poll');
     try {
-      const sessionRef = doc(db, 'sessions', sessionId);
-      const pollId = Math.random().toString(36).substr(2, 9);
-      const pollData = {
-        id: pollId,
-        movieTitles,
-        votes: {}
-      };
-  
-      await updateDoc(sessionRef, {
-        poll: pollData
-      });
+      await callPollApi(`/api/sessions/${sessionId}/poll`, 'POST', { movieTitles });
     } catch (error) {
-      console.error("Error creating poll: ", error);
+      console.error("Error creating poll via API: ", error);
       throw error;
     }
-  }, [user, userData]);
+  }, [user]);
 
   const addMovieToPoll = useCallback(async (sessionId: string, movieTitle: string) => {
-    if (!user || !userData) throw new Error('User must be logged in to add a movie');
+    if (!user) throw new Error('User must be logged in to add a movie');
     try {
-      const sessionRef = doc(db, 'sessions', sessionId);
-      const sessionSnapshot = await getDoc(sessionRef);
-      const sessionData = sessionSnapshot.data() as Session;
-  
-      if (!sessionData.poll) throw new Error('No poll exists for this session');
-  
-      const updatedMovieTitles = [...sessionData.poll.movieTitles, movieTitle];
-  
-      await updateDoc(sessionRef, {
-        'poll.movieTitles': updatedMovieTitles
-      });
+      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'POST', { movieTitle });
     } catch (error) {
-      console.error("Error adding movie to poll: ", error);
+      console.error("Error adding movie to poll via API: ", error);
       throw error;
     }
-  }, [user, userData]);
+  }, [user]);
 
   const removeMovieFromPoll = useCallback(async (sessionId: string, movieTitle: string) => {
-    if (!user || !userData) throw new Error('User must be logged in to remove a movie');
+    if (!user) throw new Error('User must be logged in to remove a movie');
     try {
-      const sessionRef = doc(db, 'sessions', sessionId);
-      const sessionSnapshot = await getDoc(sessionRef);
-      const sessionData = sessionSnapshot.data() as Session;
-  
-      if (!sessionData.poll) throw new Error('No poll exists for this session');
-  
-      const updatedMovieTitles = sessionData.poll.movieTitles.filter(title => title !== movieTitle);
-  
-      await updateDoc(sessionRef, {
-        'poll.movieTitles': updatedMovieTitles,
-        [`poll.votes.${movieTitle}`]: deleteField()
-      });
+      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'DELETE', { movieTitle });
     } catch (error) {
-      console.error("Error removing movie from poll: ", error);
+      console.error("Error removing movie from poll via API: ", error);
       throw error;
     }
-  }, [user, userData]);
+  }, [user]);
 
   const toggleVote = useCallback(async (sessionId: string, movieTitle: string) => {
-    if (!user || !userData) throw new Error('User must be logged in to vote');
+    if (!user) throw new Error('User must be logged in to vote');
     try {
-      const sessionRef = doc(db, 'sessions', sessionId);
-      const sessionSnapshot = await getDoc(sessionRef);
-      const sessionData = sessionSnapshot.data() as Session;
-
-      if (!sessionData.poll) throw new Error('No poll exists for this session');
-
-      const userVotes = sessionData.poll.votes[userData.username] || [];
-      const updatedVotes = userVotes.includes(movieTitle)
-        ? userVotes.filter(vote => vote !== movieTitle)
-        : [...userVotes, movieTitle];
-
-      await updateDoc(sessionRef, {
-        [`poll.votes.${userData.username}`]: updatedVotes
-      });
+      await callPollApi(`/api/sessions/${sessionId}/poll/vote`, 'PUT', { movieTitle });
     } catch (error) {
-      console.error("Error toggling vote for movie: ", error);
+      console.error("Error toggling vote via API: ", error);
       throw error;
     }
-  }, [user, userData]);
+  }, [user]);
 
   return {
     createPoll,

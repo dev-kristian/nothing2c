@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { adminAuth, adminDb } from './firebase-admin'; // Assumes firebase-admin.ts exports initialized auth and db
+import { adminAuth, adminDb } from './firebase-admin'; 
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
 export interface UserProfile {
@@ -30,13 +30,27 @@ export async function getAuthenticatedUserProfile(): Promise<UserProfile | null>
       setupCompleted: firestoreData?.setupCompleted === true,
     };
 
-  } catch (error: any) {
-    if (error.code?.startsWith('auth/')) {
-      console.error('[Server Auth] Session verification failed:', error.code, error.message);
+  } catch (error: unknown) {
+    let errorCode: string | undefined;
+    let errorMessage: string | undefined;
+
+    // Safely check for properties on the unknown error type
+    if (typeof error === 'object' && error !== null) {
+      if ('code' in error && typeof (error as { code: unknown }).code === 'string') {
+        errorCode = (error as { code: string }).code;
+      }
+      if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
+        errorMessage = (error as { message: string }).message;
+      }
+    }
+
+    if (errorCode?.startsWith('auth/')) {
+      console.error('[Server Auth] Session verification failed:', errorCode, errorMessage);
     } else {
+      // Log the original error object if it's not a recognized Firebase auth error
       console.error('[Server Auth] Unexpected error during authentication:', error);
     }
-    return null; 
+    return null;
   }
 }
 

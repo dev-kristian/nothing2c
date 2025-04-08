@@ -3,7 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <div className="animate-pulse">
-      {/* Skeleton for DetailPageWrapper */}
       <div className="relative h-[60vh] w-full">
         <Skeleton className="absolute inset-0 h-full w-full" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
@@ -18,7 +17,6 @@ export default function Loading() {
       </div>
 
       <div className="pt-4 w-full px-2 md:px-8 space-y-8">
-        {/* Skeleton for SeasonCarousel (placeholder) */}
         <div>
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="flex space-x-4 overflow-hidden">
@@ -28,7 +26,6 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Skeleton for CrewCarousel */}
          <div>
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="flex space-x-4 overflow-hidden">
@@ -41,7 +38,6 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Skeleton for ReviewsSection */}
         <div>
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="space-y-4">
@@ -50,7 +46,6 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Skeleton for SimilarContent */}
         <div>
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">

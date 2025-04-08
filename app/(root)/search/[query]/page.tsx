@@ -2,15 +2,15 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation'; // Import useRouter
+import { useParams, useSearchParams, useRouter } from 'next/navigation'; 
 import { Loader2, ArrowLeft } from 'lucide-react';
 import useSWRInfinite from 'swr/infinite';
 import MediaPoster from '@/components/MediaPoster';
-import { Media, SearchResult } from '@/types';
+import { SearchResult } from '@/types';
 import SpinningLoader from '@/components/SpinningLoader';
-import SearchComponent from '@/components/discover/SearchComponent'; // Import SearchComponent
+import SearchComponent from '@/components/discover/SearchComponent'; 
 import { Button } from '@/components/ui/button';
-import { GENRES_BY_TYPE, Genre } from '@/constants/genres'; // Import GENRES_BY_TYPE and Genre
+import { GENRES_BY_TYPE, Genre } from '@/constants/genres';
 
 interface SearchApiResponse {
   results: SearchResult[];
@@ -28,11 +28,13 @@ const fetcher = async (url: string): Promise<SearchApiResponse> => {
   return response.json();
 };
 
-function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T {
+// More specific debounce type to handle arguments correctly
+function debounce<A extends unknown[], R>(func: (...args: A) => R, wait: number): (...args: A) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  return function(this: ThisParameterType<T>, ...args: Parameters<T>) {
-    const context = this;
+  return function(this: ThisParameterType<typeof func>, ...args: A) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const context = this; 
     
     const later = () => {
       timeoutId = null;
@@ -43,8 +45,9 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T 
       clearTimeout(timeoutId);
     }
     timeoutId = setTimeout(later, wait);
-  } as T;
+  };
 }
+
 
 export default function SearchResultsPage() {
   const router = useRouter();
@@ -101,27 +104,23 @@ export default function SearchResultsPage() {
     const uniqueResults: SearchResult[] = []; 
     const seenKeys = new Set<string>();
 
-    // Corrected loop: Iterate through all fetched results
     for (const result of allResults) {
       if (result.id === undefined) {
         console.warn('SearchResult missing id:', result);
         continue;
       }
 
-      let determinedType = result.media_type; // Start with API response type
+      let determinedType = result.media_type; 
 
-      if (!determinedType) { // If API didn't provide type...
+      if (!determinedType) { 
         if (type === 'movie' || type === 'tv') {
-          determinedType = type; // Use page type for specific movie/tv searches
+          determinedType = type; 
         } else {
-          // This case indicates a multi-search result is missing media_type, which is unexpected for TMDB.
           console.warn("Multi-search result unexpectedly missing media_type:", result);
-          // Skip this result as we can't reliably determine its type or key.
           continue; 
         }
       }
 
-      // Ensure the determined type is one we handle
       if (!['movie', 'tv', 'person'].includes(determinedType)) {
          console.warn('Result has unexpected media_type:', result, 'Type:', determinedType);
          continue;
@@ -129,7 +128,6 @@ export default function SearchResultsPage() {
 
       const key = `${determinedType}-${result.id}`;
       if (!seenKeys.has(key)) {
-        // Ensure the result object consistently has the determined media_type
         const resultWithGuaranteedType = {
           ...result,
           media_type: determinedType as 'movie' | 'tv' | 'person'
@@ -139,14 +137,14 @@ export default function SearchResultsPage() {
       }
     }
     return uniqueResults;
-  }, [apiResponses, type]); // <-- Added 'type' to dependency array
+  }, [apiResponses, type]); 
 
   const isLoadingInitialData = !apiResponses && !error && isLoading;
   const isLoadingMore = isLoading && size > 1;
-  const isEmpty = apiResponses?.[0]?.results?.length === 0 && !isLoadingInitialData; // Check after initial load
+  const isEmpty = apiResponses?.[0]?.results?.length === 0 && !isLoadingInitialData;
 
   const isReachingEnd = useMemo(() => {
-    if (!apiResponses || apiResponses.length === 0) return false; // No data yet
+    if (!apiResponses || apiResponses.length === 0) return false;
     const lastPage = apiResponses[apiResponses.length - 1];
     const reachedTotalPages = lastPage.page >= lastPage.total_pages;
     const lastPageIsEmpty = !lastPage.results?.length;
@@ -160,9 +158,10 @@ export default function SearchResultsPage() {
   const observer = useRef<IntersectionObserver>();
   const lastItemRef = useRef<HTMLDivElement>(null);
 
+  // Explicitly type the debounced function
   const debouncedSetSize = useMemo(
-    () => debounce((newSize: number) => setSize(newSize), 300),
-    [setSize] 
+    () => debounce<[number], Promise<SearchApiResponse[] | undefined>>(setSize, 300),
+    [setSize]
   );
 
   const loadMore = useCallback(() => {
@@ -205,19 +204,24 @@ export default function SearchResultsPage() {
     };
   }, [handleObserver, hasMore]);
   
-  const getPageTitle = () => {
+  const renderPageTitle = () => {
     const displayQuery = query === 'discover' ? undefined : query;
     if (displayQuery) {
-      return `Search results for "${displayQuery}"`;
+      const decodedQuery = decodeURIComponent(displayQuery);
+      return (
+        <>
+          <span className="text-foreground">Search results for </span>
+          <span className="text-pink">{decodedQuery}</span>
+        </>
+      );
     }
-    
-    const parts = []
+
+    const parts = [];
     if (type !== 'multi') {
       parts.push(type === 'movie' ? 'Movies' : type === 'tv' ? 'TV Shows' : 'People')
     }
     if (year) parts.push(`from ${year}`)
     if (genre) {
-      // Use imported GENRES_BY_TYPE constant based on the current type
       const currentGenreList: Genre[] = GENRES_BY_TYPE[type] || GENRES_BY_TYPE['multi'];
       const genreName = currentGenreList.find(g => g.id.toString() === genre)?.name;
       if (genreName) parts.push(genreName);
@@ -229,16 +233,16 @@ export default function SearchResultsPage() {
  
    return (
      <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center mb-6 gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold text-pink">{getPageTitle()}</h1>
-      </div>
+       <div className="flex items-center mb-6 gap-4">
+         <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back" className="group hover:bg-transparent">
+           <ArrowLeft className="h-5 w-5 text-pink group-hover:text-pink/90 transition-colors" />
+         </Button>
+         <h1 className="text-2xl font-bold">{renderPageTitle()}</h1>
+       </div>
 
        <div className="mb-8">
-         <SearchComponent 
-           initialQuery={query === 'discover' ? '' : query}
+         <SearchComponent
+           initialQuery={query === 'discover' ? '' : (query ? decodeURIComponent(query) : '')}
            initialType={type}
            initialYear={year}
             initialGenre={genre}
@@ -278,18 +282,12 @@ export default function SearchResultsPage() {
           )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-            {/* The 'results' array now contains objects with guaranteed correct media_type ('movie', 'tv', or 'person') */}
-            {/* thanks to the updated useMemo hook. */}
             {results.map((result, index) => {
               const isLastItem = index === results.length - 1;
 
-              // No need to filter here or reconstruct mediaData. 
-              // MediaPoster handles different media types internally.
-              // The key should use the guaranteed media_type from the result object.
               return (
                 <div key={`${result.media_type}-${result.id}`} ref={isLastItem ? lastItemRef : null}>
-                  {/* Pass the result object directly, it has the correct media_type */}
-                  <MediaPoster media={result} />
+                  <MediaPoster media={result} showMediaType={true} />
                 </div>
               );
             })}
@@ -305,5 +303,3 @@ export default function SearchResultsPage() {
     </div>
   );
 }
-
-// Removed the local genres definition

@@ -6,39 +6,35 @@ const ClearSequentialSpinner = ({ size = 150 }) => {
   const pinkColor = "#FF2D55";
   const numCircles = 7;
 
-  // Generate circles with decreasing sizes
   const circles = Array.from({ length: numCircles }).map((_, i) => ({
     id: i,
-    size: Math.max(size * (0.18 - (i * 0.018)), 8), // Ensure minimum visible size
-    opacity: 1 - (i * 0.08), // Decreasing opacity
+    size: Math.max(size * (0.18 - (i * 0.018)), 8), 
+    opacity: 1 - (i * 0.08),
   }));
 
-  // Variants for the container to manage staggering
   const containerVariants = {
-    hidden: {}, // Initial state (can be empty)
+    hidden: {}, 
     visible: {
       transition: {
-        staggerChildren: 0.2 // Delay between each circle starting animation
+        staggerChildren: 0.2 
       }
     }
   };
 
-  // Variants for individual circles animation
   const circleVariants = {
     hidden: { rotate: 0 },
     visible: {
       rotate: 360,
       transition: {
         duration: 1.8,
-        ease: [0.2, 0, 0.8, 1], // Slow start, fast middle, slow end
-        repeat: Infinity,       // Repeat the animation indefinitely
-        repeatDelay: 1.2        // Delay between repetitions (approx 3s total loop feel)
+        ease: [0.2, 0, 0.8, 1],
+        repeat: Infinity,
+        repeatDelay: 1.2 
       }
     }
   };
 
   return (
-    // Container div to orchestrate the staggering
     <motion.div
       style={{
         width: size,
@@ -49,15 +45,13 @@ const ClearSequentialSpinner = ({ size = 150 }) => {
         alignItems: 'center',
       }}
       variants={containerVariants}
-      initial="hidden" // Start in the hidden state
-      animate="visible" // Animate to the visible state on mount
+      initial="hidden"
+      animate="visible"
     >
       {circles.map(circle => (
-        // Individual animated circles
         <motion.div
           key={circle.id}
-          variants={circleVariants} // Apply circle animation variants
-          // initial/animate props are inherited from the parent container
+          variants={circleVariants}
           style={{
             position: 'absolute',
             width: circle.size,
@@ -65,10 +59,10 @@ const ClearSequentialSpinner = ({ size = 150 }) => {
             borderRadius: '50%',
             backgroundColor: pinkColor,
             opacity: circle.opacity,
-            top: 0, // Start at top
+            top: 0,
             left: '50%',
             marginLeft: -(circle.size / 2),
-            transformOrigin: `50% ${size/2}px`, // Rotate around center of container
+            transformOrigin: `50% ${size/2}px`, 
           }}
         />
       ))}

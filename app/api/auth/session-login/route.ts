@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebase-admin';
 
 const expiresIn = 60 * 60 * 24 * 5 * 1000;
@@ -13,15 +12,8 @@ export async function POST(request: NextRequest) {
     if (!idToken) {
       return NextResponse.json({ error: 'ID token is required.' }, { status: 400 });
     }
-
-    // Verify the ID token (optional here, createSessionCookie also verifies)
-    // We don't need the decoded token here anymore.
-    // const decodedToken = await adminAuth.verifyIdToken(idToken);
-
-    // Create the session cookie
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
-    // Set cookie options
     const options = {
       name: '__session', 
       value: sessionCookie,
@@ -32,17 +24,21 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax' as const, 
     };
 
-    // Create the response and set the cookie
-    const response = NextResponse.json({ status: 'success' }, { status: 200 }); // Just return success
+    const response = NextResponse.json({ status: 'success' }, { status: 200 }); 
     response.cookies.set(options);
 
     return response;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API Session Login] Error creating session cookie:', error);
-    if (error.code === 'auth/invalid-id-token' || error.code === 'auth/id-token-expired') {
-       return NextResponse.json({ error: 'Invalid or expired ID token.' }, { status: 401 });
+    // Type check for Firebase error structure
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string }; // Type assertion after check
+      if (firebaseError.code === 'auth/invalid-id-token' || firebaseError.code === 'auth/id-token-expired') {
+         return NextResponse.json({ error: 'Invalid or expired ID token.' }, { status: 401 });
+      }
     }
-    return NextResponse.json({ error: 'Failed to create session cookie.' }, { status: 500 });
+    // Generic error response if it's not a recognized Firebase error
+    return NextResponse.json({ error: 'Failed to create session cookie. Unknown error occurred.' }, { status: 500 });
   }
 }

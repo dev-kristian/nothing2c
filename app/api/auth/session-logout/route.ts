@@ -17,7 +17,7 @@ export async function POST() {
 
     return NextResponse.json({ status: 'success' }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API Session Logout] Error clearing session cookie:', error);
     return NextResponse.json({ error: 'Failed to clear session cookie.' }, { status: 500 });
   }

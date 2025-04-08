@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or update the friends subcollection for current user
     const currentUserFriendsRef = doc(db, 'users', currentUser.uid, 'friends', 'data');
     await setDoc(currentUserFriendsRef, {
       sentRequests: {
@@ -23,7 +22,6 @@ export async function POST(request: NextRequest) {
       }
     }, { merge: true });
 
-    // Create or update the friends subcollection for target user
     const targetUserFriendsRef = doc(db, 'users', targetUser.uid, 'friends', 'data');
     await setDoc(targetUserFriendsRef, {
       receivedRequests: {
@@ -31,7 +29,6 @@ export async function POST(request: NextRequest) {
       }
     }, { merge: true });
 
-    // Create the friend request document
     const requestRef = doc(db, 'users', targetUser.uid, 'friendRequests', currentUser.uid);
     await setDoc(requestRef, {
       fromUid: currentUser.uid,

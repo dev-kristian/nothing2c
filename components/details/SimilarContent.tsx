@@ -3,8 +3,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Media } from '@/types';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import MediaPoster from '../MediaPoster'; // Import MediaPoster
-import SectionHeader from './SectionHeader'; // Import the new component
+import MediaPoster from '../MediaPoster'; 
+import SectionHeader from './SectionHeader'; 
 
 interface SimilarContentProps {
   similar: Media[];
@@ -12,19 +12,17 @@ interface SimilarContentProps {
 }
 
 const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) => {
-  // Remove hoveredIndex state
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
-  // Check scroll possibility on mount and window resize
   useEffect(() => {
     const checkScroll = () => {
       if (scrollContainerRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
         setCanScrollLeft(scrollLeft > 0);
-        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10); // 10px buffer
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
       }
     };
     
@@ -33,7 +31,6 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
     return () => window.removeEventListener('resize', checkScroll);
   }, [similar]);
   
-  // Handle scroll events
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
@@ -63,14 +60,12 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* Header using SectionHeader */}
       <div className="flex items-center justify-between">
         <SectionHeader 
           title="You May Also Like" 
           subtitle={`Similar ${mediaType === 'movie' ? 'movies' : 'shows'} you might enjoy`} 
         />
         
-        {/* Navigation controls with Apple-style minimal buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => scrollTo('left')}
@@ -99,9 +94,7 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
         </div>
       </div>
       
-      {/* Content scroller with fade edges */}
       <div className="relative">
-        {/* Scrollable content */}
         <div 
           ref={scrollContainerRef}
           className="flex overflow-x-auto no-scrollbar py-4 gap-5 pb-8"
@@ -119,17 +112,15 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
                 ease: [0.16, 1, 0.3, 1]
               }}
             >
-              {/* Replace Link and internal structure with MediaPoster */}
               <MediaPoster 
-                media={{ ...item, media_type: mediaType }} // Ensure media_type is passed correctly
-                variant="default" // Use default variant
+                media={{ ...item, media_type: mediaType }}
+                variant="default"
               />
             </motion.div>
           ))}
         </div>
       </div>
       
-      {/* Progress indicator in Apple style */}
       <div className="flex justify-center mt-2">
         <div className="h-0.5 bg-muted rounded-full w-24 overflow-hidden">
           <motion.div

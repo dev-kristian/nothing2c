@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get users matching the search
     const usersRef = collection(db, 'users');
     const q = query(
       usersRef,
@@ -28,15 +27,12 @@ export async function GET(request: NextRequest) {
     const users = querySnapshot.docs.map(doc => ({
       uid: doc.id,
       username: doc.data().username,
-      email: doc.data().email,
     }));
 
-    // Get current user's friends data
     const friendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
     const friendsDoc = await getDoc(friendsRef);
     const friendsData = friendsDoc.data() || {};
 
-    // Check request status for each user
     const usersWithStatus = await Promise.all(users.map(async (user) => {
       const requestStatus: {
         exists: boolean;
@@ -47,13 +43,11 @@ export async function GET(request: NextRequest) {
         type: undefined,
         status: undefined
       };
-        // Check if the current user has sent a request to this user
         if (friendsData.sentRequests && friendsData.sentRequests[user.uid]) {
             requestStatus.exists = true;
             requestStatus.type = 'sent';
             requestStatus.status = 'pending';
         }
-        //Check if the current user has received a request from this user.
         if (friendsData.receivedRequests && friendsData.receivedRequests[user.uid]) {
           requestStatus.exists = true;
           requestStatus.type = 'received';

@@ -22,16 +22,15 @@ interface MediaSuggestionsProps {
 }
 
 const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) => {
-  const [inputMediaTitle, setInputMediaTitle] = useState<string>(''); 
-  const [suggestions, setSuggestions] = useState<FriendsWatchlistItem[]>([]); 
+  const [inputMediaTitle, setInputMediaTitle] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<FriendsWatchlistItem[]>([]);
   const [showInput, setShowInput] = useState<boolean>(false);
   const inputContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const { friendsWatchlistItems } = useFriendsWatchlist();
   const { toggleVote, addMovieToPoll, removeMovieFromPoll } = useSession();
   const { userData } = useUserData();
 
-  // Hook for handling outside clicks
   useOutsideClickHandler(inputContainerRef, () => {
     setSuggestions([]);
     if (inputMediaTitle.trim() === '') {
@@ -80,26 +79,27 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
 
   const getMediaType = (mediaInfo: FriendsWatchlistItem | undefined): 'movie' | 'tv' => {
     if (!mediaInfo) return 'movie';
-    return mediaInfo.media_type || (mediaInfo.first_air_date ? 'tv' : 'movie');
+    if (mediaInfo.media_type === 'movie' || mediaInfo.media_type === 'tv') {
+      return mediaInfo.media_type;
+    }
+    return mediaInfo.first_air_date ? 'tv' : 'movie';
   };
 
-  // Convert FriendsWatchlistItem to be compatible with FirestoreWatchlistItem/TopWatchlistItem
-  const convertToFirestoreCompatible = (items: FriendsWatchlistItem[]): any[] => {
+  const convertToFirestoreCompatible = (items: FriendsWatchlistItem[]): FriendsWatchlistItem[] => { // Changed return type
     return items.map(item => ({
       ...item,
       media_type: item.media_type || (item.first_air_date ? 'tv' : 'movie') as 'movie' | 'tv',
-      poster_path: item.poster_path || undefined, // Convert null to undefined
-      profile_path: undefined, // Remove properties not in FirestoreWatchlistItem
+      poster_path: item.poster_path || undefined,
+      profile_path: undefined,
       weighted_score: item.weighted_score || 0
     }));
   };
 
-  // Function to safely get the release year
   const getReleaseYear = (date: string | undefined) => {
     if (!date) return null;
     try {
       return format(new Date(date), 'yyyy');
-    } catch (error) {
+    } catch { // Removed unused error variable
       console.error('Invalid date format:', date);
       return null;
     }
@@ -118,14 +118,14 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                     movie: convertToFirestoreCompatible(friendsWatchlistItems.movie),
                     tv: convertToFirestoreCompatible(friendsWatchlistItems.tv)
                   };
-                  handleInputChange(e, setInputMediaTitle, compatibleItems, setSuggestions as any);
+                  handleInputChange(e, setInputMediaTitle, compatibleItems, setSuggestions); // Removed 'as any'
                 }}
                 placeholder="Enter title..."
                 className="w-60 text-sm rounded-full border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-md"
                 autoFocus
               />
-              <Button 
-                onClick={handleAddMedia} 
+              <Button
+                onClick={handleAddMedia}
                 className="ml-2 h-9 w-9 rounded-full p-0 bg-system-pink hover:bg-system-pink-dark text-white"
                 disabled={inputMediaTitle.trim() === ''}
               >
@@ -133,8 +133,8 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
               </Button>
             </div>
           ) : (
-            <Button 
-              onClick={() => setShowInput(true)} 
+            <Button
+              onClick={() => setShowInput(true)}
               className="h-9 rounded-full px-4 bg-white/10 dark:bg-black/10 backdrop-blur-sm text-sm text-label-secondary dark:text-label-secondary-dark border border-white/10 dark:border-white/5 hover:bg-white/20 dark:hover:bg-black/20"
             >
               <Plus size={14} className="mr-1" /> Suggest
@@ -148,19 +148,18 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                   key={media.id}
                   className="px-4 py-2.5 hover:bg-system-pink/5 cursor-pointer flex items-center border-b border-separator/10 dark:border-separator-dark/10 last:border-b-0"
                   onClick={() => {
-                    // Convert media to be compatible with FirestoreWatchlistItem
                     const compatibleMedia = {
                       ...media,
                       media_type: media.media_type || (media.first_air_date ? 'tv' : 'movie') as 'movie' | 'tv',
                       poster_path: media.poster_path || undefined
                     };
-                    
+
                     handleSuggestionClick(
-                      compatibleMedia as any,
+                      compatibleMedia, // Removed 'as any'
                       setInputMediaTitle,
                       [],
                       () => {},
-                      setSuggestions as any,
+                      setSuggestions, // Removed 'as any'
                       async (title) => {
                         await addMovieToPoll(session.id, title);
                         setInputMediaTitle('');
@@ -219,15 +218,15 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
             const voted = hasVoted(title);
             const mediaInfo = getMediaDetails(title);
             const mediaType = getMediaType(mediaInfo);
-            const releaseYear = mediaInfo ? 
+            const releaseYear = mediaInfo ?
               getReleaseYear(mediaInfo.release_date || mediaInfo.first_air_date) : null;
-            
+
             return (
               <motion.div
                 key={`${title}-${index}`}
                 className={`p-3 rounded-xl border ${
-                  voted 
-                    ? 'bg-system-pink/5 dark:bg-system-pink-dark/10 border-system-pink/10 dark:border-system-pink-dark/10' 
+                  voted
+                    ? 'bg-system-pink/5 dark:bg-system-pink-dark/10 border-system-pink/10 dark:border-system-pink-dark/10'
                     : 'bg-white/5 dark:bg-black/5 border-white/10 dark:border-white/5'
                 } cursor-pointer transition-all duration-200 hover:bg-white/10 dark:hover:bg-black/10`}
                 whileHover={{ scale: 1.005 }}
@@ -250,30 +249,30 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <Link 
+                      <Link
                         href={mediaInfo ? `/details/${mediaType}/${mediaInfo.id}` : '#'}
                         className="hover:text-system-pink dark:hover:text-system-pink-dark transition-colors"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent vote toggle
+                          e.stopPropagation();
                           if (!mediaInfo) e.preventDefault();
                         }}
                       >
                         <h4 className="font-medium text-base text-label dark:text-label-dark">{title}</h4>
                       </Link>
-                      
+
                       <div className="flex items-center">
                         <span className={`text-sm font-medium px-3 py-1 rounded-full flex items-center ${
-                          voted 
-                            ? 'bg-system-pink/15 text-system-pink dark:bg-system-pink-dark/15 dark:text-system-pink-dark' 
+                          voted
+                            ? 'bg-system-pink/15 text-system-pink dark:bg-system-pink-dark/15 dark:text-system-pink-dark'
                             : 'bg-gray-6 dark:bg-gray-5-dark text-label-secondary dark:text-label-secondary-dark'
                         }`}>
                           <ThumbsUp size={14} className="mr-1.5" />
                           {voteCount}
                         </span>
-                        
+
                         {isSessionCreator && (
                           <Button
                             variant="ghost"
@@ -290,7 +289,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                         )}
                       </div>
                     </div>
-                    
+
                     {mediaInfo && (
                       <div className="text-xs text-label-secondary dark:text-label-secondary-dark mt-1.5 flex flex-wrap items-center">
                         {mediaInfo.vote_average !== undefined && (
@@ -299,21 +298,21 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                             {mediaInfo.vote_average.toFixed(1)}
                           </span>
                         )}
-                        
+
                         {releaseYear && (
                           <span className="mr-3 flex items-center">
                             <Calendar className="w-3 h-3 mr-1" />
                             {releaseYear}
                           </span>
                         )}
-                        
+
                         {mediaInfo.watchlist_count && mediaInfo.watchlist_count > 0 && (
                           <span className="mr-3 flex items-center">
                             <Users className="w-3 h-3 mr-1" />
                             {mediaInfo.watchlist_count} in watchlist
                           </span>
                         )}
-                        
+
                         <span className="flex items-center text-system-pink/70 dark:text-system-pink-dark/70 font-medium">
                           {mediaType === 'tv' ? 'TV Show' : 'Movie'}
                         </span>

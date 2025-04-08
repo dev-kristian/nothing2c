@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
       return {
         id: doc.id,
         ...data,
-        // Convert Firestore timestamp to ISO string
         timestamp: data.timestamp?.toDate().toISOString() || new Date().toISOString()
       };
     });
