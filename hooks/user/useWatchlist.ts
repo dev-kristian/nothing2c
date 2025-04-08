@@ -99,16 +99,25 @@ export const useWatchlist = (): UseWatchlistReturn => {
 
   const removeFromWatchlist = useCallback(
     async (id: number, mediaType: 'movie' | 'tv') => {
-      if (!user || !watchlistKey || !watchlistApiData?.[mediaType]?.[id.toString()]) return; // Check if item exists
+      // Remove the check for item existence in watchlistApiData - let the API call handle it
+      if (!user || !watchlistKey) return;
 
-      const optimisticData: WatchlistApiData = { ...watchlistApiData };
-      delete optimisticData[mediaType][id.toString()]; // Remove optimistically
+      // Prepare optimistic data only if current data exists
+      const optimisticData = watchlistApiData
+        ? { ...watchlistApiData }
+        : undefined;
+
+      if (optimisticData?.[mediaType]?.[id.toString()]) {
+        delete optimisticData[mediaType][id.toString()]; // Remove optimistically if possible
+      }
 
       try {
-        // Optimistic update
-        await mutate(watchlistKey, optimisticData, false);
+        // Optimistic update (only if optimisticData was prepared)
+        if (optimisticData) {
+          await mutate(watchlistKey, optimisticData, false);
+        }
 
-        // API call
+        // API call - always attempt this
         const response = await fetch(`${watchlistKey}?id=${id}&mediaType=${mediaType}`, {
           method: 'DELETE',
         });
@@ -123,11 +132,13 @@ export const useWatchlist = (): UseWatchlistReturn => {
 
       } catch (err) {
         console.error(`Error removing ${mediaType} from watchlist:`, err);
-        // Rollback optimistic update
-        mutate(watchlistKey, watchlistApiData, false);
+        // Rollback optimistic update (only if optimisticData was prepared)
+        if (optimisticData) {
+          mutate(watchlistKey, watchlistApiData, false); // Revert to original data before optimistic update
+        }
       }
     },
-    [user, mutate, watchlistKey, watchlistApiData]
+    [user, mutate, watchlistKey, watchlistApiData] // watchlistApiData is still needed for rollback
   );
 
   return {
