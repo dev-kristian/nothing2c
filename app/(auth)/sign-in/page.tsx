@@ -104,7 +104,7 @@ function SignInContent() {
       <CardFooter className="flex flex-col space-y-4 pb-8">
         <div className="text-center">
           <span className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               href="/sign-up"
               className="text-pink hover:text-pink/80 transition-colors"
