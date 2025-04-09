@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useUserData } from '@/context/UserDataContext';
 import { Clock, X, Loader2, AlertTriangle, ChevronDown, Search, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -305,9 +306,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({ mediaType, searchQuery, onClear
         Clear Search
       </button>
     ) : (
-      <button className="button-primary">
+      <Link href={`/discover?type=${mediaType}`} className="button-primary">
         Browse {mediaType === 'movie' ? 'Movies' : 'Shows'}
-      </button>
+      </Link>
     )}
   </div>
 );

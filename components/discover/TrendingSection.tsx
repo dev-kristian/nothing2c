@@ -1,11 +1,12 @@
 // components/TrendingSection.tsx
 import React, { useRef, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaPoster from '../MediaPoster';
 import SpinningLoader from '../SpinningLoader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaTypeToggle from '../MediaTypeToggle';
-import { useTrending } from '@/hooks/discover/useTrending'; 
+import { useTrending, DiscoverMediaType } from '@/hooks/discover/useTrending';
 
 const TrendingSection: React.FC = () => {
   const {
@@ -18,6 +19,17 @@ const TrendingSection: React.FC = () => {
     mediaType,
     setMediaType,
   } = useTrending();
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam === 'movie' || typeParam === 'tv') {
+      setMediaType(typeParam as DiscoverMediaType);
+    }
+    // Run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // No dependencies needed here, we only want to read the initial URL param
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);

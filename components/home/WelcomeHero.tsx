@@ -3,8 +3,8 @@
 import { useUserData } from '@/context/UserDataContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react'; // Removed useState, useEffect
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PosterImageProps {
   path: string;
@@ -39,12 +39,10 @@ const WelcomeHeroSkeleton = () => (
 
 
 export function WelcomeHero() {
-  const { userData, watchlistItems, isLoading } = useUserData(); // Added isLoading
+  const { userData, watchlistItems, isLoading } = useUserData();
   const router = useRouter();
-  // Removed mounted state
 
   const topRatedPosters = useMemo(() => {
-    // Handle case where watchlistItems might be initially empty during loading
     const movies = watchlistItems?.movie || [];
     const tvShows = watchlistItems?.tv || [];
     const allItems = [...movies, ...tvShows];
@@ -59,9 +57,9 @@ export function WelcomeHero() {
   }, [watchlistItems]);
 
   const fallbackPosters = [
-    "/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg", 
+    "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg", 
     "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg", 
-    "/qW4crfED8mpNDadSmMdi7ZDzhXF.jpg"  
+    "/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg"  
   ];
   
   const currentHour = new Date().getHours();
@@ -115,7 +113,7 @@ export function WelcomeHero() {
           
           <div className="hidden md:block">
             <div className="relative h-48 w-48 lg:h-56 lg:w-56 flex-shrink-0 ml-4">
-              <div className="absolute top-0 left-0 h-32 w-24 rounded-lg overflow-hidden shadow-lg transform -rotate-6 z-10">
+              <div className="absolute top-0 left-2 h-32 w-24 rounded-lg overflow-hidden shadow-lg transform -rotate-6 z-10">
                 <PosterImage 
                   path={topRatedPosters[0]?.poster_path || fallbackPosters[0]} 
                   title={topRatedPosters[0]?.title || topRatedPosters[0]?.name || "Movie poster"}
@@ -124,7 +122,7 @@ export function WelcomeHero() {
                 />
               </div>
               
-              <div className="absolute top-4 right-0 h-36 w-24 rounded-lg overflow-hidden shadow-lg transform rotate-6 z-20">
+              <div className="absolute top-0 right-0 h-32 w-24 rounded-lg overflow-hidden shadow-lg transform rotate-6 z-20">
                 <PosterImage 
                   path={topRatedPosters[1]?.poster_path || fallbackPosters[1]} 
                   title={topRatedPosters[1]?.title || topRatedPosters[1]?.name || "Movie poster"}
@@ -133,7 +131,7 @@ export function WelcomeHero() {
                 />
               </div>
               
-              <div className="absolute bottom-0 left-8 h-32 w-24 rounded-lg overflow-hidden shadow-lg transform -rotate-3 z-0">
+              <div className="absolute top-20 left-14 h-32 w-24 rounded-lg overflow-hidden shadow-lg transform  z-0">
                 <PosterImage 
                   path={topRatedPosters[2]?.poster_path || fallbackPosters[2]} 
                   title={topRatedPosters[2]?.title || topRatedPosters[2]?.name || "Movie poster"}
