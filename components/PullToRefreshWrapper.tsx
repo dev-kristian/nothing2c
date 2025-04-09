@@ -7,23 +7,26 @@ const PullToRefreshWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isStandaloneIOS = typeof window !== 'undefined' && ('standalone' in window.navigator) && window.navigator.standalone === true && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  // Use matchMedia for more reliable PWA standalone detection
+  const isStandalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
+  // Removed unused isIOS variable definition
 
   useEffect(() => {
-    if (!isStandaloneIOS || !containerRef.current) return;
+    // Apply only if in standalone mode (iOS check might be redundant if matchMedia works)
+    if (!isStandalone || !containerRef.current) return; 
 
     const container = containerRef.current;
     let isDragging = false;
 
     const handleTouchStart = (e: globalThis.TouchEvent) => {
-      // Only start tracking if scrolled to the top
-      if (window.scrollY === 0) {
+      // Temporarily remove scroll check for debugging standalone mode
+      // if (window.scrollY === 0) { 
         setStartY(e.touches[0].clientY);
         isDragging = true;
         setPullDistance(0); // Reset pull distance on new touch
-      } else {
-        isDragging = false;
-      }
+      // } else {
+      //   isDragging = false;
+      // }
     };
 
     const handleTouchMove = (e: globalThis.TouchEvent) => {
@@ -65,7 +68,7 @@ const PullToRefreshWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isStandaloneIOS, startY, pullDistance]); // Include dependencies
+  }, [isStandalone, startY, pullDistance]); // Updated dependency
 
   // Optional: Add a visual indicator for refreshing
   // const refreshIndicatorStyle: React.CSSProperties = {
