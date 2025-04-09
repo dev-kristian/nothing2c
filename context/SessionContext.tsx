@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { SessionContextType } from '@/types';
 import {
   useCreateSession,
@@ -19,22 +19,12 @@ export const useSession = () => {
 };
 
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
   const createSession = useCreateSession();
   const updateUserDates = useUpdateUserDates();
   const { createPoll, addMovieToPoll, removeMovieFromPoll, toggleVote } = usePollActions();
   const updateParticipantStatus = useParticipantActions();
-  const sessions = useSessionSubscription();
+  const { sessions, initialLoadComplete } = useSessionSubscription(); 
   
-  useEffect(() => {
-    if (sessions !== undefined) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [sessions]);
-
   const contextValue = useMemo(() => ({
     createSession,
     createPoll,
@@ -44,7 +34,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     removeMovieFromPoll,
     updateParticipantStatus,
     sessions: sessions || [], 
-    isLoading
+    isLoading: !initialLoadComplete 
   }), [
     createSession,
     createPoll,
@@ -54,7 +44,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     removeMovieFromPoll,
     updateParticipantStatus,
     sessions,
-    isLoading
+    initialLoadComplete
   ]);
  
   return (
