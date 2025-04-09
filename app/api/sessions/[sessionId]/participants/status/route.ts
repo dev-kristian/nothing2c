@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const isValidStatus = (status: unknown): status is 'accepted' | 'declined' => {
   return status === 'accepted' || status === 'declined';
@@ -41,16 +42,31 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     const sessionData = sessionDoc.data();
     if (!sessionData?.participants || !sessionData.participants[userId]) {
        console.warn(`User ${userId} attempted to update status for session ${sessionId} they are not part of.`);
+       console.warn(`User ${userId} attempted to update status for session ${sessionId} they are not part of.`);
        return NextResponse.json({ error: 'Forbidden: User is not a participant in this session' }, { status: 403 });
     }
 
-    const updatePayload = {
-      [`participants.${userId}.status`]: status
-    };
+    let updatePayload = {};
+    if (status === 'accepted') {
+      // Update status to accepted
+      updatePayload = {
+        [`participants.${userId}.status`]: 'accepted'
+      };
+    } else if (status === 'declined') {
+      // Remove participant entirely
+      updatePayload = {
+        [`participants.${userId}`]: FieldValue.delete(), // Remove from map
+        participantIds: FieldValue.arrayRemove(userId) // Remove from array
+      };
+    } else {
+      // Should not happen due to isValidStatus check, but handle defensively
+      return NextResponse.json({ error: 'Invalid status operation' }, { status: 400 });
+    }
+
 
     await sessionRef.update(updatePayload);
 
-    return NextResponse.json({ message: 'Participant status updated successfully' }, { status: 200 });
+    return NextResponse.json({ message: `Participant status updated successfully (${status})` }, { status: 200 });
 
   } catch (error: unknown) {
     console.error(`Error updating participant status for session ${params.sessionId} via API:`, error);

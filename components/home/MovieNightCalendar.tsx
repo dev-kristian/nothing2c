@@ -10,6 +10,7 @@ interface MovieNightCalendarProps {
   datePopularity?: DatePopularity[];
   activeUsername?: string;
   userDates?: { [username: string]: { date: string; hours: string[] | 'all' }[] };
+  isReadOnly?: boolean;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -20,14 +21,14 @@ export default function MovieNightCalendar({
   onDatesSelected,
   datePopularity = [],
   activeUsername,
-  userDates = {}
+  userDates = {},
+  isReadOnly = false
 }: MovieNightCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showHourPicker, setShowHourPicker] = useState(false);
   const [animation, setAnimation] = useState<'left' | 'right' | null>(null);
 
-  // Reset animation after it completes
   useEffect(() => {
     if (animation) {
       const timer = setTimeout(() => setAnimation(null), 300);
@@ -57,11 +58,11 @@ export default function MovieNightCalendar({
     }
 
     onDatesSelected(newSelectedDates);
-  }, [currentDate, selectedDates, onDatesSelected]);
+  }, [currentDate, selectedDates, onDatesSelected]); 
 
   const handleHourClick = useCallback((hour: number) => {
-    if (!selectedDate) return;
-  
+    if (isReadOnly || !selectedDate) return;
+
     const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     let newSelectedDates: DateTimeSelection[];
   
@@ -99,11 +100,12 @@ export default function MovieNightCalendar({
     }
   
     onDatesSelected(newSelectedDates);
-  }, [selectedDate, selectedDates, onDatesSelected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]);
 
   const handleSelectAllHours = useCallback(() => {
-    if (!selectedDate) return;
-    
+    if (isReadOnly || !selectedDate) return; 
+
     const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     let newSelectedDates: DateTimeSelection[];
     
@@ -118,14 +120,15 @@ export default function MovieNightCalendar({
     }
     
     onDatesSelected(newSelectedDates);
-  }, [selectedDate, selectedDates, onDatesSelected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]); // Re-added eslint-disable for persistent warning
 
   const handleClearSelection = useCallback(() => {
-    if (!selectedDate) return;
-    
+    if (isReadOnly || !selectedDate) return;
+
     onDatesSelected(selectedDates.filter(d => !isSameDay(new Date(d.date), selectedDate)));
     setShowHourPicker(false);
-  }, [selectedDate, selectedDates, onDatesSelected]);
+  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]); // Kept added isReadOnly
 
   const handlePrevMonth = useCallback(() => {
     setAnimation('left');
@@ -159,7 +162,6 @@ export default function MovieNightCalendar({
 
       const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
 
-      // Determine cell styling based on state
       let dayClasses = 'h-10 w-10 lg:w-12 lg:h-12 rounded-md flex items-center justify-center relative text-base font-medium transition-all duration-200 ';
       
       if (isPastDate) {
@@ -179,9 +181,9 @@ export default function MovieNightCalendar({
           key={i}
           onClick={() => !isPastDate && handleDateClick(i)}
           className={dayClasses}
-          disabled={isPastDate}
-          whileHover={!isPastDate ? { scale: 1.1 } : {}}
-          whileTap={!isPastDate ? { scale: 0.95 } : {}}
+          disabled={isReadOnly || isPastDate}
+          whileHover={!isReadOnly && !isPastDate ? { scale: 1.1 } : {}}
+          whileTap={!isReadOnly && !isPastDate ? { scale: 0.95 } : {}}
         >
           {i}
           {totalUsersSelected > 0 && !isPastDate && (
@@ -194,7 +196,7 @@ export default function MovieNightCalendar({
     }
 
     return days;
-  }, [currentDate, selectedDates, userDates, activeUsername, handleDateClick]);
+  }, [currentDate, selectedDates, userDates, activeUsername, handleDateClick, isReadOnly]);
 
   const renderHours = useCallback(() => {
     if (!selectedDate) return null;
@@ -203,18 +205,16 @@ export default function MovieNightCalendar({
     const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
     const isAllHoursSelected = selectedDateTimes?.hours === 'all';
     
-    // Group hours by AM/PM
     const amHours = HOURS.slice(0, 12);
     const pmHours = HOURS.slice(12);
     
     const renderHourGroup = (hours: number[]) => (
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {hours.map(hour => {
-          const hourPopularity = popularityForDate?.hours?.[hour]; // Access details for the specific hour using the correct structure
+          const hourPopularity = popularityForDate?.hours?.[hour]; 
           const isActiveUserSelected = isAllHoursSelected || 
             (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
   
-          // Check if other users have selected this specific hour
           const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => {
             if (username === activeUsername) return false;
             
@@ -224,16 +224,13 @@ export default function MovieNightCalendar({
               if (d.hours === 'all') return true;
               
               if (Array.isArray(d.hours)) {
-                // Check if this specific hour is in the user's selected hours
                 return d.hours.some(h => {
-                  // Handle both number and string hour formats
                   if (typeof h === 'number') return h === hour;
                   if (typeof h === 'string') {
                     try {
                       const hourFromString = new Date(h).getHours();
                       return hourFromString === hour;
-                    } catch { // Remove unused 'e'
-                      // Attempt to parse as integer if Date parsing fails
+                    } catch {
                       const parsedInt = parseInt(h);
                       return !isNaN(parsedInt) && parsedInt === hour;
                     }
@@ -248,13 +245,11 @@ export default function MovieNightCalendar({
   
           const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
           
-          // Format hour display
           const hourDisplay = hour === 0 ? '12am' : 
                              hour < 12 ? `${hour}am` : 
                              hour === 12 ? '12pm' : 
                              `${hour-12}pm`;
           
-          // Hour styling based on selection state
           let hourClasses = "h-10 rounded-md flex items-center justify-center text-sm font-medium transition-all duration-200 relative ";
           
           if (isActiveUserSelected) {
@@ -270,9 +265,10 @@ export default function MovieNightCalendar({
               key={hour}
               onClick={() => handleHourClick(hour)}
               className={hourClasses}
-              title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''} // Use defined type
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              disabled={isReadOnly}
+              title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''}
+              whileHover={!isReadOnly ? { scale: 1.05 } : {}}
+              whileTap={!isReadOnly ? { scale: 0.95 } : {}}
             >
               {hourDisplay}
               {totalUsersSelected > 0 && (
@@ -298,12 +294,11 @@ export default function MovieNightCalendar({
         </div>
       </div>
     );
-  }, [selectedDate, selectedDates, datePopularity, userDates, activeUsername, handleHourClick]);
+  }, [selectedDate, selectedDates, datePopularity, userDates, activeUsername, handleHourClick, isReadOnly]);
   
 
   return (
     <div className="mt-4 flex flex-col lg:flex-row gap-4">
-      {/* Calendar Panel */}
       <motion.div 
         className="frosted-panel p-4 flex-grow"
         initial={{ opacity: 0, y: 20 }}
@@ -380,9 +375,10 @@ export default function MovieNightCalendar({
         </div>
         
         {selectedDate && (
-          <motion.button 
-            onClick={() => setShowHourPicker(!showHourPicker)} 
+          <motion.button
+            onClick={() => setShowHourPicker(!showHourPicker)}
             className="mt-4 py-2 px-4 rounded-xl text-sm font-medium button-neutral w-full flex items-center justify-center "
+            disabled={isReadOnly}
           >
             <Clock className="mr-2 h-4 w-4" />
             {showHourPicker ? 'Hide Hours' : 'Select Hours'} for {format(selectedDate, 'MMM d')}
@@ -390,7 +386,6 @@ export default function MovieNightCalendar({
         )}
       </motion.div>
       
-      {/* Hour Selection Panel */}
       {selectedDate && showHourPicker && (
         <motion.div 
           className="frosted-panel p-4 lg:w-[400px]"
@@ -416,8 +411,9 @@ export default function MovieNightCalendar({
             <motion.button
               onClick={handleSelectAllHours}
               className="flex-1 py-2 px-3 rounded-xl text-xs font-medium button-neutral flex items-center justify-center"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={isReadOnly}
+              whileHover={!isReadOnly ? { scale: 1.02 } : {}} 
+              whileTap={!isReadOnly ? { scale: 0.98 } : {}}
             >
               <Check className="w-3 h-3 mr-1" />
               All Hours
@@ -426,8 +422,9 @@ export default function MovieNightCalendar({
             <motion.button
               onClick={handleClearSelection}
               className="flex-1 py-2 px-3 rounded-xl text-xs font-medium button-neutral flex items-center justify-center"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={isReadOnly}
+              whileHover={!isReadOnly ? { scale: 1.02 } : {}}
+              whileTap={!isReadOnly ? { scale: 0.98 } : {}}
             >
               <X className="w-3 h-3 mr-1" />
               Clear

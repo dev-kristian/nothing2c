@@ -17,6 +17,7 @@ export const useSessionSubscription = () => {
   const { user } = useAuthContext();
   const { userData } = useUserData();
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false); 
   const isSubscribed = useRef(false);
 
   useEffect(() => {
@@ -95,8 +96,12 @@ export const useSessionSubscription = () => {
       sessionsList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       
       setSessions(sessionsList);
+      if (!initialLoadComplete) {
+        setInitialLoadComplete(true);
+      }
     }, (error) => {
       console.error("Error fetching sessions:", error);
+      setInitialLoadComplete(true);
       isSubscribed.current = false;
     });
   
@@ -106,7 +111,7 @@ export const useSessionSubscription = () => {
       unsubscribe();
       isSubscribed.current = false;
     };
-  }, [user, userData]);
+  }, [user, userData, initialLoadComplete]);
 
-  return sessions;
+  return { sessions, initialLoadComplete };
 };

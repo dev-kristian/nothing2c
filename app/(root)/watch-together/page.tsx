@@ -256,9 +256,15 @@ const SessionsPage = () => {
                               <h3 className="text-lg font-semibold text-gray-5-dark dark:text-gray">
                                 Movie Night with {session.createdBy}
                               </h3>
+                              {/* Add Invited Badge if applicable */}
+                              {session.participants?.[userData?.uid || '']?.status === 'invited' && (
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                                  Invited
+                                </span>
+                              )}
                               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                session.status === 'active' 
-                                  ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
+                                session.status === 'active'
+                                  ? 'bg-green-500/20 text-green-600 dark:text-green-400'
                                   : 'bg-foreground/10 text-foreground/70'
                               }`}>
                                 {session.status === 'active' ? 'Active' : 

@@ -54,11 +54,16 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     }
 
     const sessionData = sessionDoc.data();
-    const participantIds = sessionData?.participantIds || [];
+    const participantInfo = sessionData?.participants?.[userId];
 
-    if (!participantIds.includes(userId)) {
+    if (!participantInfo) {
       console.warn(`User ${userId} (${username}) attempted to update dates for session ${sessionId} they are not part of.`);
       return NextResponse.json({ error: 'Forbidden: User is not a participant in this session' }, { status: 403 });
+    }
+
+    if (participantInfo.status !== 'accepted') {
+      console.warn(`User ${userId} (${username}) attempted to update dates for session ${sessionId} with status '${participantInfo.status}'.`);
+      return NextResponse.json({ error: 'Forbidden: User must accept the invitation before updating availability.' }, { status: 403 });
     }
 
     const userDatesFirestore = dates.map(({ date, hours }) => {

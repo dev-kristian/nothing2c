@@ -19,9 +19,10 @@ import Link from 'next/link';
 interface MediaSuggestionsProps {
   session: Session;
   poll: Poll;
+  isReadOnly?: boolean;
 }
 
-const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) => {
+const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isReadOnly = false }) => {
   const [inputMediaTitle, setInputMediaTitle] = useState<string>('');
   const [suggestions, setSuggestions] = useState<FriendsWatchlistItem[]>([]);
   const [showInput, setShowInput] = useState<boolean>(false);
@@ -41,6 +42,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
   const isSessionCreator = userData?.username === session.createdBy;
 
   const handleAddMedia = async () => {
+    if (isReadOnly) return;
     if (inputMediaTitle.trim() !== '') {
       await addMovieToPoll(session.id, inputMediaTitle.trim());
       setInputMediaTitle('');
@@ -49,6 +51,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
   };
 
   const handleVote = async (mediaTitle: string) => {
+    if (isReadOnly) return;
     try {
       await toggleVote(session.id, mediaTitle);
     } catch (error) {
@@ -85,7 +88,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
     return mediaInfo.first_air_date ? 'tv' : 'movie';
   };
 
-  const convertToFirestoreCompatible = (items: FriendsWatchlistItem[]): FriendsWatchlistItem[] => { // Changed return type
+  const convertToFirestoreCompatible = (items: FriendsWatchlistItem[]): FriendsWatchlistItem[] => { 
     return items.map(item => ({
       ...item,
       media_type: item.media_type || (item.first_air_date ? 'tv' : 'movie') as 'movie' | 'tv',
@@ -99,7 +102,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
     if (!date) return null;
     try {
       return format(new Date(date), 'yyyy');
-    } catch { // Removed unused error variable
+    } catch { 
       console.error('Invalid date format:', date);
       return null;
     }
@@ -118,16 +121,17 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                     movie: convertToFirestoreCompatible(friendsWatchlistItems.movie),
                     tv: convertToFirestoreCompatible(friendsWatchlistItems.tv)
                   };
-                  handleInputChange(e, setInputMediaTitle, compatibleItems, setSuggestions); // Removed 'as any'
+                  handleInputChange(e, setInputMediaTitle, compatibleItems, setSuggestions);
                 }}
                 placeholder="Enter title..."
                 className="w-60 text-sm rounded-full border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-md"
                 autoFocus
+                disabled={isReadOnly}
               />
               <Button
                 onClick={handleAddMedia}
                 className="ml-2 h-9 w-9 rounded-full p-0 bg-system-pink hover:bg-system-pink-dark text-white"
-                disabled={inputMediaTitle.trim() === ''}
+                disabled={isReadOnly || inputMediaTitle.trim() === ''}
               >
                 <Plus size={16} />
               </Button>
@@ -136,6 +140,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
             <Button
               onClick={() => setShowInput(true)}
               className="h-9 rounded-full px-4 bg-white/10 dark:bg-black/10 backdrop-blur-sm text-sm text-label-secondary dark:text-label-secondary-dark border border-white/10 dark:border-white/5 hover:bg-white/20 dark:hover:bg-black/20"
+              disabled={isReadOnly}
             >
               <Plus size={14} className="mr-1" /> Suggest
             </Button>
@@ -155,11 +160,11 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                     };
 
                     handleSuggestionClick(
-                      compatibleMedia, // Removed 'as any'
+                      compatibleMedia,
                       setInputMediaTitle,
                       [],
                       () => {},
-                      setSuggestions, // Removed 'as any'
+                      setSuggestions,
                       async (title) => {
                         await addMovieToPoll(session.id, title);
                         setInputMediaTitle('');
@@ -228,8 +233,8 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                   voted
                     ? 'bg-system-pink/5 dark:bg-system-pink-dark/10 border-system-pink/10 dark:border-system-pink-dark/10'
                     : 'bg-white/5 dark:bg-black/5 border-white/10 dark:border-white/5'
-                } cursor-pointer transition-all duration-200 hover:bg-white/10 dark:hover:bg-black/10`}
-                whileHover={{ scale: 1.005 }}
+                } ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ${!isReadOnly ? 'hover:bg-white/10 dark:hover:bg-black/10' : ''}`}
+                whileHover={!isReadOnly ? { scale: 1.005 } : {}}
                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                 onClick={() => handleVote(title)}
               >
@@ -279,10 +284,13 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll }) =>
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              removeMovieFromPoll(session.id, title);
+                              if (!isReadOnly) {
+                                removeMovieFromPoll(session.id, title);
+                              }
                             }}
                             className="ml-2 h-8 w-8 rounded-full p-0 hover:bg-system-red/10 hover:text-system-red"
                             aria-label="Remove suggestion"
+                            disabled={isReadOnly}
                           >
                             <X size={16} />
                           </Button>

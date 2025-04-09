@@ -36,11 +36,16 @@ export async function POST(request: NextRequest, { params }: { params: { session
     }
 
     const sessionData = sessionDoc.data() as Session | undefined;
-    const participantIds = sessionData?.participantIds || [];
+    const participantInfo = sessionData?.participants?.[userId];
 
-    if (!participantIds.includes(userId)) {
+    if (!participantInfo) {
       console.warn(`User ${userId} attempted to add movie to poll for session ${sessionId} they are not part of.`);
       return NextResponse.json({ error: 'Forbidden: User is not a participant' }, { status: 403 });
+    }
+
+    if (participantInfo.status !== 'accepted') {
+      console.warn(`User ${userId} attempted to add movie to poll for session ${sessionId} with status '${participantInfo.status}'.`);
+      return NextResponse.json({ error: 'Forbidden: User must accept the invitation before suggesting movies.' }, { status: 403 });
     }
 
     if (!sessionData?.poll) {
@@ -69,9 +74,8 @@ export async function POST(request: NextRequest, { params }: { params: { session
 
     return NextResponse.json({ message: 'Movie added to poll successfully' }, { status: 200 });
 
-  } catch (error: unknown) { // Change 'any' to 'unknown'
+  } catch (error: unknown) {
     console.error(`Error adding movie to poll for session ${params.sessionId} via API:`, error);
-    // Type check for Firestore error code
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {
@@ -102,11 +106,16 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
     }
 
     const sessionData = sessionDoc.data() as Session | undefined;
-    const participantIds = sessionData?.participantIds || [];
+    const participantInfo = sessionData?.participants?.[userId];
 
-    if (!participantIds.includes(userId)) {
+    if (!participantInfo) {
       console.warn(`User ${userId} attempted to remove movie from poll for session ${sessionId} they are not part of.`);
       return NextResponse.json({ error: 'Forbidden: User is not a participant' }, { status: 403 });
+    }
+
+    if (participantInfo.status !== 'accepted') {
+      console.warn(`User ${userId} attempted to remove movie from poll for session ${sessionId} with status '${participantInfo.status}'.`);
+      return NextResponse.json({ error: 'Forbidden: User must accept the invitation before removing movies.' }, { status: 403 });
     }
 
     if (!sessionData?.poll) {

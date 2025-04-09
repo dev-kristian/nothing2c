@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Session } from '@/types';
+import { Session} from '@/types';
 import { useUserData } from '@/context/UserDataContext';
 import { Users, Plus } from 'lucide-react';
+import InviteFriendsDialog from './InviteFriendsDialog';
 
-interface SessionParticipantsProps {
+interface ParticipantsListProps {
   session: Session;
+  onInviteClick: () => void;
 }
 
-// Define a type for participant data
 interface ParticipantData {
   username: string;
   status: 'accepted' | 'invited' | 'declined';
@@ -20,27 +21,23 @@ interface Participant {
   status: 'accepted' | 'invited' | 'declined';
 }
 
-const ParticipantsList: React.FC<SessionParticipantsProps> = ({ session }) => {
+const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteClick }) => {
   const { userData } = useUserData();
-  
-  // Extract participants with proper typing
+
   const participants: Participant[] = Object.entries(session.participants || {}).map(([uid, data]) => ({
     uid,
     username: (data as ParticipantData).username,
     status: (data as ParticipantData).status
   }));
   
-  // Check if current user is creator
   const isCreator = userData?.uid === session.createdByUid;
-  
-  // Sections for different statuses
+
   const accepted = participants.filter(p => p.status === 'accepted');
   const pending = participants.filter(p => p.status === 'invited');
   const declined = participants.filter(p => p.status === 'declined');
   
   return (
     <div className="space-y-5 px-4">
-      {/* Attending */}
       {accepted.length > 0 && (
         <div>
           <h3 className="text-xs font-medium uppercase text-label-secondary dark:text-label-secondary-dark mb-2.5">
@@ -67,26 +64,27 @@ const ParticipantsList: React.FC<SessionParticipantsProps> = ({ session }) => {
               </div>
             ))}
             
-            {/* Invite button placed within the attending section */}
             {isCreator && (
-              <div className="flex flex-col items-center">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-12 h-12 rounded-full flex items-center justify-center bg-system-pink/10 dark:bg-system-pink-dark/15 border border-system-pink/20 dark:border-system-pink-dark/20 text-system-pink dark:text-system-pink-dark"
+              <motion.button
+                onClick={onInviteClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center group cursor-pointer" 
+              >
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center border border-gray group-hover:border-pink text-gray hover:text-pink transition-colors" 
                 >
                   <Plus size={20} />
-                </motion.button>
-                <span className="mt-1.5 text-xs text-center text-system-pink dark:text-system-pink-dark">
+                </div>
+                <span className="mt-1.5 text-xs text-center text-gray group-hover:text-pink transition-colors"> 
                   Invite
                 </span>
-              </div>
+              </motion.button>
             )}
           </div>
         </div>
       )}
       
-      {/* Pending */}
       {pending.length > 0 && (
         <div>
           <h3 className="text-xs font-medium uppercase text-label-secondary dark:text-label-secondary-dark mb-2.5">
@@ -109,7 +107,6 @@ const ParticipantsList: React.FC<SessionParticipantsProps> = ({ session }) => {
         </div>
       )}
       
-      {/* Declined */}
       {declined.length > 0 && (
         <div>
           <h3 className="text-xs font-medium uppercase text-label-secondary dark:text-label-secondary-dark mb-2.5">
@@ -135,17 +132,20 @@ const ParticipantsList: React.FC<SessionParticipantsProps> = ({ session }) => {
   );
 };
 
+interface SessionParticipantsProps {
+  session: Session;
+}
+
 const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session }) => {
   const [expanded, setExpanded] = useState(false);
-  
-  // Count participants
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+
   const participantCount = Object.keys(session.participants || {}).length;
   const acceptedCount = Object.values(session.participants || {})
     .filter(p => (p as ParticipantData).status === 'accepted').length;
   
   return (
     <div className="pb-6">
-      {/* Summary card - always visible */}
       <div 
         onClick={() => setExpanded(!expanded)}
         className="bg-white dark:bg-gray-6-dark rounded-2xl p-5 backdrop-blur-md backdrop-saturate-150 border border-white/10 dark:border-white/5 cursor-pointer transition-all hover:bg-white/70 dark:hover:bg-gray-5-dark"
@@ -175,7 +175,6 @@ const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session }) =>
         </div>
       </div>
       
-      {/* Expandable detailed view */}
       <motion.div
         initial={false}
         animate={{ 
@@ -184,14 +183,20 @@ const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session }) =>
         }}
         transition={{ 
           duration: 0.3,
-          ease: [0.25, 0.1, 0.25, 1.0]  // Apple's easing
+          ease: [0.25, 0.1, 0.25, 1.0]
         }}
         className="overflow-hidden"
       >
         <div className="mt-1 bg-white/80 dark:bg-gray-6-dark/50 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 dark:border-white/5 py-5">
-          <ParticipantsList session={session} />
+          <ParticipantsList session={session} onInviteClick={() => setIsInviteDialogOpen(true)} />
         </div>
       </motion.div>
+
+      <InviteFriendsDialog
+        sessionId={session.id}
+        isOpen={isInviteDialogOpen}
+        onClose={() => setIsInviteDialogOpen(false)}
+      />
     </div>
   );
 };
