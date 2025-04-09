@@ -12,21 +12,22 @@ const PullToRefreshWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   // Removed unused isIOS variable definition
 
   useEffect(() => {
-    // Apply only if in standalone mode (iOS check might be redundant if matchMedia works)
-    if (!isStandalone || !containerRef.current) return; 
+    // Apply only if in standalone mode
+    if (!isStandalone) return; 
 
-    const container = containerRef.current;
+    // Attach listeners to document instead of containerRef
+    const targetElement = document; 
     let isDragging = false;
 
     const handleTouchStart = (e: globalThis.TouchEvent) => {
-      // Temporarily remove scroll check for debugging standalone mode
-      // if (window.scrollY === 0) { 
+      // Reinstate scroll check, using documentElement.scrollTop
+      if (document.documentElement.scrollTop === 0) { 
         setStartY(e.touches[0].clientY);
         isDragging = true;
         setPullDistance(0); // Reset pull distance on new touch
-      // } else {
-      //   isDragging = false;
-      // }
+      } else {
+        isDragging = false;
+      }
     };
 
     const handleTouchMove = (e: globalThis.TouchEvent) => {
@@ -57,18 +58,20 @@ const PullToRefreshWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-    container.addEventListener('touchcancel', handleTouchEnd, { passive: true }); // Handle cancellation
+    // Add listeners to the document
+    targetElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    targetElement.addEventListener('touchmove', handleTouchMove, { passive: true });
+    targetElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+    targetElement.addEventListener('touchcancel', handleTouchEnd, { passive: true }); // Handle cancellation
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchcancel', handleTouchEnd);
+      // Remove listeners from the document
+      targetElement.removeEventListener('touchstart', handleTouchStart);
+      targetElement.removeEventListener('touchmove', handleTouchMove);
+      targetElement.removeEventListener('touchend', handleTouchEnd);
+      targetElement.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isStandalone, startY, pullDistance]); // Updated dependency
+  }, [isStandalone, startY, pullDistance]); // Dependency remains the same
 
   // Optional: Add a visual indicator for refreshing
   // const refreshIndicatorStyle: React.CSSProperties = {
