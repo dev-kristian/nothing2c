@@ -201,7 +201,6 @@ export default function MovieNightCalendar({
   
     const selectedDateTimes = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
-    const hourPopularityDetails = popularityForDate?.hours; // Use hours
     const isAllHoursSelected = selectedDateTimes?.hours === 'all';
     
     // Group hours by AM/PM
