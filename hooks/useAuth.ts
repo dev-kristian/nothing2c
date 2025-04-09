@@ -123,18 +123,20 @@ export function useAuth() {
         if (serverVerifiedUid !== null) {
           console.warn("Auth mismatch detected (Client: null, Server: verified). Forcing sign out.");
           firebaseSignOut(auth).catch(err => console.error("Error during forced sign out:", err));
-          // Clear local state immediately to reflect sign-out
-          setUser(null);
+          // Clear the server state as it's now invalid relative to client
           setServerVerifiedUid(null);
+          // setUser(null) is implicitly handled as currentUser is null here
         }
       }
 
+      // Only set loading false after the initial check completes
+      // and potentially after the mismatch logic runs.
       setLoading(false);
       setInitialAuthChecked(true);
     });
 
     return () => unsubscribe();
-  }, []); 
+  }, [serverVerifiedUid]); // <-- Added serverVerifiedUid to dependency array
 
   return {
     user,
