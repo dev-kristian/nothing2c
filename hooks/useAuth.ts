@@ -28,9 +28,17 @@ async function syncSession(endpoint: string, body?: Record<string, unknown>) {
     if (!response.ok) {
       console.error(`Failed to sync session (${endpoint}):`, response.status, await response.text());
     } else {
+      // Optional: console.debug(`Session sync successful (${endpoint})`);
     }
   } catch (error) {
-    console.error(`Network error during session sync (${endpoint}):`, error);
+    // Check if the error is a TypeError, often indicating a fetch interrupted by navigation
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Log less severely or ignore, as this might be expected during post-login redirects
+      console.debug(`Session sync fetch (${endpoint}) was potentially interrupted by navigation:`, error.message);
+    } else {
+      // Log other network errors as actual errors
+      console.error(`Network error during session sync (${endpoint}):`, error);
+    }
   }
 }
 
