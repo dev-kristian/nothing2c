@@ -201,7 +201,7 @@ export default function MovieNightCalendar({
   
     const selectedDateTimes = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
     const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
-    const hourPopularityDetails = popularityForDate?.hourlyDetails; // Use hourlyDetails
+    const hourPopularityDetails = popularityForDate?.hours; // Use hours
     const isAllHoursSelected = selectedDateTimes?.hours === 'all';
     
     // Group hours by AM/PM
@@ -211,7 +211,7 @@ export default function MovieNightCalendar({
     const renderHourGroup = (hours: number[]) => (
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {hours.map(hour => {
-          const hourPopularity = hourPopularityDetails?.[hour]; // Access details for the specific hour
+          const hourPopularity = popularityForDate?.hours?.[hour]; // Access details for the specific hour using the correct structure
           const isActiveUserSelected = isAllHoursSelected || 
             (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
   
