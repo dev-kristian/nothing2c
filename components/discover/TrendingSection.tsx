@@ -27,9 +27,7 @@ const TrendingSection: React.FC = () => {
     if (typeParam === 'movie' || typeParam === 'tv') {
       setMediaType(typeParam as DiscoverMediaType);
     }
-    // Run only once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // No dependencies needed here, we only want to read the initial URL param
+  }, [searchParams, setMediaType]); // Added dependencies
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);

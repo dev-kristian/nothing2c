@@ -1,12 +1,12 @@
 'use client';
 import React from 'react';
-import { Toaster } from '@/components/ui/toaster';
+// Removed Toaster import
 
 export function WelcomeClientWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <Toaster />
+      {/* Removed Toaster instance */}
     </>
   );
 }

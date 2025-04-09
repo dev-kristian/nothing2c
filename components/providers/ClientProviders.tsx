@@ -1,27 +1,28 @@
 'use client';
 
 import React from 'react';
-import { SWRConfig } from 'swr';
-import swrConfig from '@/lib/swr-config';
+// Removed incorrect SWRConfig imports
+import { SWRProvider } from '@/context/SWRContext'; // Import the custom provider
 import { UserDataProvider } from '@/context/UserDataContext';
 import { FriendsWatchlistProvider } from '@/context/FriendsWatchlistContext';
 import { SearchProvider } from '@/context/SearchContext';
 import { SessionProvider } from '@/context/SessionContext';
-import { Toaster } from '@/components/ui/toaster';
+// Removed Toaster import
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <SWRConfig value={swrConfig}>
+    // Use the custom SWRProvider which includes the onError handler
+    <SWRProvider> 
       <UserDataProvider>
         <FriendsWatchlistProvider>
             <SearchProvider>
               <SessionProvider>
                 {children}
-                <Toaster />
+                {/* Removed Toaster instance */}
               </SessionProvider>
             </SearchProvider>
           </FriendsWatchlistProvider>
         </UserDataProvider>
-      </SWRConfig>
+      </SWRProvider> 
   );
 }

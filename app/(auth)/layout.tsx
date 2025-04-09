@@ -5,7 +5,7 @@ import { Inter } from "next/font/google";
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Toaster } from "@/components/ui/toaster";
+// Removed Toaster import
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -60,7 +60,7 @@ export default function AuthLayout({
           {children}
         </div>
       </div>
-      <Toaster />
+      {/* Removed Toaster instance */}
     </div>
   );
 }
