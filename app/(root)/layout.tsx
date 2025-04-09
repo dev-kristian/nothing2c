@@ -5,7 +5,7 @@ import { getUserProfileStatus } from '@/lib/server-auth-utils';
 import { ClientProviders } from '@/components/providers/ClientProviders';
 import Navigation from '@/components/Navigation';
 import SpinningLoader from '@/components/SpinningLoader';
-import PullToRefreshWrapper from '@/components/PullToRefreshWrapper'; // Import the new wrapper
+// Removed PullToRefreshWrapper import
 
 export default async function RootLayout({
   children,
@@ -29,14 +29,12 @@ export default async function RootLayout({
               <SpinningLoader />
             </div>
           }>
-            {/* Wrap the content area with PullToRefreshWrapper */}
-            <PullToRefreshWrapper> 
-              <div className="mt-[var(--navbar-height)]">
-                <ClientProviders>
-                  {children}
-                </ClientProviders>
-              </div>
-            </PullToRefreshWrapper>
+            {/* Removed PullToRefreshWrapper */}
+            <div className="mt-[var(--navbar-height)]">
+              <ClientProviders>
+                {children}
+              </ClientProviders>
+            </div>
           </Suspense>
         </main>
       </div>

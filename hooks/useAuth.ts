@@ -46,6 +46,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
+  const [serverVerifiedUid, setServerVerifiedUid] = useState<string | null>(null); // Added state for server session check
 
   const signIn = useCallback(async () => {
     try {
@@ -64,6 +65,25 @@ export function useAuth() {
     } catch (error) {
       handleAuthError(error, 'Failed to sign out. Please try again.');
     }
+  }, []);
+
+  // Effect to verify server session on initial load
+  useEffect(() => {
+    const verifyServerSession = async () => {
+      try {
+        const response = await fetch('/api/auth/verify-session'); // Assuming this endpoint exists
+        if (response.ok) {
+          const data = await response.json();
+          setServerVerifiedUid(data.uid || null); // Store UID if verified
+        } else {
+          setServerVerifiedUid(null);
+        }
+      } catch (error) {
+        console.error("Error verifying server session:", error);
+        setServerVerifiedUid(null);
+      }
+    };
+    verifyServerSession();
   }, []);
 
 
@@ -99,6 +119,14 @@ export function useAuth() {
           console.error("Error during auth state processing:", error);
         }
       } else {
+        // PWA Fix: Check for mismatch between client (null) and server (verified)
+        if (serverVerifiedUid !== null) {
+          console.warn("Auth mismatch detected (Client: null, Server: verified). Forcing sign out.");
+          firebaseSignOut(auth).catch(err => console.error("Error during forced sign out:", err));
+          // Clear local state immediately to reflect sign-out
+          setUser(null);
+          setServerVerifiedUid(null);
+        }
       }
 
       setLoading(false);
