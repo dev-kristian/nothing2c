@@ -40,15 +40,16 @@ export const useUpdateUserDates = () => {
   }, [user]);
 
   return useCallback((sessionId: string, dates: DateTimeSelection[]) => {
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
+    return new Promise<void>((resolve, reject) => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
 
-    updateTimeoutRef.current = setTimeout(() => {
-      executeUpdate(sessionId, dates).catch(error => {
-        console.error("Error executing debounced update:", error);
-      });
-    }, DEBOUNCE_DELAY);
-
+      updateTimeoutRef.current = setTimeout(() => {
+        executeUpdate(sessionId, dates)
+          .then(resolve) 
+          .catch(reject);
+      }, DEBOUNCE_DELAY);
+    });
   }, [executeUpdate]);
 };
