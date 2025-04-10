@@ -23,13 +23,13 @@ export interface AuthFormData {
 
 export interface UserData {
   username: string;
-  email?: string; 
+  email?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  setupCompleted?: boolean;
+  // Removed setupCompleted
   uid?: string;
   watchlist: {
-    movie: Media[]; // Changed from object to array of Media
+    movie: Media[];
     tv: Media[];    // Changed from object to array of Media
   };
   notification?: NotificationStatus;
@@ -39,7 +39,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   username: string;
-  setupCompleted: boolean;
+  // Removed setupCompleted
   createdAt: string;
   updatedAt: string;
 }

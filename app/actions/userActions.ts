@@ -1,14 +1,13 @@
 'use server';
 
-import { adminDb, adminAuth } from '@/lib/firebase-admin'; 
-import { FieldValue } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 
 interface ValidationResult {
   isValid: boolean;
   message: string;
 }
 
-
+// Restoring this function as it's needed for username updates in profile settings
 export const checkUsernameAvailability = async (username: string): Promise<ValidationResult> => {
   const trimmedUsername = username.trim().toLowerCase();
 
@@ -26,29 +25,32 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  if (trimmedUsername.length > 15) {
+  // Update max length check to 20
+  if (trimmedUsername.length > 20) { 
     return {
       isValid: false,
-      message: "Username must be less than 15 characters long"
+      message: "Username must be less than 20 characters long"
     };
   }
 
-  if (!/^[a-z0-9_]+$/.test(trimmedUsername)) {
-    return {
-      isValid: false,
-      message: "Username can only contain letters, numbers, and underscores"
-    };
-  }
+  // Allow letters, numbers, and underscores, but not starting with a number
+  if (!/^[a-z_][a-z0-9_]*$/.test(trimmedUsername)) {
+     if (/^[0-9]/.test(trimmedUsername)) {
+       return {
+         isValid: false,
+         message: "Username cannot start with a number"
+       };
+     }
+     return {
+       isValid: false,
+       message: "Username can only contain letters, numbers, and underscores, and cannot start with a number"
+     };
+   }
 
-  if (/^[0-9]/.test(trimmedUsername)) {
-    return {
-      isValid: false,
-      message: "Username cannot start with a number"
-    };
-  }
 
   try {
     const usersRef = adminDb.collection('users');
+    // Check against the lowercase username stored in Firestore
     const querySnapshot = await usersRef.where('username', '==', trimmedUsername).limit(1).get();
 
     if (!querySnapshot.empty) {
@@ -71,42 +73,4 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
   }
 };
 
-interface SetUsernameResult {
-  success: boolean;
-  message: string;
-}
-
-export const setUsernameAndClaim = async (uid: string, username: string): Promise<SetUsernameResult> => {
-  if (!uid) {
-    return { success: false, message: 'User ID is required.' };
-  }
-
-  const validation = await checkUsernameAvailability(username);
-  if (!validation.isValid) {
-    return { success: false, message: validation.message };
-  }
-
-  const finalUsername = username.trim().toLowerCase();
-
-  try {
-    const userRef = adminDb.collection('users').doc(uid);
-    await userRef.update({
-      username: finalUsername,
-      setupCompleted: true,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    // Firestore update successful, now set the custom claim
-    await adminAuth.setCustomUserClaims(uid, { setupCompleted: true });
-
-    console.log(`[Server Action] Successfully set username and updated setupCompleted claim for UID: ${uid}`);
-    // Return success to signal client-side to refresh session cookie
-    return { success: true, message: 'Setup completed successfully. Refreshing session...' };
-
-  } catch (error) {
-    // Log error for Firestore update OR claim setting failure
-    console.error(`[Server Action] Error completing setup for UID ${uid}:`, error);
-    // Do not attempt rollback, just return failure
-    return { success: false, message: 'Failed to complete setup. Please try again.' };
-  }
-};
+// Note: setUsernameAndClaim remains removed as it was part of the welcome flow.

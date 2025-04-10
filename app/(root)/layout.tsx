@@ -1,7 +1,7 @@
 // app/(root)/layout.tsx 
 import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { getUserProfileStatus } from '@/lib/server-auth-utils';
+import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; // Changed import
 import { ClientProviders } from '@/components/providers/ClientProviders';
 import Navigation from '@/components/Navigation';
 import SpinningLoader from '@/components/SpinningLoader';
@@ -12,9 +12,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const profileStatus = await getUserProfileStatus();
+  // Call the correct function and check for null
+  const userProfile = await getAuthenticatedUserProfile(); 
 
-  if (!profileStatus) {
+  if (!userProfile) {
     console.log('[Root Layout] User not authenticated, redirecting to /sign-in');
     redirect('/sign-in');
   }

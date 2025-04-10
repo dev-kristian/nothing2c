@@ -96,8 +96,8 @@ export async function GET() {
         username: userInfo.username,
         email: userInfo.email,
         createdAt: userInfo.createdAt?.toDate(),
-        updatedAt: userInfo.updatedAt?.toDate(), 
-        setupCompleted: userInfo.setupCompleted,
+        updatedAt: userInfo.updatedAt?.toDate(),
+        // Removed setupCompleted
         uid: userInfo.uid,
         notification: userInfo.notification,
         watchlist: {
