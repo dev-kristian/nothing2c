@@ -53,21 +53,22 @@ export const SearchUsers: React.FC<SearchUsersProps> = ({
                   </div>
                 </div>
 
-                {user.requestStatus?.exists ? (
+                {user.friendshipStatus === 'pending_sent' ? (
                   <div className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium flex items-center flex-shrink-0">
-                    {user.requestStatus.type === 'sent' ? (
-                      <>
-                        <Clock className="h-3 w-3 mr-1.5 text-muted-foreground" />
-                        Pending
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="h-3 w-3 mr-1.5 text-muted-foreground" />
-                        Received
-                      </>
-                    )}
+                    <Clock className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                    Pending
                   </div>
-                ) : (
+                ) : user.friendshipStatus === 'pending_received' ? (
+                  <div className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium flex items-center flex-shrink-0">
+                    <UserCheck className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                    Received
+                  </div>
+                ) : user.friendshipStatus === 'friends' ? (
+                   <div className="px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-xs font-medium flex items-center flex-shrink-0 dark:bg-green-900 dark:text-green-200">
+                    <UserCheck className="h-3 w-3 mr-1.5" />
+                    Friends
+                  </div>
+                ) : ( // friendshipStatus === 'none'
                   <Button
                     onClick={() => handleSendFriendRequest(user)}
                     disabled={pendingRequests.has(user.uid)}
