@@ -61,11 +61,12 @@ function WelcomePage() {
           console.error('Error refreshing session cookie:', errorData);
           setError('Username set, but failed to refresh session. Please log out and log back in.');
           return;
-        }
-
-        window.location.href = '/discover';
-
-      } catch (error) {
+         }
+ 
+         // Use router.push for client-side navigation
+         router.push('/discover');
+ 
+       } catch (error) {
         console.error('Error setting username or refreshing session:', error);
         setError('An unexpected error occurred. Please try again.');
       }

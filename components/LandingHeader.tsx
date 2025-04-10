@@ -4,13 +4,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { LogIn, DraftingCompass } from 'lucide-react';
+import { LogIn, DraftingCompass } from 'lucide-react'; // Removed LogOut icon
 import { motion } from 'framer-motion';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext'; // Import context hook
+// Button import no longer needed unless used elsewhere
 
 export default function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user } = useAuthContext(); // Removed signOut destructuring
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,30 +72,33 @@ export default function LandingHeader() {
             </div>
           </Link>
 
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <div className="flex items-center space-x-2">
             {user ? (
-              <Link
-                href="/discover"
-                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
-                         hover:bg-pink-hover transition-colors duration-300 shadow-lg"
-              >
-                <DraftingCompass className="h-4 w-4" />
-                <span>Go to App</span>
-              </Link>
+              // Show only "Go to App" if user is authenticated
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  href="/discover"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
+                           hover:bg-pink-hover transition-colors duration-300 shadow-lg"
+                >
+                  <DraftingCompass className="h-4 w-4" />
+                  <span>Go to App</span>
+                </Link>
+              </motion.div>
             ) : (
-              <Link
-                href="/sign-in"
-                className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
-                         hover:bg-pink-hover transition-colors duration-300 shadow-lg"
-              >
-                <LogIn className="h-4 w-4" />
-                <span>Sign In</span>
-              </Link>
+              // Show Sign In link if user is not authenticated
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}> {/* Motion for Sign In Link */}
+                <Link
+                  href="/sign-in"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-pink text-white
+                           hover:bg-pink-hover transition-colors duration-300 shadow-lg"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In</span>
+                </Link>
+              </motion.div>
             )}
-          </motion.div>
+          </div> {/* Add missing closing tag for the div started on line 78 */}
         </div>
       </div>
     </motion.nav>

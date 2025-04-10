@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react'; // Added useMemo
 import { format } from 'date-fns';
 import { Users, Clock } from 'lucide-react';
 import { DatePopularity } from '@/types';
@@ -18,7 +18,36 @@ interface HourData {
 }
 
 const TopAvailability: React.FC<TopAvailabilityProps> = ({ datePopularity }) => {
-  if (!datePopularity.length) {
+
+  // Helper function (can remain outside useMemo)
+  const formatHour = (hour: number): string => {
+    if (hour === 0) return '12 AM';
+    if (hour === 12) return '12 PM';
+    return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
+  };
+
+  // Memoize the calculation of top dates and their popular hours
+  const topDatesWithHours = useMemo(() => {
+    const getPopularHours = (date: DatePopularity): PopularHour[] => {
+      if (!date.hours || Object.keys(date.hours).length === 0) {
+        return [];
+      }
+      return Object.entries(date.hours)
+        .map(([hour, hourData]) => ({
+          hour: parseInt(hour),
+          count: ((hourData as unknown) as HourData).count || 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+    };
+
+    return datePopularity.slice(0, 3).map(date => ({
+      ...date,
+      popularHours: getPopularHours(date) // Calculate popular hours here
+    }));
+  }, [datePopularity]); // Recalculate only when datePopularity changes
+
+  if (!topDatesWithHours.length) { // Check the memoized result
     return (
       <div className="bg-white dark:bg-gray-6-dark rounded-2xl p-6 backdrop-blur-md backdrop-saturate-150 border border-white/10 dark:border-white/5">
         <div className="flex flex-col items-center justify-center py-6">
@@ -31,34 +60,18 @@ const TopAvailability: React.FC<TopAvailabilityProps> = ({ datePopularity }) => 
     );
   }
 
-  const getPopularHours = (date: DatePopularity): PopularHour[] => {
-    if (!date.hours || Object.keys(date.hours).length === 0) {
-      return [];
-    }
-    
-    return Object.entries(date.hours)
-      .map(([hour, hourData]) => ({
-        hour: parseInt(hour),
-        count: ((hourData as unknown) as HourData).count || 0,
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
-  };
-
-  const formatHour = (hour: number): string => {
-    if (hour === 0) return '12 AM';
-    if (hour === 12) return '12 PM';
-    return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
-  };
+  // Removed getPopularHours from here as it's inside useMemo now
 
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {datePopularity.slice(0, 3).map((date, index) => {
-          const popularHours = getPopularHours(date);
-          
+        {/* Map over the memoized topDatesWithHours */}
+        {topDatesWithHours.map((date, index) => {
+          // popularHours is now part of the date object
+          const { popularHours } = date;
+
           return (
-            <motion.div 
+            <motion.div
               key={index}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // Added useMemo
 import { motion } from 'framer-motion';
 import { Session} from '@/types';
 import { useUserData } from '@/context/UserDataContext';
@@ -8,6 +8,7 @@ import InviteFriendsDialog from './InviteFriendsDialog';
 interface ParticipantsListProps {
   session: Session;
   onInviteClick: () => void;
+  isReadOnly: boolean; // Add isReadOnly prop
 }
 
 interface ParticipantData {
@@ -21,21 +22,31 @@ interface Participant {
   status: 'accepted' | 'invited' | 'declined';
 }
 
-const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteClick }) => {
+// Destructure isReadOnly directly from props here
+const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteClick, isReadOnly }) => {
   const { userData } = useUserData();
 
-  const participants: Participant[] = Object.entries(session.participants || {}).map(([uid, data]) => ({
-    uid,
-    username: (data as ParticipantData).username,
-    status: (data as ParticipantData).status
-  }));
-  
-  const isCreator = userData?.uid === session.createdByUid;
+  // Memoize participants array derivation
+  const participants: Participant[] = useMemo(() => {
+    return Object.entries(session.participants || {}).map(([uid, data]) => ({
+      uid,
+      username: (data as ParticipantData).username,
+  status: (data as ParticipantData).status
+    }));
+  }, [session.participants]);
 
-  const accepted = participants.filter(p => p.status === 'accepted');
-  const pending = participants.filter(p => p.status === 'invited');
-  const declined = participants.filter(p => p.status === 'declined');
-  
+  // Memoize creator check
+  const isCreator = useMemo(() => userData?.uid === session.createdByUid, [userData?.uid, session.createdByUid]);
+  // Removed incorrect destructuring from here
+
+  // Memoize filtered arrays
+  const { accepted, pending, declined } = useMemo(() => {
+    const accepted = participants.filter(p => p.status === 'accepted');
+    const pending = participants.filter(p => p.status === 'invited');
+    const declined = participants.filter(p => p.status === 'declined');
+    return { accepted, pending, declined };
+  }, [participants]);
+
   return (
     <div className="space-y-5 px-4">
       {accepted.length > 0 && (
@@ -67,11 +78,12 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteCl
             {isCreator && (
               <motion.button
                 onClick={onInviteClick}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center group cursor-pointer" 
+                whileHover={!isReadOnly ? { scale: 1.05 } : {}}
+                whileTap={!isReadOnly ? { scale: 0.95 } : {}}
+                className={`flex flex-col items-center group ${isReadOnly ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                disabled={isReadOnly} // Disable button if read-only
               >
-                <div 
+                <div
                   className="w-12 h-12 rounded-full flex items-center justify-center border border-gray group-hover:border-pink text-gray hover:text-pink transition-colors" 
                 >
                   <Plus size={20} />
@@ -134,9 +146,10 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteCl
 
 interface SessionParticipantsProps {
   session: Session;
+  isReadOnly: boolean; // Add isReadOnly prop here too
 }
 
-const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session }) => {
+const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session, isReadOnly }) => {
   const [expanded, setExpanded] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
@@ -188,7 +201,8 @@ const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session }) =>
         className="overflow-hidden"
       >
         <div className="mt-1 bg-white/80 dark:bg-gray-6-dark/50 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 dark:border-white/5 py-5">
-          <ParticipantsList session={session} onInviteClick={() => setIsInviteDialogOpen(true)} />
+          {/* Pass isReadOnly down to ParticipantsList */}
+          <ParticipantsList session={session} onInviteClick={() => setIsInviteDialogOpen(true)} isReadOnly={isReadOnly} />
         </div>
       </motion.div>
 

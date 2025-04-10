@@ -36,7 +36,13 @@ export async function POST(request: NextRequest, { params }: { params: { session
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const sessionData = sessionDoc.data() as Session | undefined; 
+    const sessionData = sessionDoc.data() as Session | undefined;
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot create a poll for a completed session' }, { status: 403 }); // Forbidden
+    }
+
     const participantIds = sessionData?.participantIds || [];
 
     if (!participantIds.includes(userId)) {

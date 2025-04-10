@@ -36,6 +36,12 @@ export async function POST(request: NextRequest, { params }: { params: { session
     }
 
     const sessionData = sessionDoc.data() as Session | undefined;
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot add movies to a completed session poll' }, { status: 403 }); // Forbidden
+    }
+
     const participantInfo = sessionData?.participants?.[userId];
 
     if (!participantInfo) {
@@ -48,9 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: { session
       return NextResponse.json({ error: 'Forbidden: User must accept the invitation before suggesting movies.' }, { status: 403 });
     }
 
-    if (!sessionData?.poll) {
-        return NextResponse.json({ error: 'Poll does not exist for this session' }, { status: 404 });
-    }
+    // Poll existence check removed here, will handle creation/update below
 
     let body;
     try {
@@ -64,13 +68,24 @@ export async function POST(request: NextRequest, { params }: { params: { session
     }
     const { movieTitle }: { movieTitle: string } = body;
 
-    if (sessionData.poll.movieTitles.includes(movieTitle)) {
-        return NextResponse.json({ error: 'Movie title already exists in the poll' }, { status: 409 }); 
+    // Check if poll exists and initialize if not, otherwise add movie
+    if (!sessionData?.poll) {
+      // Poll doesn't exist, create it with the first movie
+      await sessionRef.update({
+        poll: {
+          movieTitles: [movieTitle],
+          votes: {} // Initialize votes map
+        }
+      });
+    } else {
+      // Poll exists, add movie if it's not already there
+      if (sessionData.poll.movieTitles.includes(movieTitle)) {
+          return NextResponse.json({ error: 'Movie title already exists in the poll' }, { status: 409 });
+      }
+      await sessionRef.update({
+        'poll.movieTitles': FieldValue.arrayUnion(movieTitle)
+      });
     }
-
-    await sessionRef.update({
-      'poll.movieTitles': FieldValue.arrayUnion(movieTitle)
-    });
 
     return NextResponse.json({ message: 'Movie added to poll successfully' }, { status: 200 });
 
@@ -106,6 +121,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
     }
 
     const sessionData = sessionDoc.data() as Session | undefined;
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot remove movies from a completed session poll' }, { status: 403 }); // Forbidden
+    }
+
     const participantInfo = sessionData?.participants?.[userId];
 
     if (!participantInfo) {

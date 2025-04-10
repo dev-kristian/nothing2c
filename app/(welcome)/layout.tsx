@@ -2,13 +2,8 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { getUserProfileStatus } from '@/lib/server-auth-utils';
-import { Inter } from "next/font/google";
 import Image from 'next/image';
-import { WelcomeClientWrapper } from '@/components/providers/WelcomeClientWrapper';
-import { Toaster } from "@/components/ui/toaster";
-
-const inter = Inter({ subsets: ["latin"] });
-
+  
 export default async function WelcomeLayout({
   children,
 }: {
@@ -27,7 +22,7 @@ export default async function WelcomeLayout({
   }
 
   return (
-    <div className={`${inter.className} min-h-screen flex items-center justify-center p-2`}>
+    <div className={`min-h-screen flex items-center justify-center p-2`}>
       <div className="max-w-xl w-full bg-white/60 dark:bg-[#1c1c1e]/80 backdrop-blur-[30px] backdrop-saturate-[180%] rounded-2xl overflow-hidden border border-white/30 dark:border-white/10 relative shadow-apple dark:shadow-apple-dark">
         <div className="relative z-10 p-8"> 
           <div className="flex justify-center items-center space-x-3 mb-6"> 
@@ -51,14 +46,13 @@ export default async function WelcomeLayout({
               <span className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase -mt-0.5 ml-0.5">
                 Entertainment
               </span>
-            </div>
-          </div>
-          <WelcomeClientWrapper>
-            {children}
-          </WelcomeClientWrapper>
-        </div>
-      </div>
-      <Toaster />
-    </div>
-  );
-}
+             </div>
+           </div>
+           {/* Render children directly */}
+           {children}
+         </div>
+       </div>
+       {/* Removed Toaster instance */}
+     </div>
+   );
+ }

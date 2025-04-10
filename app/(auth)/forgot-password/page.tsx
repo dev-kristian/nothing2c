@@ -2,10 +2,11 @@
 
 import React, { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { toast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+ import { sendPasswordResetEmail } from 'firebase/auth';
+ import { auth } from '@/lib/firebase';
+ import { toast } from "@/hooks/use-toast";
+ import { handleAuthError } from '@/lib/utils'; // Import handleAuthError
+ import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from 'lucide-react'; // Import Loader2
@@ -28,15 +29,11 @@ const ForgotPasswordPage = (): JSX.Element => {
         title: "Reset Link Sent",
         description: "Please check your email to reset your password.",
         variant: "default",
-      });
-    } catch (error) {
-      console.error('Error sending password reset email:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send reset link. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+       });
+     } catch (error) {
+       // Use handleAuthError for consistent error feedback
+       handleAuthError(error, "Failed to send reset link. Please try again.");
+     } finally {
       setLoading(false);
     }
   };

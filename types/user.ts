@@ -1,11 +1,13 @@
 // types/user.ts
+// types/user.ts
 import { User, Auth } from 'firebase/auth';
+import { Media } from './media'; // Add this import
 
 export interface AuthState {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<User | undefined>; 
-  signOut: () => Promise<void>;
+  signIn: () => Promise<User | undefined>;
+  signOut: () => Promise<boolean>; // Changed return type to Promise<boolean>
   isAuthenticated: boolean;
   initialAuthChecked: boolean;
   auth: Auth; 
@@ -27,8 +29,8 @@ export interface UserData {
   setupCompleted?: boolean;
   uid?: string;
   watchlist: {
-    movie: { [movieId: string]: boolean };
-    tv: { [tvId: string]: boolean };
+    movie: Media[]; // Changed from object to array of Media
+    tv: Media[];    // Changed from object to array of Media
   };
   notification?: NotificationStatus;
 }
@@ -53,6 +55,7 @@ export interface FriendRequest {
   id: string;
   fromUid: string;
   fromUsername: string;
+  fromPhotoURL?: string; // Add optional photoURL
   status: 'pending' | 'accepted' | 'rejected';
   timestamp: string;
   exists?: boolean;
@@ -70,12 +73,12 @@ export interface FriendSearchResult {
   username: string;
 }
 
+// Define the possible friendship statuses (can also be defined here or imported)
+type FriendshipStatus = 'friends' | 'pending_sent' | 'pending_received' | 'none';
+
 export interface FriendSearchResultWithStatus extends FriendSearchResult {
-  requestStatus?: {
-    exists: boolean;
-    type?: 'sent' | 'received';
-    status?: 'pending' | 'accepted' | 'rejected';
-  };
+  photoURL?: string; // Add optional photoURL
+  friendshipStatus: FriendshipStatus; // Replace requestStatus with combined status
 }
 
 export type NotificationStatus = 'allowed' | 'denied' | 'unsupported';

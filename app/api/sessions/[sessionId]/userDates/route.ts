@@ -54,6 +54,12 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     }
 
     const sessionData = sessionDoc.data();
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot update dates for a completed session' }, { status: 403 }); // Forbidden
+    }
+
     const participantInfo = sessionData?.participants?.[userId];
 
     if (!participantInfo) {

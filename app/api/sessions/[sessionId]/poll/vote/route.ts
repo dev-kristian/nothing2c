@@ -36,6 +36,12 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     }
 
     const sessionData = sessionDoc.data() as Session | undefined;
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot vote in a completed session poll' }, { status: 403 }); // Forbidden
+    }
+
     const participantInfo = sessionData?.participants?.[userId];
 
     if (!participantInfo) {

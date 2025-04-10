@@ -68,6 +68,11 @@ export async function POST(
     }
     const sessionData = sessionDoc.data() as Session;
 
+    // 3.5. Check if Session is Completed
+    if (sessionData.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot invite participants to a completed session' }, { status: 403 }); // Forbidden
+    }
+
     // 4. Authorization Check: Is user the creator?
     if (sessionData.createdByUid !== currentUserId) {
       return NextResponse.json({ error: 'Forbidden: Only the session creator can invite participants' }, { status: 403 });

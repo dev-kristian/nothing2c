@@ -1,11 +1,20 @@
 // public/firebaseConfig.js
 const firebaseConfig = {
-  apiKey: "AIzaSyB0eS_-BHrntaXgg7ICiBf4tek5MYPW_Oo",
-  authDomain: "nothing2c-tv.firebaseapp.com",
-  projectId: "nothing2c-tv",
-  storageBucket: "nothing2c-tv.firebasestorage.app",
-  messagingSenderId: "451648445800",
-  appId: "1:451648445800:web:9f4087caf98d5847440add",
+
+  apiKey: "AIzaSyA5gG1JdCZ3F_pIGRf-buTBDOpU35k9oEA",
+
+  authDomain: "nothing-2c.firebaseapp.com",
+
+  projectId: "nothing-2c",
+
+  storageBucket: "nothing-2c.firebasestorage.app",
+
+  messagingSenderId: "288575155282",
+
+  appId: "1:288575155282:web:1cf74c79fa51d87b19438b",
+
+  measurementId: "G-6PZVM9J5QY"
+
 };
 
 // For the service worker

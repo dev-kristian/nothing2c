@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/context/UserDataContext';
 import { Media } from '@/types';
+import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils'; // Added import
 import { Star, Film, Tv} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { shimmer, toBase64 } from '@/lib/image-shimmer';
@@ -26,7 +27,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   index
 }) => {
   const router = useRouter();
-  const { isLoading: isUserDataLoading, addToWatchlist, removeFromWatchlist, watchlistItems } = useUserData();
+  const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
   const [isLoading, setIsLoading] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -34,13 +35,14 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv' | 'person';
 
   useEffect(() => {
-    if (watchlistItems && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
-      const isItemInWatchlist = watchlistItems[internalMediaType]?.some(item => item.id === media.id);
+    if (userData?.watchlist && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
+      const currentWatchlist = userData.watchlist[internalMediaType] || [];
+      const isItemInWatchlist = currentWatchlist.some(item => item.id === media.id);
       setIsInWatchlist(isItemInWatchlist);
     } else {
-      setIsInWatchlist(false); 
+      setIsInWatchlist(false);
     }
-  }, [watchlistItems, internalMediaType, media.id]);
+  }, [userData, internalMediaType, media.id]);
 
   const handleToggleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -52,12 +54,10 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
     try {
       const mediaTypeForWatchlist = internalMediaType as 'movie' | 'tv';
       if (isInWatchlist) {
-        await removeFromWatchlist(media.id, mediaTypeForWatchlist);
+        await removeUserWatchlistItem(media.id, mediaTypeForWatchlist, userData, mutateUserData);
       } else {
-        await addToWatchlist({
-          ...media,
-          addedAt: new Date().toISOString()
-        }, mediaTypeForWatchlist);
+        const { ...mediaToAdd } = media; // Removed unused addedAt
+        await addUserWatchlistItem(mediaToAdd, mediaTypeForWatchlist, userData, mutateUserData);
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);

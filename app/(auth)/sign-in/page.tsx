@@ -49,12 +49,7 @@ function SignInContent() {
         return;
       }
 
-      toast({
-        title: "Sign In Successful",
-        description: "Welcome back!",
-        variant: "default",
-      });
-
+      // Get token and call session login API *before* showing success toast
       const idToken = await user.getIdToken();
 
       const response = await fetch('/api/auth/session-login', {
@@ -66,14 +61,21 @@ function SignInContent() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error setting session cookie via API:', errorData);
-        handleAuthError(errorData.error || 'Failed to establish session.');
-        return;
-      }
+         handleAuthError(errorData.error || 'Failed to establish session.');
+         return;
+        }
+ 
+        // Show success toast just before navigation
+        toast({
+          title: "Sign In Successful",
+          description: "Welcome back!",
+          variant: "default",
+        });
 
-      // Use window.location.href for full page reload after session is set
-      window.location.href = redirectPath;
-
-    } catch (error: unknown) {
+        // Use router.push for client-side navigation
+        router.push(redirectPath);
+ 
+      } catch (error: unknown) {
       // Avoid duplicate error handling if session login already handled it
       if (!(error instanceof Error && error.message === "Session login failed")) {
          handleAuthError(error);

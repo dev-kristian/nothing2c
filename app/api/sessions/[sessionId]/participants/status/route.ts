@@ -40,6 +40,12 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     }
 
     const sessionData = sessionDoc.data();
+
+    // Check if Session is Completed
+    if (sessionData?.status === 'completed') {
+      return NextResponse.json({ error: 'Cannot update status for a completed session' }, { status: 403 }); // Forbidden
+    }
+
     if (!sessionData?.participants || !sessionData.participants[userId]) {
        console.warn(`User ${userId} attempted to update status for session ${sessionId} they are not part of.`);
        console.warn(`User ${userId} attempted to update status for session ${sessionId} they are not part of.`);

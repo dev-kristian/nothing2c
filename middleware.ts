@@ -19,7 +19,8 @@ export async function middleware(request: NextRequest) {
   let authResult = {
     isAuthenticated: false,
     uid: null,
-    hasUsername: false,
+    setupCompleted: false, // Add default setupCompleted
+    hasUsername: false, // Keep hasUsername for now, might be useful elsewhere or can be removed later if unused
   };
 
   // 1. Skip middleware for static assets, API routes, etc.
@@ -48,7 +49,7 @@ export async function middleware(request: NextRequest) {
       });
 
       if (response.ok) {
-        authResult = await response.json(); // Get { isAuthenticated, uid, hasUsername }
+        authResult = await response.json(); // Get { isAuthenticated, uid, setupCompleted, hasUsername }
       } else {
          // If verify fails (e.g., 401), treat as unauthenticated
          console.warn(`[Middleware] Session verification failed for ${pathname} with status ${response.status}`);
@@ -65,7 +66,8 @@ export async function middleware(request: NextRequest) {
   const isWelcomeRoute = checkPathPrefix(pathname, WELCOME_PREFIXES);
   const isAuthRoute = checkPathPrefix(pathname, AUTH_PREFIXES);
 
-  const { isAuthenticated, hasUsername } = authResult;
+  // Destructure the results, providing defaults if the API call failed or didn't return expected fields
+  const { isAuthenticated, setupCompleted = false } = authResult;
 
   // 4. Apply Routing Rules
 
@@ -80,35 +82,31 @@ export async function middleware(request: NextRequest) {
     // Allow access to AUTH routes and PUBLIC paths (already handled by initial check)
   }
 
-  // Rule 2: Authenticated, No Username
-  if (isAuthenticated && !hasUsername) {
-    if (isRootRoute) {
-      const welcomeUrl = new URL('/welcome', request.url);
-      console.log(`[Middleware] Redirecting auth user (no username) from ${pathname} to /welcome`);
-      return NextResponse.redirect(welcomeUrl);
-    }
-    // Allow authenticated users without usernames to access verification/action pages
-    if (isAuthRoute && pathname !== '/verify-email' && pathname !== '/auth-action') {
+  // Rule 2: Authenticated, Setup Not Completed
+  if (isAuthenticated && !setupCompleted) {
+    // Allow access ONLY to the welcome page itself or email verification/action pages
+    if (!isWelcomeRoute && pathname !== '/verify-email' && pathname !== '/auth-action') {
        const welcomeUrl = new URL('/welcome', request.url);
-       console.log(`[Middleware] Redirecting auth user (no username) from AUTH route ${pathname} to /welcome`);
+       console.log(`[Middleware] Redirecting auth user (setup not complete) from ${pathname} to /welcome`);
        return NextResponse.redirect(welcomeUrl);
     }
-    // Allow access to WELCOME routes, /verify-email, /auth-action and PUBLIC paths
+    // Allow access to WELCOME routes, /verify-email, /auth-action and PUBLIC paths (already handled)
   }
 
-  // Rule 3: Authenticated, Has Username
-  if (isAuthenticated && hasUsername) {
+  // Rule 3: Authenticated, Setup Completed
+  if (isAuthenticated && setupCompleted) {
      if (isWelcomeRoute) {
        const discoverUrl = new URL('/discover', request.url);
-       console.log(`[Middleware] Redirecting auth user (has username) from WELCOME route ${pathname} to /discover`);
-       return NextResponse.redirect(discoverUrl);
+       console.log(`[Middleware] Redirecting auth user (setup complete) from WELCOME route ${pathname} to /discover`);
+      return NextResponse.redirect(discoverUrl); // Correct variable name
      }
-     if (isAuthRoute) {
+     // If setup is complete, redirect away from auth pages (except verify/action which might be needed transiently)
+     if (isAuthRoute && pathname !== '/verify-email' && pathname !== '/auth-action') {
        const discoverUrl = new URL('/discover', request.url);
-       console.log(`[Middleware] Redirecting auth user (has username) from AUTH route ${pathname} to /discover`);
+       console.log(`[Middleware] Redirecting auth user (setup complete) from AUTH route ${pathname} to /discover`);
        return NextResponse.redirect(discoverUrl);
      }
-     // Allow access to ROOT routes and PUBLIC paths
+     // Allow access to ROOT routes and PUBLIC paths (already handled)
   }
 
   // 5. Allow request to proceed if no redirect rules matched

@@ -1,66 +1,79 @@
 // app/api/friends/search/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from 'firebase/firestore'; // Added orderBy, limit
+import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
+import { FriendSearchResultWithStatus } from '@/types'; // Import the type
+
+// Define the possible friendship statuses
+type FriendshipStatus = 'friends' | 'pending_sent' | 'pending_received' | 'none';
 
 export async function GET(request: NextRequest) {
   try {
+    const userProfile = await getAuthenticatedUserProfile();
+    if (!userProfile) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const authenticatedUserId = userProfile.uid;
+
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
-    const currentUserId = searchParams.get('currentUserId');
 
-    if (!username || !currentUserId) {
+    if (!username) { // Only username is required from query now
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing username parameter' },
         { status: 400 }
       );
     }
 
     const usersRef = collection(db, 'users');
+    // Add orderBy and limit for better performance and relevance
+    // Note: This query requires a composite index on username (Ascending)
+    // Firebase will prompt to create it if it doesn't exist.
     const q = query(
       usersRef,
       where('username', '>=', username),
-      where('username', '<=', username + '\uf8ff')
+      where('username', '<=', username + '\uf8ff'),
+      orderBy('username'), // Order results alphabetically
+      limit(15) // Limit results to avoid fetching too many
     );
 
     const querySnapshot = await getDocs(q);
-    const users = querySnapshot.docs.map(doc => ({
-      uid: doc.id,
-      username: doc.data().username,
-    }));
 
-    const friendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
+    // Fetch the current user's friends/requests data *once*
+    const friendsRef = doc(db, 'users', authenticatedUserId, 'friends', 'data');
     const friendsDoc = await getDoc(friendsRef);
-    const friendsData = friendsDoc.data() || {};
+    const friendsData = friendsDoc.exists() ? friendsDoc.data() : {};
+    const friendsList = friendsData?.friendsList || {};
+    const sentRequests = friendsData?.sentRequests || {};
+    const receivedRequests = friendsData?.receivedRequests || {};
 
-    const usersWithStatus = await Promise.all(users.map(async (user) => {
-      const requestStatus: {
-        exists: boolean;
-        type?: 'sent' | 'received';
-        status?: 'pending' | 'accepted' | 'rejected';
-      } = {
-        exists: false,
-        type: undefined,
-        status: undefined
-      };
-        if (friendsData.sentRequests && friendsData.sentRequests[user.uid]) {
-            requestStatus.exists = true;
-            requestStatus.type = 'sent';
-            requestStatus.status = 'pending';
+    // Process search results
+    const users: FriendSearchResultWithStatus[] = querySnapshot.docs
+      .map(doc => {
+        const userData = doc.data();
+        const uid = doc.id;
+
+        // Determine friendship status
+        let friendshipStatus: FriendshipStatus = 'none';
+        if (friendsList[uid]) {
+          friendshipStatus = 'friends';
+        } else if (sentRequests[uid]) {
+          friendshipStatus = 'pending_sent';
+        } else if (receivedRequests[uid]) {
+          friendshipStatus = 'pending_received';
         }
-        if (friendsData.receivedRequests && friendsData.receivedRequests[user.uid]) {
-          requestStatus.exists = true;
-          requestStatus.type = 'received';
-          requestStatus.status = 'pending';
-      }
 
-      return {
-        ...user,
-        requestStatus
-      };
-    }));
+        return {
+          uid: uid,
+          username: userData.username || 'unknown user',
+          photoURL: userData.photoURL || undefined, // Include photoURL
+          friendshipStatus: friendshipStatus,
+        };
+      })
+      .filter(user => user.uid !== authenticatedUserId); // Exclude self from search results
 
-    return NextResponse.json({ users: usersWithStatus });
+    return NextResponse.json({ users });
   } catch (error) {
     console.error('Error searching users:', error);
     return NextResponse.json(

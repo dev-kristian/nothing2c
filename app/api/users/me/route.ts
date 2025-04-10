@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { UserData } from '@/types';
-import { Timestamp, FieldValue, CollectionReference } from 'firebase-admin/firestore'; 
+import { FieldValue, CollectionReference } from 'firebase-admin/firestore'; 
 import { checkUsernameAvailability } from '@/app/actions/userActions';
 
 import { DocumentReference } from 'firebase-admin/firestore';
@@ -80,30 +80,16 @@ export async function GET() {
     const watchlistDocRef = adminDb.collection('watchlists').doc(userProfile.uid);
 
     let userData: UserData | null = null;
-    let userDocSnapshot = await userDocRef.get();
-
-    if (!userDocSnapshot.exists) {
-      console.log(`Creating default user document for UID: ${userProfile.uid}`);
-      const defaultUserData: Omit<UserData, 'watchlist'> = { 
-        username: userProfile.username || '',
-        email: userProfile.email || undefined,
-        createdAt: Timestamp.now().toDate(),
-        updatedAt: Timestamp.now().toDate(),
-        setupCompleted: false,
-        uid: userProfile.uid,
-      };
-      await userDocRef.set(defaultUserData);
-      userDocSnapshot = await userDocRef.get();
-      const watchlistSnap = await watchlistDocRef.get();
-      if (!watchlistSnap.exists) {
-        console.log(`Creating default watchlist document for UID: ${userProfile.uid}`);
-        await watchlistDocRef.set({ movie: {}, tv: {} }); 
-      }
-    }
-
-    const userInfo = userDocSnapshot.data();
-    const watchlistSnapshot = await watchlistDocRef.get();
-    const watchlistData = watchlistSnapshot.exists ? watchlistSnapshot.data() : { movie: {}, tv: {} }; 
+     const userDocSnapshot = await userDocRef.get();
+ 
+     if (!userDocSnapshot.exists) {
+        console.error(`User document not found for authenticated user UID: ${userProfile.uid}. This should not happen.`);
+        return NextResponse.json({ error: 'User data not found despite valid authentication.' }, { status: 404 });
+     }
+ 
+     const userInfo = userDocSnapshot.data();
+     const watchlistSnapshot = await watchlistDocRef.get();
+    const watchlistData = watchlistSnapshot.exists ? watchlistSnapshot.data() : { movie: [], tv: [] }; // Use empty arrays as default
 
     if (userInfo) {
       userData = {
@@ -114,11 +100,11 @@ export async function GET() {
         setupCompleted: userInfo.setupCompleted,
         uid: userInfo.uid,
         notification: userInfo.notification,
-        watchlist: { 
-          movie: watchlistData?.movie || {},
-          tv: watchlistData?.tv || {}
+        watchlist: {
+          movie: watchlistData?.movie || [],
+          tv: watchlistData?.tv || []
         }
-      } as UserData; 
+      } as UserData;
     }
 
     if (!userData) {

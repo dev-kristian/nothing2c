@@ -8,13 +8,10 @@ export type TopWatchlistItem = FirestoreWatchlistItem;
 export interface UserDataContextType {
     userData: UserData | null;
     isLoading: boolean;
-    watchlistItems: {
-      movie: Media[];
-      tv: Media[];
-    };
-    addToWatchlist: (item: Media, mediaType: 'movie' | 'tv') => Promise<void>;
-    removeFromWatchlist: (id: number, mediaType: 'movie' | 'tv') => Promise<void>;
-    mutateUserData: KeyedMutator<UserData | null>; 
+    // Removed: watchlistItems
+    // Removed: addToWatchlist
+    // Removed: removeFromWatchlist
+    mutateUserData: KeyedMutator<UserData | null>;
     friends: Friend[];
     friendRequests: FriendRequest[];
     isLoadingFriends: boolean;
