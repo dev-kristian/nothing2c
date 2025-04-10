@@ -39,17 +39,13 @@ export const useUpdateUserDates = () => {
     }
   }, [user]);
 
-  return useCallback((sessionId: string, dates: DateTimeSelection[]) => {
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
+  // Removed debouncing to match expected Promise return type
+  return useCallback(async (sessionId: string, dates: DateTimeSelection[]) => {
+    try {
+      await executeUpdate(sessionId, dates);
+    } catch (error) {
+      console.error("Error executing update:", error);
+      // Optionally re-throw or handle error as needed
     }
-
-    updateTimeoutRef.current = setTimeout(() => {
-      executeUpdate(sessionId, dates)
-        .catch(error => {
-          console.error("Error executing debounced update:", error);
-        });
-    }, DEBOUNCE_DELAY);
-
   }, [executeUpdate]); 
 };

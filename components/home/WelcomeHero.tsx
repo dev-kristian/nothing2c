@@ -39,12 +39,12 @@ const WelcomeHeroSkeleton = () => (
 
 
 export function WelcomeHero() {
-  const { userData, watchlistItems, isLoading } = useUserData();
+  const { userData, isLoading } = useUserData();
   const router = useRouter();
 
   const topRatedPosters = useMemo(() => {
-    const movies = watchlistItems?.movie || [];
-    const tvShows = watchlistItems?.tv || [];
+    const movies = userData?.watchlist?.movie || [];
+    const tvShows = userData?.watchlist?.tv || [];
     const allItems = [...movies, ...tvShows];
     
     const sortedItems = [...allItems].sort((a, b) => 
@@ -54,7 +54,7 @@ export function WelcomeHero() {
     return sortedItems
       .filter(item => item.poster_path)
       .slice(0, 3);
-  }, [watchlistItems]);
+  }, [userData?.watchlist]);
 
   const fallbackPosters = [
     "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg", 

@@ -28,7 +28,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
   // Removed: const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist();
   const { friends, friendRequests, isLoadingFriends, isLoadingRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend } =
-    useFriends(userData?.username);
+    useFriends(); // Removed argument
   const { updateNotificationStatus } = useNotification();
 
   const isLoading = isLoadingUserData || isLoadingFriends || isLoadingRequests; // Removed isLoadingWatchlist
