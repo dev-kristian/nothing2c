@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin'; // Import adminDb
+import { FieldValue } from 'firebase-admin/firestore'; // Import FieldValue
 
 const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
@@ -16,24 +17,45 @@ export async function POST(request: NextRequest) {
     // 1. Verify ID token to get UID
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    const emailVerified = decodedToken.email_verified === true;
 
-    // 2. Fetch user data from Firestore
-    let setupCompleted = false;
-    try {
+    // 2. Determine setupCompleted status and ensure user document exists if email is verified
+    let setupCompleted = false; // Default to false
+
+    if (emailVerified) {
       const userDocRef = adminDb.collection('users').doc(uid);
-      const userDoc = await userDocRef.get();
-      if (userDoc.exists) {
-        setupCompleted = userDoc.data()?.setupCompleted === true;
-      } else {
-        console.warn(`[API Session Login] User document not found for UID: ${uid} during login. Assuming setup not completed.`);
+      try {
+        const userDoc = await userDocRef.get();
+        if (userDoc.exists) {
+          // Document exists, read its status
+          setupCompleted = userDoc.data()?.setupCompleted === true;
+          console.log(`[API Session Login] User doc exists for UID: ${uid}. setupCompleted: ${setupCompleted}`);
+        } else {
+          // Document does NOT exist, create it with setupCompleted: false
+          console.log(`[API Session Login] User doc not found for verified UID: ${uid}. Creating document.`);
+          const initialUserData = {
+            uid: uid,
+            email: decodedToken.email, // Use email from token
+            createdAt: FieldValue.serverTimestamp(), // Use FieldValue for server timestamp
+            username: "", // Initialize username as empty
+            setupCompleted: false, // Explicitly set to false
+          };
+          await userDocRef.set(initialUserData);
+          setupCompleted = false; // Ensure setupCompleted is false for the claim
+          console.log(`[API Session Login] Successfully created user document for UID: ${uid}.`);
+        }
+      } catch (dbError) {
+        console.error(`[API Session Login] Error accessing/creating user document for UID: ${uid}`, dbError);
+        // Keep setupCompleted as false on DB error
       }
-    } catch (dbError) {
-      console.error(`[API Session Login] Error fetching user document for UID: ${uid}`, dbError);
-      // Proceed, but setupCompleted remains false
+    } else {
+      console.log(`[API Session Login] Email not verified for UID: ${uid}. Skipping doc check/creation. setupCompleted remains false.`);
+      // Keep setupCompleted as false if email is not verified
     }
 
-    // 3. Set custom claim on the user
+    // 3. Set custom claim on the user based on the determined status
     await adminAuth.setCustomUserClaims(uid, { setupCompleted });
+    console.log(`[API Session Login] Set custom claim setupCompleted=${setupCompleted} for UID: ${uid}`);
 
     // 4. Create session cookie (claims are automatically included)
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
