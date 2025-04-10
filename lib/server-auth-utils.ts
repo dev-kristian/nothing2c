@@ -6,7 +6,7 @@ export interface UserProfile {
   uid: string;
   email?: string;
   username?: string;
-  setupCompleted?: boolean;
+  // Removed setupCompleted
 }
 
 export async function getAuthenticatedUserProfile(): Promise<UserProfile | null> {
@@ -27,7 +27,7 @@ export async function getAuthenticatedUserProfile(): Promise<UserProfile | null>
       uid: decodedToken.uid,
       email: decodedToken.email,
       username: firestoreData?.username,
-      setupCompleted: firestoreData?.setupCompleted === true,
+      // Removed setupCompleted assignment
     };
 
   } catch (error: unknown) {
@@ -54,13 +54,4 @@ export async function getAuthenticatedUserProfile(): Promise<UserProfile | null>
   }
 }
 
-export async function getUserProfileStatus(): Promise<{ uid: string; setupCompleted: boolean } | null> {
-   const userProfile = await getAuthenticatedUserProfile();
-   if (!userProfile) {
-     return null;
-   }
-   return {
-     uid: userProfile.uid,
-     setupCompleted: userProfile.setupCompleted ?? false
-   };
-}
+// Removed getUserProfileStatus function as it's no longer needed

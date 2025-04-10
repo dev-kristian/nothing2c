@@ -7,7 +7,7 @@ interface UserProfile {
   uid: string;
   email: string;
   createdAt: FirebaseFirestore.Timestamp;
-  setupCompleted: boolean; 
+  // Removed setupCompleted
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();
 
-    let setupCompleted = false; 
+    // Removed setupCompleted variable
 
     if (!userDoc.exists) {
       console.log(`Creating new user profile for UID: ${uid}`);
@@ -44,17 +44,18 @@ export async function POST(request: NextRequest) {
         uid: uid,
         email: email,
         createdAt: Timestamp.fromDate(new Date()),
-        setupCompleted: false,
+        // Removed setupCompleted
       };
       await userRef.set(newUserProfile);
-      setupCompleted = newUserProfile.setupCompleted;
+      // Removed setupCompleted assignment
     } else {
-      const existingProfile = userDoc.data() as UserProfile;
-      setupCompleted = existingProfile.setupCompleted ?? false;
-      console.log(`User profile found for UID: ${uid}, setupCompleted: ${setupCompleted}`);
+      // User profile already exists, no action needed regarding setupCompleted
+      console.log(`User profile found for UID: ${uid}`);
     }
 
-    return NextResponse.json({ setupCompleted });
+    // Return a success response, perhaps just status or basic user info if needed
+    // Removed setupCompleted from response
+    return NextResponse.json({ status: 'success', uid: uid }); 
 
   } catch (error) {
     console.error('Error in /api/users POST handler:', error);
