@@ -2,32 +2,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, writeBatch, deleteField } from 'firebase/firestore';
+import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { currentUserId, requesterId } = body;
+    const userProfile = await getAuthenticatedUserProfile();
+    if (!userProfile?.uid) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const authenticatedUserId = userProfile.uid;
 
-    if (!currentUserId || !requesterId) {
+    const body = await request.json();
+    const { requesterId } = body; // Only expect requesterId from body
+
+    if (!requesterId) {
       return NextResponse.json(
-        { error: 'Missing required information' },
+        { error: 'Missing requester ID' },
         { status: 400 }
       );
     }
 
+    // Prevent rejecting self (edge case)
+    if (authenticatedUserId === requesterId) {
+        return NextResponse.json(
+            { error: 'Invalid operation' },
+            { status: 400 }
+        );
+    }
+
     const batch = writeBatch(db);
 
-    const requestRef = doc(db, 'users', currentUserId, 'friendRequests', requesterId);
+    // Use authenticatedUserId for the path
+    const requestRef = doc(db, 'users', authenticatedUserId, 'friendRequests', requesterId);
+    // Consider deleting instead of updating status? For now, keep update.
     batch.update(requestRef, { status: 'rejected' });
 
-    const currentUserFriendsRef = doc(db, 'users', currentUserId, 'friends', 'data');
+    // Use authenticatedUserId for current user's data
+    const currentUserFriendsRef = doc(db, 'users', authenticatedUserId, 'friends', 'data');
     batch.set(currentUserFriendsRef, {
-      receivedRequests: { [requesterId]: deleteField() }
+      receivedRequests: { [requesterId]: deleteField() } // Remove from received
     }, { merge: true });
 
+    // Use requesterId for requester's data
     const requesterFriendsRef = doc(db, 'users', requesterId, 'friends', 'data');
     batch.set(requesterFriendsRef, {
-      sentRequests: { [currentUserId]: deleteField() }
+      sentRequests: { [authenticatedUserId]: deleteField() } // Remove from their sent
     }, { merge: true });
 
     await batch.commit();

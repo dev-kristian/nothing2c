@@ -4,13 +4,11 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { applyActionCode, confirmPasswordReset } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth} from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Eye, EyeOff, Loader2 } from 'lucide-react'; // Import Loader2
-// Removed SpinningLoader import
+import { Eye, EyeOff, Loader2 } from 'lucide-react'; 
 import { z } from 'zod';
 import { toast } from "@/hooks/use-toast";
 import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
@@ -52,31 +50,11 @@ function AuthActionContent() {
         toast({
           title: "Email Verified",
           description: "Your email has been successfully verified.",
-          variant: "default",
-        });
-
-        if (user) {
-          try {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userData = {
-              uid: user.uid,
-              email: user.email,
-              createdAt: serverTimestamp(),
-              username: "",
-            };
-            await setDoc(userDocRef, userData, { merge: true });
-          } catch (firestoreError) {
-            console.error("Error writing to Firestore:", firestoreError);
-            toast({
-              title: "Firestore Error",
-              description: "Failed to update user data.",
-              variant: "destructive",
-            });
-          }
-        }
-
-        setTimeout(() => router.push('/sign-in'), 3000);
-      } catch (error) {
+           variant: "default",
+         });
+ 
+         setTimeout(() => router.push('/sign-in'), 3000);
+       } catch (error) {
         console.error('Error verifying email:', error);
         setVerificationStatus('error');
         toast({
@@ -84,9 +62,8 @@ function AuthActionContent() {
           description: "Unable to verify your email.",
           variant: "destructive",
         });
-        setLoading(false); // Stop loading on error
+        setLoading(false); 
       } 
-      // Keep loading=true on success until redirect
     };
 
     const mode = searchParams.get('mode');
@@ -147,13 +124,11 @@ function AuthActionContent() {
           description: "An error occurred while resetting your password.",
           variant: "destructive",
         });
-        setLoading(false); // Stop loading on error
+        setLoading(false);
       }
     } 
-    // Keep loading=true on success until redirect
   };
 
-  // Keep showing loader on success states until redirect
   if (loading || verificationStatus === 'success' || verificationStatus === 'passwordResetSuccess') {
     return (
       <div className="flex flex-col justify-center items-center min-h-[300px] space-y-4">
@@ -261,9 +236,8 @@ function AuthActionContent() {
             <Button
               type="submit"
               className="w-full bg-pink text-white hover:bg-pink-hover" 
-              disabled={!isFormValid} // Loading state handled by the main loader now
+              disabled={!isFormValid} 
             >
-              {/* Button loader removed as main loader persists */}
               Reset Password
             </Button>
           </form>

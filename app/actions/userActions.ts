@@ -96,22 +96,17 @@ export const setUsernameAndClaim = async (uid: string, username: string): Promis
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    await adminAuth.setCustomUserClaims(uid, { hasUsername: true });
+    // Firestore update successful, now set the custom claim
+    await adminAuth.setCustomUserClaims(uid, { setupCompleted: true });
 
-    console.log(`[Server Action] Successfully set username and claim for UID: ${uid}`);
-    return { success: true, message: 'Username set successfully.' };
+    console.log(`[Server Action] Successfully set username and updated setupCompleted claim for UID: ${uid}`);
+    // Return success to signal client-side to refresh session cookie
+    return { success: true, message: 'Setup completed successfully. Refreshing session...' };
 
   } catch (error) {
-    console.error(`[Server Action] Error setting username and claim for UID ${uid}:`, error);
-    try {
-      const user = await adminAuth.getUser(uid);
-      if (user.customClaims?.hasUsername) {
-        await adminAuth.setCustomUserClaims(uid, { hasUsername: null }); 
-        console.warn(`[Server Action] Rolled back custom claim for UID ${uid} due to error.`);
-      }
-    } catch (rollbackError) {
-       console.error(`[Server Action] Error rolling back custom claim for UID ${uid}:`, rollbackError);
-    }
-    return { success: false, message: 'Failed to set username. Please try again.' };
+    // Log error for Firestore update OR claim setting failure
+    console.error(`[Server Action] Error completing setup for UID ${uid}:`, error);
+    // Do not attempt rollback, just return failure
+    return { success: false, message: 'Failed to complete setup. Please try again.' };
   }
 };

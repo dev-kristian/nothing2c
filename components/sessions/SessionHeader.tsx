@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // Added useMemo
 import { format, differenceInDays } from 'date-fns';
 import { Info, Calendar, Film, Users, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,15 +15,19 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({ session, datePopularity }
   
   // Calculate most popular date
   const topDate = datePopularity.length > 0 ? datePopularity[0] : null;
-  
-  // Calculate most voted movie
-  const getTopMovie = () => {
-    if (!session.poll || !session.poll.movieTitles.length) return null;
-    
+
+  // Memoize the calculation for the most voted movie
+  const topMovie = useMemo(() => {
+    // Check if poll exists before accessing its properties
+    if (!session.poll || !session.poll.movieTitles || session.poll.movieTitles.length === 0) {
+      return null;
+    }
+
     let maxVotes = 0;
     let topMovie = '';
-    
-    session.poll.movieTitles.forEach(movie => {
+
+    // Use optional chaining here to satisfy TS, even though the check above should guarantee existence
+    session.poll?.movieTitles.forEach(movie => {
       const voteCount = Object.values(session.poll?.votes || {}).reduce(
         (count, userVotes) => count + (userVotes.includes(movie) ? 1 : 0),
         0
@@ -36,10 +40,9 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({ session, datePopularity }
     });
     
     return { title: topMovie, votes: maxVotes };
-  };
-  
-  const topMovie = getTopMovie();
-  
+    // Depend on the poll object itself, which might be undefined initially
+  }, [session.poll]);
+
   // Count participants
   const participantCount = Object.keys(session.participants || {}).length;
   

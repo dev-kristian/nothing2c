@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react'; 
+import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { Users, Bell, Search, ChevronRight, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FriendsList, RequestsList, SearchUsers } from '@/components/social';
@@ -47,7 +48,18 @@ export default function SocialPage() {
     sendFriendRequest,
   } = useUserData();
 
-  const [activeCategory, setActiveCategory] = useState(socialCategories[0].id);
+  const searchParams = useSearchParams(); // Get search params
+  const initialTab = searchParams.get('tab'); // Read the 'tab' parameter
+
+  // Set initial active category based on query param or default to 'friends'
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (initialTab === 'requests') {
+      return 'requests';
+    }
+    // Add other potential initial tabs here if needed
+    return socialCategories[0].id; // Default to 'friends'
+  });
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FriendSearchResultWithStatus[]>([]);

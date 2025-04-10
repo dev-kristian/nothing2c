@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -42,6 +43,7 @@ import { AuthFormData } from '@/types';
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const router = useRouter(); // Initialize useRouter
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
@@ -109,9 +111,9 @@ import { AuthFormData } from '@/types';
         toast({
           title: "Google Sign In Successful",
           description: "Welcome!",
-          variant: "default", 
+          variant: "default",
         });
-        window.location.href = redirectPath; 
+        router.push(redirectPath); 
 
       } else {
          console.log("Google Sign In popup closed or did not return a user.");

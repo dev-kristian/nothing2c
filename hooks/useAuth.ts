@@ -1,5 +1,5 @@
 // hooks/useAuth.ts 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   onIdTokenChanged,
   User,
@@ -12,41 +12,13 @@ import {
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { handleAuthError } from '@/lib/utils';
-
-async function syncSession(endpoint: string, body?: Record<string, unknown>) {
-  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = `${window.location.origin}${path}`;
-
-  try {
-    const response = await fetch(url, { 
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!response.ok) {
-      console.error(`Failed to sync session (${endpoint}):`, response.status, await response.text());
-    } else {
-      // Optional: console.debug(`Session sync successful (${endpoint})`);
-    }
-  } catch (error) {
-    // Check if the error is a TypeError, often indicating a fetch interrupted by navigation
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      // Log less severely or ignore, as this might be expected during post-login redirects
-      console.debug(`Session sync fetch (${endpoint}) was potentially interrupted by navigation:`, error.message);
-    } else {
-      // Log other network errors as actual errors
-      console.error(`Network error during session sync (${endpoint}):`, error);
-    }
-  }
-}
+import { toast } from "@/hooks/use-toast"; 
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
-  const [serverVerifiedUid, setServerVerifiedUid] = useState<string | null>(null); // Added state for server session check
+  const initialSyncDoneRef = useRef<boolean>(false); 
 
   const signIn = useCallback(async () => {
     try {
@@ -56,34 +28,40 @@ export function useAuth() {
     } catch (error) {
       handleAuthError(error, 'Failed to sign in. Please try again.');
     }
-  }, []); 
-
-  const signOut = useCallback(async () => {
-    try {
-      await syncSession('/api/auth/session-logout');
-      await firebaseSignOut(auth);
-    } catch (error) {
-      handleAuthError(error, 'Failed to sign out. Please try again.');
-    }
   }, []);
 
-  // Effect to verify server session on initial load
-  useEffect(() => {
-    const verifyServerSession = async () => {
-      try {
-        const response = await fetch('/api/auth/verify-session'); // Assuming this endpoint exists
-        if (response.ok) {
-          const data = await response.json();
-          setServerVerifiedUid(data.uid || null); // Store UID if verified
-        } else {
-          setServerVerifiedUid(null);
-        }
-      } catch (error) {
-        console.error("Error verifying server session:", error);
-        setServerVerifiedUid(null);
+  // Revised signOut to handle errors and return success status
+  const signOut = useCallback(async (): Promise<boolean> => {
+    // 1. Server-side logout
+    const logoutUrl = `${window.location.origin}/api/auth/session-logout`;
+    try {
+      const response = await fetch(logoutUrl, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server-side logout failed:', response.status, errorText);
+        // Throw an error to be caught by the calling component
+        throw new Error(`Server logout failed: ${response.status}`);
       }
-    };
-    verifyServerSession();
+    } catch (error) {
+      // Catch fetch errors or the error thrown above
+      console.error('Error during server-side logout request:', error);
+      // Re-throw the error for the calling component
+      throw error;
+    }
+
+    // 2. Client-side logout (only if server logout succeeded)
+    try {
+      await firebaseSignOut(auth);
+      return true; // Indicate successful sign out
+    } catch (error) {
+      // Handle potential Firebase sign-out errors
+      console.error('Firebase sign out error:', error);
+      // Throw the error for the calling component
+      throw error;
+    }
   }, []);
 
 
@@ -94,13 +72,16 @@ export function useAuth() {
       });
 
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
-      setUser(currentUser); 
+      setUser(currentUser);
 
-      if (currentUser) {
+      if (currentUser && !initialSyncDoneRef.current) {
+        initialSyncDoneRef.current = true;
         try {
-          const idToken = await currentUser.getIdToken();
-          await syncSession('/api/auth/session-login', { idToken });
+          // Removed redundant session login call - handled by sign-in/sign-up pages
+          // const idToken = await currentUser.getIdToken();
+          // await syncSession('/api/auth/session-login', { idToken });
 
+          // Check email verification and handle Firestore doc creation
           if (currentUser.emailVerified) {
             const userDocRef = doc(db, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
@@ -114,29 +95,26 @@ export function useAuth() {
               };
               await setDoc(userDocRef, userData);
             }
-          }
-        } catch (error) {
-          console.error("Error during auth state processing:", error);
-        }
-      } else {
-        // PWA Fix: Check for mismatch between client (null) and server (verified)
-        if (serverVerifiedUid !== null) {
-          console.warn("Auth mismatch detected (Client: null, Server: verified). Forcing sign out.");
-          firebaseSignOut(auth).catch(err => console.error("Error during forced sign out:", err));
-          // Clear the server state as it's now invalid relative to client
-          setServerVerifiedUid(null);
-          // setUser(null) is implicitly handled as currentUser is null here
-        }
+           }
+         } catch (error) {
+           console.error("Error during auth state processing or Firestore write:", error);
+           toast({
+             title: "Account Setup Incomplete",
+             description: "Failed to initialize user data. Please try logging out and back in, or contact support if the issue persists.",
+             variant: "destructive",
+             duration: 9000,
+           });
+         }
+      } else if (!currentUser) {
+         initialSyncDoneRef.current = false;
       }
 
-      // Only set loading false after the initial check completes
-      // and potentially after the mismatch logic runs.
       setLoading(false);
       setInitialAuthChecked(true);
     });
 
     return () => unsubscribe();
-  }, [serverVerifiedUid]); // <-- Added serverVerifiedUid to dependency array
+  }, []); 
 
   return {
     user,

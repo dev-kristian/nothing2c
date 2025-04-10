@@ -5,23 +5,7 @@ import { FirestoreWatchlistItem, FriendsWatchlistItem } from '@/types';
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
-const fetchWatchlistForUser = async (userId: string): Promise<{ movie: FirestoreWatchlistItem[], tv: FirestoreWatchlistItem[] }> => {
-  try {
-    const docRef = adminDb.doc(`watchlists/${userId}`);
-    const docSnap = await docRef.get();
-
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      const movies = (data?.movie || []) as FirestoreWatchlistItem[];
-      const tvShows = (data?.tv || []) as FirestoreWatchlistItem[];
-      return { movie: movies, tv: tvShows };
-    }
-    return { movie: [], tv: [] };
-  } catch (error) {
-    console.error(`Error fetching watchlist items for user ${userId}:`, error);
-    return { movie: [], tv: [] };
-  }
-};
+// Removed fetchWatchlistForUser as we'll fetch in batch
 
 const processWatchlistItems = (
     allItems: FirestoreWatchlistItem[],
@@ -66,16 +50,32 @@ export async function GET() {
     const friendIds = Object.keys(actualFriendsList);
 
     const allUserIds = [userId, ...friendIds];
-    const watchlistPromises = allUserIds.map(id => fetchWatchlistForUser(id));
-    const watchlistResults = await Promise.all(watchlistPromises);
 
     let combinedMovies: FirestoreWatchlistItem[] = [];
     let combinedTv: FirestoreWatchlistItem[] = [];
-    watchlistResults.forEach(result => {
-        combinedMovies = combinedMovies.concat(result.movie);
-        combinedTv = combinedTv.concat(result.tv);
-    });
 
+    if (allUserIds.length > 0) {
+      // Create document references for all required watchlists
+      const watchlistRefs = allUserIds.map(id => adminDb.doc(`watchlists/${id}`));
+
+      // Fetch all watchlist documents in a single batch using getAll
+      const watchlistSnapshots = await adminDb.getAll(...watchlistRefs);
+
+      // Process the results from getAll
+      watchlistSnapshots.forEach(docSnap => {
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          if (data) {
+            combinedMovies = combinedMovies.concat((data.movie || []) as FirestoreWatchlistItem[]);
+            combinedTv = combinedTv.concat((data.tv || []) as FirestoreWatchlistItem[]);
+          }
+        }
+        // Optionally handle cases where a friend's watchlist doc doesn't exist
+        // else { console.log(`Watchlist for user ${docSnap.ref.id} not found.`); }
+      });
+    }
+
+    // Process the combined lists
     const topMovies = processWatchlistItems(combinedMovies, 'movie');
     const topTv = processWatchlistItems(combinedTv, 'tv');
 

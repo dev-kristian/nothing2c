@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext';
 import { db } from '@/lib/firebase';
-import { 
-  collection, 
+import {
+  collection,
   query, 
   where,
   orderBy,
@@ -15,15 +14,14 @@ import { FirestoreUserDate } from '@/types/context';
 
 export const useSessionSubscription = () => {
   const { user } = useAuthContext();
-  const { userData } = useUserData();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false); 
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const isSubscribed = useRef(false);
 
   useEffect(() => {
-    if (!user || !userData) return;
+    if (!user) return;
     if (isSubscribed.current) return;
-  
+
     const sessionsRef = collection(db, 'sessions');
     
     const sessionsQuery = query(
@@ -94,7 +92,7 @@ export const useSessionSubscription = () => {
       });
       
       sessionsList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
+
       setSessions(sessionsList);
       if (!initialLoadComplete) {
         setInitialLoadComplete(true);
@@ -111,7 +109,8 @@ export const useSessionSubscription = () => {
       unsubscribe();
       isSubscribed.current = false;
     };
-  }, [user, userData, initialLoadComplete]);
+    // Removed userData from dependency array
+  }, [user, initialLoadComplete]);
 
   return { sessions, initialLoadComplete };
 };

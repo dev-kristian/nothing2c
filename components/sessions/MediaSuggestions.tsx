@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react'; // Added useMemo
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { Film, Star, Calendar, Users, ThumbsUp, Plus, X } from 'lucide-react';
@@ -18,7 +18,7 @@ import Link from 'next/link';
 
 interface MediaSuggestionsProps {
   session: Session;
-  poll: Poll;
+  poll: Poll | undefined; // Allow poll to be undefined
   isReadOnly?: boolean;
 }
 
@@ -60,25 +60,36 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
   };
 
   const getVoteCount = (mediaTitle: string) => {
-    if (!poll) return 0;
+    // Check if poll and poll.votes exist before accessing
+    if (!poll?.votes) return 0;
     return Object.values(poll.votes).reduce(
-      (count, userVotes) => count + (userVotes.includes(mediaTitle) ? 1 : 0),
+      (count, userVotes) => count + (userVotes?.includes(mediaTitle) ? 1 : 0), // Also check userVotes
       0
     );
   };
 
   const hasVoted = (mediaTitle: string) => {
-    if (!poll || !userData) return false;
+    // Check if poll, userData, and poll.votes exist
+    if (!poll?.votes || !userData?.username) return false;
     const userVotes = poll.votes[userData.username] || [];
     return userVotes.includes(mediaTitle);
   };
 
-  const getMediaDetails = (title: string) => {
-    return (
-      friendsWatchlistItems.movie.find((item) => item.title === title) ||
-      friendsWatchlistItems.tv.find((item) => item.name === title || item.title === title)
-    );
-  };
+  // Create a memoized map for quick media detail lookup by title
+  const mediaDetailsMap = useMemo(() => {
+    const map = new Map<string, FriendsWatchlistItem>();
+    friendsWatchlistItems.movie.forEach(item => {
+      if (item.title) map.set(item.title, item);
+    });
+    friendsWatchlistItems.tv.forEach(item => {
+      // Handle both 'name' and 'title' for TV shows if necessary
+      if (item.name && !map.has(item.name)) map.set(item.name, item);
+      if (item.title && !map.has(item.title)) map.set(item.title, item); // In case TV shows also use 'title'
+    });
+    return map;
+  }, [friendsWatchlistItems]);
+
+  // Removed getMediaDetails function
 
   const getMediaType = (mediaInfo: FriendsWatchlistItem | undefined): 'movie' | 'tv' => {
     if (!mediaInfo) return 'movie';
@@ -206,7 +217,8 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
         </div>
       </div>
 
-      {!poll.movieTitles || poll.movieTitles.length === 0 ? (
+      {/* Check if poll exists and has movieTitles before mapping */}
+      {!poll?.movieTitles || poll.movieTitles.length === 0 ? (
         <div className="py-8 flex flex-col items-center justify-center rounded-xl bg-white/5 dark:bg-black/5 border border-white/10 dark:border-white/5">
           <Film className="w-12 h-12 text-label-tertiary dark:text-label-tertiary-dark mb-3" />
           <p className="text-label-secondary dark:text-label-secondary-dark text-center">
@@ -218,10 +230,12 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
         </div>
       ) : (
         <div className="space-y-3">
-          {poll.movieTitles.map((title: string, index: number) => {
+          {/* Ensure poll and movieTitles exist before mapping */}
+          {poll?.movieTitles?.map((title: string, index: number) => {
             const voteCount = getVoteCount(title);
             const voted = hasVoted(title);
-            const mediaInfo = getMediaDetails(title);
+            // Get mediaInfo from the memoized map
+            const mediaInfo = mediaDetailsMap.get(title);
             const mediaType = getMediaType(mediaInfo);
             const releaseYear = mediaInfo ?
               getReleaseYear(mediaInfo.release_date || mediaInfo.first_air_date) : null;

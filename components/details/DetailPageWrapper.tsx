@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { DetailsData, VideoData, Media } from '@/types'; // Use Media type
 import { format } from 'date-fns';
 import { useUserData } from '@/context/UserDataContext';
+import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils'; // Added import
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Plus, Check, Film, Loader2 } from 'lucide-react'; // Import Loader2
 import YouTubeEmbed from './YoutubeEmbed';
@@ -19,8 +20,8 @@ interface DetailPageWrapperProps {
 const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }) => {
   const [showTrailer, setShowTrailer] = useState(false);
   const [showFlickyEmbed, setShowFlickyEmbed] = useState(false);
-  // Get watchlistItems and loading state from useUserData
-  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isUserDataLoading } = useUserData();
+  // Updated useUserData destructuring
+  const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
   const [isProcessingWatchlist, setIsProcessingWatchlist] = useState(false);
 
   const isMovie = 'title' in details;
@@ -28,17 +29,17 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   // Local state for immediate UI feedback
   const [localIsInWatchlist, setLocalIsInWatchlist] = useState(false);
 
-  // Sync local state with watchlistItems from context
+  // Sync local state with userData.watchlist from context
   useEffect(() => {
-    if (watchlistItems && details?.id) {
-      const items = watchlistItems[mediaType]; // Get the correct array (movie or tv)
-      const contextIsInWatchlist = items?.some(item => item.id === details.id);
+    if (userData?.watchlist && details?.id) {
+      const items = userData.watchlist[mediaType] || []; // Get the correct array (movie or tv)
+      const contextIsInWatchlist = items.some(item => item.id === details.id);
       setLocalIsInWatchlist(!!contextIsInWatchlist);
     } else {
       setLocalIsInWatchlist(false);
     }
-    // Depend on watchlistItems object directly for changes
-  }, [watchlistItems, details?.id, mediaType]);
+    // Depend on userData object directly for changes
+  }, [userData, details?.id, mediaType]);
 
   const title = isMovie ? details.title : details.name;
   const releaseDate = isMovie ? details.release_date : details.first_air_date;
@@ -59,11 +60,12 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
 
     try {
       if (localIsInWatchlist) {
-        await removeFromWatchlist(currentMediaId, mediaType);
-        setLocalIsInWatchlist(false);
+        // Use removeUserWatchlistItem utility
+        await removeUserWatchlistItem(currentMediaId, mediaType, userData, mutateUserData);
+        // Local state will update via useEffect when userData revalidates
       } else {
         // Construct the payload strictly conforming to the Media type
-        const mediaPayload: Media & { addedAt: string } = {
+        const mediaPayload: Media = {
           // Fields directly from Media type definition
           id: details.id,
           vote_average: details.vote_average, // Required in Media
@@ -79,13 +81,14 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
 
           // Add required fields for watchlist functionality
           media_type: mediaType,
-          addedAt: new Date().toISOString(),
+          // addedAt is handled by the API/utility function now
         };
         // Note: Fields like backdrop_path, popularity, vote_count, original_title/name, adult, video
         // are NOT part of the Media type and are intentionally omitted.
 
-        await addToWatchlist(mediaPayload as Media, mediaType); // Pass the correctly typed payload
-        setLocalIsInWatchlist(true);
+        // Use addUserWatchlistItem utility
+        await addUserWatchlistItem(mediaPayload, mediaType, userData, mutateUserData);
+        // Local state will update via useEffect when userData revalidates
       }
     } catch (error) {
       console.error("Error updating watchlist:", error);

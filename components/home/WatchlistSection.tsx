@@ -32,7 +32,8 @@ const WatchlistSkeleton = ({ count = 8, gridCols }: { count?: number, gridCols: 
 
 
 export function WatchlistSection() {
-  const { watchlistItems, isLoading: isUserDataLoading } = useUserData();
+  // Destructure userData instead of watchlistItems
+  const { userData, isLoading: isUserDataLoading } = useUserData();
 
   const [mediaType, setMediaType] = useState<DiscoverMediaType>('movie');
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,10 +75,13 @@ export function WatchlistSection() {
   }, [sortBy, debouncedSearchQuery, initialBatchSize]);
 
   const filteredAndSortedItems = useMemo(() => {
-    if (mediaType !== 'movie' && mediaType !== 'tv') {
+    // Access watchlist from userData, handle potential null/undefined
+    const currentWatchlist = userData?.watchlist;
+    if (!currentWatchlist || (mediaType !== 'movie' && mediaType !== 'tv')) {
       return [];
     }
-    const items = [...watchlistItems[mediaType]];
+    // Use the correct array from userData.watchlist
+    const items = [...(currentWatchlist[mediaType] || [])];
     if (debouncedSearchQuery) {
       return items.filter(item =>
         (item.title || item.name || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase())
@@ -100,7 +104,8 @@ export function WatchlistSection() {
         default: return 0;
       }
     });
-  }, [watchlistItems, mediaType, debouncedSearchQuery, sortBy]);
+    // Depend on userData instead of watchlistItems
+  }, [userData, mediaType, debouncedSearchQuery, sortBy]);
 
   const loadMoreItems = useCallback(() => {
     if (isLoadingMore) return;
@@ -165,11 +170,12 @@ export function WatchlistSection() {
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Your Watchlist</h2>
+          {/* Update count display to use userData */}
           <p className="text-sm text-foreground/60">
-            {(mediaType === 'movie' || mediaType === 'tv') ? watchlistItems[mediaType].length : 0} {mediaType === 'movie' ? 'movies' : 'shows'} saved
+            {(mediaType === 'movie' || mediaType === 'tv') ? (userData?.watchlist?.[mediaType]?.length ?? 0) : 0} {mediaType === 'movie' ? 'movies' : 'shows'} saved
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative w-full sm:w-64">
             <div className={`

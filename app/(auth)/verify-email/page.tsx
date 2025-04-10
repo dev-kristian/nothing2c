@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from "@/hooks/use-toast"; 
 import { getAuth, reload, sendEmailVerification, User } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import SpinningLoader from '@/components/SpinningLoader';
 
 export default function VerifyEmail(): JSX.Element {
   const router = useRouter();
@@ -25,9 +25,9 @@ export default function VerifyEmail(): JSX.Element {
         toast({
           title: "Email Verified",
           description: "Your email has been verified.",
-          variant: "default", 
+          variant: "default",
         });
-        router.push('/welcome');
+        router.push('/sign-in'); // Redirect to sign-in page
       } else {
         toast({
           title: "Email Not Verified",
@@ -92,7 +92,8 @@ export default function VerifyEmail(): JSX.Element {
         >
           {loading ? (
             <>
-              Checking &nbsp; <SpinningLoader />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Checking...
             </>
           ) : (
             'I have verified my email'
@@ -106,7 +107,8 @@ export default function VerifyEmail(): JSX.Element {
         >
           {resendLoading ? (
             <>
-              Sending &nbsp; <SpinningLoader />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Sending...
             </>
           ) : (
             'Resend Verification Email'

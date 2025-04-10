@@ -2,9 +2,9 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { useWatchlist } from '@/hooks/user/useWatchlist';
+// Removed: import { useWatchlist } from '@/hooks/user/useWatchlist';
 import { useFriends } from '@/hooks/user/useFriends';
-import { useNotification } from '@/hooks/user/useNotification'; 
+import { useNotification } from '@/hooks/user/useNotification';
 import { UserDataContextType, UserData } from '@/types';
 import { useUserData as useUserDataHook } from '@/hooks/user/useUserData';
 
@@ -26,21 +26,21 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     isLoading: boolean;
     mutateUserData: KeyedMutator<UserData | null>;
   };
-  const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist(); 
+  // Removed: const { watchlistItems, addToWatchlist, removeFromWatchlist, isLoading: isLoadingWatchlist } = useWatchlist();
   const { friends, friendRequests, isLoadingFriends, isLoadingRequests, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend } =
     useFriends(userData?.username);
-  const { updateNotificationStatus } = useNotification(); 
+  const { updateNotificationStatus } = useNotification();
 
-  const isLoading = isLoadingUserData || isLoadingWatchlist || isLoadingFriends || isLoadingRequests;
+  const isLoading = isLoadingUserData || isLoadingFriends || isLoadingRequests; // Removed isLoadingWatchlist
 
   return (
     <UserDataContext.Provider
       value={{
         userData,
         isLoading: isLoading,
-        watchlistItems,
-        addToWatchlist,
-        removeFromWatchlist,
+        // Removed: watchlistItems,
+        // Removed: addToWatchlist,
+        // Removed: removeFromWatchlist,
         mutateUserData,
         friends,
         friendRequests,

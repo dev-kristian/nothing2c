@@ -1,7 +1,8 @@
-// app/(root)/sessions/[id]/page.tsx
+// app/(root)/watch-together/[id]/page.tsx
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import SpinningLoader from '@/components/SpinningLoader'; // Import the loader
 import { useSession } from '@/context/SessionContext';
 import { useUserData } from '@/context/UserDataContext';
 import MovieNightCalendar from '@/components/home/MovieNightCalendar';
@@ -26,7 +27,9 @@ const SessionPage = () => {
     if (!userData?.uid || !session?.participants) return undefined;
     return session.participants[userData.uid]?.status;
   }, [session, userData]);
-  const isReadOnly = currentUserStatus === 'invited';
+
+  // Session is read-only if user is just invited OR if the session is completed
+  const isReadOnly = currentUserStatus === 'invited' || session?.status === 'completed';
 
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
   const [datePopularity, setDatePopularity] = useState<DatePopularity[]>([]);
@@ -62,13 +65,18 @@ const SessionPage = () => {
     }
   }, [isLoading, session, id, router, isDeclining]);
 
+  // Show loader while session data or user data is loading
   if (isLoading || !userData) {
-    return <div className="text-center p-8 text-gray-400">Loading session details...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <SpinningLoader />
+      </div>
+    );
   }
 
   if (!session) {
     if (isDeclining) {
-      return null; 
+      return null;
     }
     return <div className="text-center p-8 text-gray-400">Session {id} not found or access denied. Redirecting...</div>;
   }
@@ -93,10 +101,11 @@ const SessionPage = () => {
         <InvitationActionsBanner
           session={session}
           onDeclineInitiated={handleDeclineInitiated}
+          // Removed isReadOnly prop from here
         />
       )}
 
-      <SessionParticipants session={session} />
+      <SessionParticipants session={session} isReadOnly={isReadOnly} /> {/* Pass isReadOnly here */}
 
       <div className="mb-8">
         <div className="flex items-center">
@@ -127,10 +136,10 @@ const SessionPage = () => {
         <TopAvailability datePopularity={datePopularity} />
       </div>
 
-      {session?.poll && (
-        <div className="mb-8">
-          <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-label dark:text-label-dark">Media Suggestions</h2>
+      {/* Always render the Media Suggestions section */}
+      <div className="mb-8">
+        <div className="flex items-center">
+          <h2 className="text-xl font-semibold text-label dark:text-label-dark">Media Suggestions</h2>
           </div>
           <p className="text-label-secondary dark:text-label-secondary-dark mb-4 text-sm">
             Suggest and vote on movies or TV shows for the group to watch together.
@@ -138,11 +147,11 @@ const SessionPage = () => {
           
           <MediaSuggestions
             session={session}
-            poll={session.poll}
-            isReadOnly={isReadOnly} 
+            poll={session.poll} // Pass poll even if undefined
+            isReadOnly={isReadOnly}
           />
         </div>
-      )}
+      {/* )} */} {/* Removed conditional rendering */}
     </div>
   );
 };
