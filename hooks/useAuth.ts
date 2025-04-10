@@ -76,35 +76,8 @@ export function useAuth() {
 
       if (currentUser && !initialSyncDoneRef.current) {
         initialSyncDoneRef.current = true;
-        try {
-          // Removed redundant session login call - handled by sign-in/sign-up pages
-          // const idToken = await currentUser.getIdToken();
-          // await syncSession('/api/auth/session-login', { idToken });
-
-          // Check email verification and handle Firestore doc creation
-          if (currentUser.emailVerified) {
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (!userDoc.exists()) {
-              const userData = {
-                uid: currentUser.uid,
-                email: currentUser.email,
-                createdAt: serverTimestamp(),
-                username: "",
-                setupCompleted: false,
-              };
-              await setDoc(userDocRef, userData);
-            }
-           }
-         } catch (error) {
-           console.error("Error during auth state processing or Firestore write:", error);
-           toast({
-             title: "Account Setup Incomplete",
-             description: "Failed to initialize user data. Please try logging out and back in, or contact support if the issue persists.",
-             variant: "destructive",
-             duration: 9000,
-           });
-         }
+        // Document creation is now handled server-side by /api/auth/session-login
+        // No need to check/create document here anymore.
       } else if (!currentUser) {
          initialSyncDoneRef.current = false;
       }
