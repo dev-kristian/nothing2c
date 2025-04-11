@@ -29,7 +29,7 @@ export const fetcher = async (url: string, mediaType: DiscoverMediaType, page: n
     finalUrl = endpoint;
   }
 
-  const absoluteUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${finalUrl}`;
+  const absoluteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${finalUrl}`;
 
   const response = await fetch(absoluteUrl, requestOptions);
 
