@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Filter, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserData } from '@/context/UserDataContext';
 import { GENRES_BY_TYPE, Genre } from '@/constants/genres';
 
 interface SearchComponentProps {
@@ -47,7 +46,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const advancedSearchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { userData } = useUserData();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

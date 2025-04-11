@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'; // Added useMemo
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Session} from '@/types';
 import { useUserData } from '@/context/UserDataContext';
@@ -8,7 +8,7 @@ import InviteFriendsDialog from './InviteFriendsDialog';
 interface ParticipantsListProps {
   session: Session;
   onInviteClick: () => void;
-  isReadOnly: boolean; // Add isReadOnly prop
+  isReadOnly: boolean;
 }
 
 interface ParticipantData {
@@ -22,11 +22,9 @@ interface Participant {
   status: 'accepted' | 'invited' | 'declined';
 }
 
-// Destructure isReadOnly directly from props here
 const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteClick, isReadOnly }) => {
   const { userData } = useUserData();
 
-  // Memoize participants array derivation
   const participants: Participant[] = useMemo(() => {
     return Object.entries(session.participants || {}).map(([uid, data]) => ({
       uid,
@@ -35,11 +33,8 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteCl
     }));
   }, [session.participants]);
 
-  // Memoize creator check
   const isCreator = useMemo(() => userData?.uid === session.createdByUid, [userData?.uid, session.createdByUid]);
-  // Removed incorrect destructuring from here
 
-  // Memoize filtered arrays
   const { accepted, pending, declined } = useMemo(() => {
     const accepted = participants.filter(p => p.status === 'accepted');
     const pending = participants.filter(p => p.status === 'invited');
@@ -81,7 +76,7 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteCl
                 whileHover={!isReadOnly ? { scale: 1.05 } : {}}
                 whileTap={!isReadOnly ? { scale: 0.95 } : {}}
                 className={`flex flex-col items-center group ${isReadOnly ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                disabled={isReadOnly} // Disable button if read-only
+                disabled={isReadOnly}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center border border-gray group-hover:border-pink text-gray hover:text-pink transition-colors" 
@@ -146,7 +141,7 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ session, onInviteCl
 
 interface SessionParticipantsProps {
   session: Session;
-  isReadOnly: boolean; // Add isReadOnly prop here too
+  isReadOnly: boolean;
 }
 
 const SessionParticipants: React.FC<SessionParticipantsProps> = ({ session, isReadOnly }) => {

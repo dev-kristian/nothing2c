@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
-// Removed SpinningLoader import
 import Image from 'next/image';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -14,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { AuthFormData } from '@/types';
+import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContext import
 
   interface AuthFormProps {
     isSignUp: boolean;
@@ -44,6 +44,7 @@ import { AuthFormData } from '@/types';
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter(); // Initialize useRouter
+  const { markSessionVerified } = useAuthContext(); // Restore markSessionVerified from context
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
@@ -105,8 +106,10 @@ import { AuthFormData } from '@/types';
             description: "Failed to establish session. Please try again.",
             variant: "destructive",
           });
-          return; 
+          return;
         }
+
+        markSessionVerified(true); // Restore marking session as verified
 
         toast({
           title: "Google Sign In Successful",

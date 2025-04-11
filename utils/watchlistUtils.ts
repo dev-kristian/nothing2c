@@ -1,10 +1,6 @@
-import { Media, UserData } from '@/types';
-import { KeyedMutator } from 'swr';
-
-// Helper function for deep cloning (simple version for this structure)
-const deepClone = <T>(obj: T): T => {
-  return JSON.parse(JSON.stringify(obj));
-};
+import { Media } from '@/types'; // Removed UserData import
+// Removed KeyedMutator import
+// Removed deepClone function as it's no longer needed
 
 /**
  * Adds an item to the user's watchlist.
@@ -12,44 +8,14 @@ const deepClone = <T>(obj: T): T => {
  *
  * @param item The Media item to add.
  * @param mediaType 'movie' or 'tv'.
- * @param currentUserData The current UserData object (needed for optimistic update).
- * @param mutateUserData The SWR mutate function for the user data key ('/api/users/me').
  */
 export const addUserWatchlistItem = async (
   item: Media,
-  mediaType: 'movie' | 'tv',
-  currentUserData: UserData | null,
-  mutateUserData: KeyedMutator<UserData | null>
+  mediaType: 'movie' | 'tv'
 ): Promise<void> => {
-  if (!currentUserData) {
-    console.error('Cannot add to watchlist: User data not available.');
-    // Optionally throw an error or show a user message
-    return;
-  }
+  // Removed currentUserData check and optimistic update logic
 
   const watchlistKey = '/api/users/watchlist'; // API endpoint for mutations
-
-  // --- Optimistic Update ---
-  const optimisticUserData = deepClone(currentUserData);
-  // Ensure the watchlist arrays exist
-  optimisticUserData.watchlist = optimisticUserData.watchlist ?? { movie: [], tv: [] };
-  optimisticUserData.watchlist[mediaType] = optimisticUserData.watchlist[mediaType] ?? [];
-
-  // Check if item already exists optimistically
-  const exists = optimisticUserData.watchlist[mediaType].some(existingItem => existingItem.id === item.id);
-
-  if (!exists) {
-    // Add the item optimistically (create a basic representation)
-    const optimisticItem: Media = {
-        ...item, // Spread the provided item details
-        addedAt: new Date().toISOString(), // Add a temporary timestamp
-    };
-    optimisticUserData.watchlist[mediaType].push(optimisticItem);
-
-    // Apply optimistic update without revalidation
-    mutateUserData(optimisticUserData, false);
-  }
-  // --- End Optimistic Update ---
 
   try {
     // API call to persist the change
@@ -64,13 +30,11 @@ export const addUserWatchlistItem = async (
       throw new Error(errorData.error || `Failed to add item: ${response.statusText}`);
     }
 
-    // Revalidate user data after successful API call to get the final state
-    mutateUserData();
+    // No revalidation needed, listener will update UI
 
   } catch (err) {
     console.error(`Error adding ${mediaType} to watchlist:`, err);
-    // Rollback optimistic update on error by revalidating
-    mutateUserData();
+    // No rollback needed as optimistic update was removed
     // Optionally show a toast notification to the user
     // Re-throw the error if the calling component needs to handle it
     throw err;
@@ -83,40 +47,14 @@ export const addUserWatchlistItem = async (
  *
  * @param id The ID of the Media item to remove.
  * @param mediaType 'movie' or 'tv'.
- * @param currentUserData The current UserData object (needed for optimistic update).
- * @param mutateUserData The SWR mutate function for the user data key ('/api/users/me').
  */
 export const removeUserWatchlistItem = async (
   id: number,
-  mediaType: 'movie' | 'tv',
-  currentUserData: UserData | null,
-  mutateUserData: KeyedMutator<UserData | null>
+  mediaType: 'movie' | 'tv'
 ): Promise<void> => {
-  if (!currentUserData) {
-    console.error('Cannot remove from watchlist: User data not available.');
-    // Optionally throw an error or show a user message
-    return;
-  }
+  // Removed currentUserData check and optimistic update logic
 
   const watchlistKey = `/api/users/watchlist?id=${id}&mediaType=${mediaType}`; // API endpoint for mutations
-
-  // --- Optimistic Update ---
-  const optimisticUserData = deepClone(currentUserData);
-  let itemExisted = false;
-
-  if (optimisticUserData.watchlist && optimisticUserData.watchlist[mediaType]) {
-    const initialLength = optimisticUserData.watchlist[mediaType].length;
-    optimisticUserData.watchlist[mediaType] = optimisticUserData.watchlist[mediaType].filter(
-      existingItem => existingItem.id !== id
-    );
-    itemExisted = optimisticUserData.watchlist[mediaType].length < initialLength;
-  }
-
-  // Apply optimistic update only if the item was found and removed
-  if (itemExisted) {
-    mutateUserData(optimisticUserData, false);
-  }
-  // --- End Optimistic Update ---
 
   try {
     // API call to persist the change
@@ -134,13 +72,11 @@ export const removeUserWatchlistItem = async (
       }
     }
 
-    // Revalidate user data after successful API call (or acceptable error like 404)
-    mutateUserData();
+    // No revalidation needed, listener will update UI
 
   } catch (err) {
     console.error(`Error removing ${mediaType} from watchlist:`, err);
-    // Rollback optimistic update on error by revalidating
-    mutateUserData();
+    // No rollback needed as optimistic update was removed
     // Optionally show a toast notification to the user
     // Re-throw the error if the calling component needs to handle it
     throw err;

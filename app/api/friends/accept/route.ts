@@ -1,20 +1,20 @@
 // app/api/friends/accept/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, writeBatch, increment, deleteField } from 'firebase/firestore';
+import { doc, writeBatch, getDoc, serverTimestamp } from 'firebase/firestore'; 
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const userProfile = await getAuthenticatedUserProfile();
-    // We don't strictly need username for accept, but uid is essential
-    if (!userProfile?.uid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const acceptorProfile = await getAuthenticatedUserProfile();
+    if (!acceptorProfile?.uid || !acceptorProfile?.username) {
+      return NextResponse.json({ error: 'Unauthorized or acceptor profile incomplete' }, { status: 401 });
     }
-    const authenticatedUserId = userProfile.uid;
+    const authenticatedUserId = acceptorProfile.uid;
+    const acceptorUsername = acceptorProfile.username;
+    const acceptorPhotoURL = acceptorProfile.photoURL;
 
     const body = await request.json();
-    // Only expect requesterId from body. RequesterUsername isn't used in this logic.
     const { requesterId } = body;
 
     if (!requesterId) {
@@ -24,36 +24,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prevent accepting self (shouldn't happen with requests, but good check)
     if (authenticatedUserId === requesterId) {
         return NextResponse.json(
             { error: 'Invalid operation' },
             { status: 400 }
-        );
+      );
     }
+
+    const requesterDocRef = doc(db, 'users', requesterId);
+    const requesterDoc = await getDoc(requesterDocRef);
+    if (!requesterDoc.exists()) {
+        return NextResponse.json({ error: 'Requester user not found' }, { status: 404 });
+    }
+    const requesterProfile = requesterDoc.data();
+    const requesterUsername = requesterProfile.username;
+    const requesterPhotoURL = requesterProfile.photoURL;
 
     const batch = writeBatch(db);
 
-    // Use authenticatedUserId for the path
     const requestRef = doc(db, 'users', authenticatedUserId, 'friendRequests', requesterId);
-    // Consider deleting instead of updating status? For now, keep update.
-    batch.update(requestRef, { status: 'accepted' });
+    batch.delete(requestRef);
 
-    // Use authenticatedUserId for current user's data
-    const currentUserFriendsRef = doc(db, 'users', authenticatedUserId, 'friends', 'data');
-    batch.set(currentUserFriendsRef, {
-      friendsList: { [requesterId]: true },
-      totalFriends: increment(1),
-      receivedRequests: { [requesterId]: deleteField() } // Remove from received
+    const acceptorFriendsRef = doc(db, 'users', authenticatedUserId, 'friends', 'data');
+    batch.set(acceptorFriendsRef, {
+      friendsList: {
+        [requesterId]: {
+          username: requesterUsername,
+          photoURL: requesterPhotoURL || null
+        }
+      }
     }, { merge: true });
 
-    // Use requesterId for requester's data
     const requesterFriendsRef = doc(db, 'users', requesterId, 'friends', 'data');
     batch.set(requesterFriendsRef, {
-      friendsList: { [authenticatedUserId]: true }, // Add current user to their list
-      totalFriends: increment(1),
-      sentRequests: { [authenticatedUserId]: deleteField() } // Remove from their sent
+      friendsList: {
+        [authenticatedUserId]: {
+          username: acceptorUsername,
+          photoURL: acceptorPhotoURL || null
+        }
+      }
     }, { merge: true });
+
+    const acceptorFriendOfRef = doc(db, 'users', authenticatedUserId, 'friendOf', requesterId);
+    batch.set(acceptorFriendOfRef, { addedAt: serverTimestamp() });
+
+    const requesterFriendOfRef = doc(db, 'users', requesterId, 'friendOf', authenticatedUserId);
+    batch.set(requesterFriendOfRef, { addedAt: serverTimestamp() });
 
     await batch.commit();
 

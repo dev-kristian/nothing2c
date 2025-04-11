@@ -5,12 +5,6 @@ import { Friend, FriendRequest } from '@/types';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
 
-interface UserBatchDetails {
-  uid: string;
-  username?: string;
-  photoURL?: string;
-}
-
 interface UseFriendsReturn {
   friends: Friend[];
   friendRequests: FriendRequest[];
@@ -50,54 +44,20 @@ export const useFriends = (): UseFriendsReturn => {
         return;
       }
 
-      const basicRequests = snapshot.docs.map(doc => {
+      const requests: FriendRequest[] = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           fromUid: data.fromUid as string,
-          status: data.status as 'pending' | 'accepted' | 'rejected',
+          fromUsername: data.fromUsername || 'unknown user',
+          fromPhotoURL: data.fromPhotoURL || undefined,
+          status: data.status as 'pending',
           timestamp: (data.timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+          exists: true,
         };
       });
 
-      const senderUids = Array.from(new Set(basicRequests.map(req => req.fromUid).filter(uid => !!uid)));
-
-      if (senderUids.length > 0) {
-        try {
-          const response = await fetch('/api/users/batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uids: senderUids }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Batch user fetch failed: ${response.statusText}`);
-          }
-
-          const { users: senderDetailsList } = await response.json() as { users: UserBatchDetails[] };
-          const senderDetailsMap = new Map<string, UserBatchDetails>(
-            senderDetailsList.map(user => [user.uid, user])
-          );
-
-          const combinedRequests: FriendRequest[] = basicRequests.map(req => {
-            const details = senderDetailsMap.get(req.fromUid);
-            return {
-              ...req,
-              fromUsername: details?.username || 'unknown user',
-              fromPhotoURL: details?.photoURL || undefined,
-              exists: !!details,
-            };
-          });
-
-          setFriendRequests(combinedRequests);
-
-        } catch (error) {
-          console.error("Error fetching batch user details for requests:", error);
-          setFriendRequests(basicRequests.map(req => ({ ...req, fromUsername: 'Error loading details', exists: false })));
-        }
-      } else {
-         setFriendRequests([]);
-      }
+      setFriendRequests(requests);
       setIsLoadingRequests(false);
 
     }, (error) => {
@@ -136,40 +96,20 @@ export const useFriends = (): UseFriendsReturn => {
         setIsLoadingFriends(false);
         return;
       }
-      try {
-        const response = await fetch('/api/users/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uids: friendUids }),
-        });
 
-        if (!response.ok) {
-          throw new Error(`Batch user fetch failed for friends: ${response.statusText}`);
-        }
+      const friendsData: Friend[] = Object.entries(friendsListMap).map(([uid, details]) => {
+        const friendDetails = details as { username: string; photoURL?: string | null };
+        return {
+          uid: uid,
+          username: friendDetails.username || 'unknown user',
+          photoURL: friendDetails.photoURL || undefined,
+          exists: true,
+        };
+      });
 
-        const { users: friendDetailsList } = await response.json() as { users: UserBatchDetails[] };
-        const friendDetailsMap = new Map<string, UserBatchDetails>(
-          friendDetailsList.map(user => [user.uid, user])
-        );
+      setFriends(friendsData);
+      setIsLoadingFriends(false);
 
-        const combinedFriends: Friend[] = friendUids.map(uid => {
-          const details = friendDetailsMap.get(uid);
-          return {
-            uid: uid,
-            username: details?.username || 'unknown user',
-            photoURL: details?.photoURL || undefined,
-            exists: !!details,
-          };
-        });
-
-        setFriends(combinedFriends);
-
-      } catch (error) {
-        console.error("Error fetching batch user details for friends:", error);
-        setFriends(friendUids.map(uid => ({ uid, username: 'Error loading details', exists: false })));
-      } finally {
-        setIsLoadingFriends(false);
-      }
     }, (error) => {
       console.error("Error listening to friends list:", error);
       setIsLoadingFriends(false);

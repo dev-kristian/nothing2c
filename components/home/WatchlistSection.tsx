@@ -7,7 +7,7 @@ import { Clock, X, Loader2, AlertTriangle, ChevronDown, Search, Filter } from 'l
 import { useDebounce } from '@/hooks/useDebounce';
 import MediaPoster from '@/components/MediaPoster';
 import MediaTypeToggle from '@/components/MediaTypeToggle';
-import { DiscoverMediaType } from '@/hooks/discover/useTrending';
+import { DiscoverMediaType } from '@/lib/fetchers';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface EmptyStateProps {

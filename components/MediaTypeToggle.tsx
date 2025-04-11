@@ -4,12 +4,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Film, Tv, Calendar } from 'lucide-react';
-import { DiscoverMediaType } from '@/hooks/discover/useTrending';
+import { DiscoverMediaType } from '@/lib/fetchers';
 
 interface MediaTypeToggleProps {
   mediaType: DiscoverMediaType;
   onMediaTypeChange: (type: DiscoverMediaType) => void;
-  size?: 'default' | 'sm'; // size prop might still be useful for padding/icon size if not compact
+  size?: 'default' | 'sm';
   compact?: boolean;
   showUpcoming?: boolean;
 }
@@ -21,7 +21,6 @@ export default function MediaTypeToggle({
   compact = false,
   showUpcoming = false
 }: MediaTypeToggleProps) {
-  // isSmall can still determine icon size and padding if needed, separate from text size
   const isSmall = size === 'sm' || compact;
 
   return (
@@ -35,9 +34,9 @@ export default function MediaTypeToggle({
       <ToggleButton
         active={mediaType === 'movie'}
         onClick={() => onMediaTypeChange('movie')}
-        size={size} // Pass size for potential padding/icon adjustments
+        size={size}
         compact={compact}
-        isSmall={isSmall} // Pass isSmall for icon size consistency
+        isSmall={isSmall}
       >
         <Film className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} ${compact ? 'mr-1' : 'mr-1.5'}`} />
         <span className={compact ? 'hidden xs:inline' : ''}>Movies</span>
@@ -79,11 +78,10 @@ interface ToggleButtonProps {
   children: React.ReactNode;
   size?: 'default' | 'sm';
   compact?: boolean;
-  isSmall: boolean; // Receive isSmall prop
+  isSmall: boolean;
 }
 
-// Added isSmall to ToggleButton props for consistency
-function ToggleButton({ active, onClick, children, size = 'default', compact = false, isSmall }: ToggleButtonProps) {
+function ToggleButton({ active, onClick, children, compact = false, isSmall }: ToggleButtonProps) {
 
   return (
     <button
@@ -98,8 +96,6 @@ function ToggleButton({ active, onClick, children, size = 'default', compact = f
     >
       {active && (
         <motion.div
-          // Ensure layoutId is consistent, maybe base it only on compact status if size is irrelevant now?
-          // Using compact status primarily for layoutId differentiation
           layoutId={`toggle-bg-${compact ? 'compact' : 'default'}`}
           className="absolute inset-0 bg-white dark:bg-gray-5-dark rounded-full shadow-sm"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}

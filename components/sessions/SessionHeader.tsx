@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'; // Added useMemo
+import React, { useState, useMemo } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { Info, Calendar, Film, Users, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

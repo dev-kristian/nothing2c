@@ -95,10 +95,11 @@ export async function POST(request: NextRequest) {
 
         const newUserDocument = {
           uid: uid,
-          email: email || null, 
+          email: email || null,
           username: username,
+          photoURL: decodedToken.picture || null, // Add photoURL from token or null
           createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(), 
+          updatedAt: FieldValue.serverTimestamp(),
         };
         await userDocRef.set(newUserDocument);
         console.log(`[API Session Login] Successfully created user document for UID: ${uid}`);

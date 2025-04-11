@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { handleAuthError } from '@/lib/utils';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton for fallback
+import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContext import
 
 interface SignInData {
   email: string;
@@ -23,6 +24,7 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [redirectPath, setRedirectPath] = useState('/'); // Changed default redirect to root
+  const { markSessionVerified } = useAuthContext(); // Restore markSessionVerified
 
   useEffect(() => {
     const redirectedFrom = searchParams.get('redirectedFrom');
@@ -64,7 +66,9 @@ function SignInContent() {
          handleAuthError(errorData.error || 'Failed to establish session.');
          return;
         }
- 
+
+        markSessionVerified(true); // Restore marking session as verified
+
         // Show success toast just before navigation
         toast({
           title: "Sign In Successful",

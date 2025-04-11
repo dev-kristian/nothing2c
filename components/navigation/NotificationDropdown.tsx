@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 interface NotificationDropdownProps {
@@ -123,13 +122,13 @@ export default function NotificationDropdown({
                   >
                     <div
                       className={cn(
-                        "group w-full px-0 md:px-4 py-2 cursor-pointer rounded-sm transition-colors duration-150",
+                        "group w-full px-0 md:px-4 py-2 cursor-pointer transition-colors duration-150",
                         index % 2 !== 0 ? 'bg-secondary' : '', 
                         'hover:bg-pink' 
                       )}
                       onClick={() => handleItemClick('/social?tab=requests')}
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
                         {request.fromPhotoURL ? (
                           <Image
                             src={request.fromPhotoURL}
@@ -156,10 +155,6 @@ export default function NotificationDropdown({
                   </DropdownMenuItem>
                 ))}
               </div>
-            )}
-
-            {pendingFriendRequestsCount > 0 && pendingInvitationsCount > 0 && (
-              <DropdownMenuSeparator className="my-1" />
             )}
 
             {pendingInvitationsCount > 0 && (

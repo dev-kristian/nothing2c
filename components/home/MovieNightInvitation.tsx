@@ -25,22 +25,22 @@ import {
   useOutsideClickHandler
 } from '@/utils/movieNightInvitationUtils';
 
-const SuggestionItem = React.memo(({ item, onClick }: { 
-  item: FriendsWatchlistItem; 
-  onClick: () => void 
+const SuggestionItem = React.memo(({ item, onClick }: {
+  item: FriendsWatchlistItem;
+  onClick: () => void
 }) => (
   <motion.li
     initial={{ opacity: 0, y: -5 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 5 }}
-    className="px-2 py-2 bg-gray-5/50 dark:bg-gray-5-dark/80 hover:bg-gray-5 hover:dar:bg-gray-5-dark flex list-item-selectable cursor-pointer rounded-lg transition-colors duration-200"
+    className="px-2 py-2 bg-gray-5/50 dark:bg-gray-5-dark/80 hover:bg-gray-5 hover:dark:bg-gray-5-dark flex list-item-selectable cursor-pointer rounded-lg transition-colors duration-200"
     onClick={onClick}
   >
     {item.poster_path ? (
-      <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm">
-        <Image 
+      <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm flex-shrink-0">
+        <Image
           src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
-          alt={item.title || ''}
+          alt={item.title || item.name || ''} // Use name as fallback alt text
           width={32}
           height={48}
           className="object-cover w-full h-full"
@@ -48,7 +48,7 @@ const SuggestionItem = React.memo(({ item, onClick }: {
         />
       </div>
     ) : (
-      <div className="w-8 h-12 bg-gray dark:bg-gray-dark rounded-md mr-3 flex items-center justify-center">
+      <div className="w-8 h-12 bg-gray dark:bg-gray-dark rounded-md mr-3 flex items-center justify-center flex-shrink-0">
         {item.media_type === 'tv' ? (
           <Tv className="w-4 h-4 text-gray dark:text-gray-dark" />
         ) : (
@@ -56,15 +56,15 @@ const SuggestionItem = React.memo(({ item, onClick }: {
         )}
       </div>
     )}
-    <div className="flex flex-col">
-      <span className="text-sm font-medium">{item.title}</span>
+    <div className="flex flex-col justify-center"> {/* Added justify-center */}
+      <span className="text-sm font-medium">{item.title || item.name}</span> {/* Display title or name */}
       <span className="text-xs text-foreground/60">
         {item.media_type === 'tv' ? 'TV Show' : 'Movie'}
       </span>
     </div>
   </motion.li>
 ));
-SuggestionItem.displayName = "SuggestionItem"; 
+SuggestionItem.displayName = "SuggestionItem";
 
 const SelectedMediaItem = React.memo(({ 
   item, 
@@ -375,9 +375,13 @@ export default function MovieNightInvitation() {
             <div ref={inputContainerRef} className="relative">
               <div className="flex items-center gap-2">
                 <div className="relative flex-grow ">
-                <input 
+                 <input 
                     value={inputMediaTitle} 
                     onChange={handleMediaInputChange}
+                    onFocus={() => {
+                      const allSuggestions = [...friendsWatchlistItems.movie, ...friendsWatchlistItems.tv];
+                      setSuggestions(allSuggestions);
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder="Search or enter title (movie or TV show)"
                     className="pr-10 input"
@@ -400,7 +404,7 @@ export default function MovieNightInvitation() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute z-10 w-full mt-1 rounded-xl list space-y-2 p-2"
+                    className="absolute w-full mt-1 rounded-xl list space-y-2 p-2 max-h-40 overflow-y-auto"
                   >
                     {suggestions.map((item) => (
                       <SuggestionItem

@@ -54,23 +54,19 @@ export const adjectives: string[] = [
 ];
 
 export const nouns: string[] = [
-  // Original & Tech
   'ninja', 'robot', 'popcorn', 'llama', 'wizard', 'dragon', 'phoenix', 'comet',
   'galaxy', 'nebula', 'quasar', 'planet', 'star', 'moon', 'sun', 'asteroid',
   'meteor', 'alien', 'cyborg', 'android', 'droid', 'bot', 'computer', 'code',
   'pixel', 'byte', 'chip', 'circuit', 'console', 'joystick', 'keyboard', 'mouse',
   'screen', 'avatar', 'hero', 'villain', 'quest', 'level', 'score', 'token', 'gem',
   'key', 'map', 'portal', 'ship', 'rocket', 'laser', 'shield', 'sword', 'wand',
-  'potion', 'scroll', 'book',
-  // Pop Culture / Internet / Gen Z
-  'meme', 'vibe', 'glitch', 'stream', 'troll', 'noob', 'chad', 'karen', 'boomer',
-  'zoomer', 'emoji', 'hashtag', 'filter', 'influencer', 'metaverse', 'nft',
-  'crypto', 'algorithm', 'bandwidth', 'cache', 'cloud', 'cookie', 'database',
+  'potion', 'scroll', 'book', 'meme', 'vibe', 'glitch', 'stream', 'troll', 'noob',
+  'chad', 'karen', 'boomer','zoomer', 'emoji', 'hashtag', 'filter', 'influencer',
+  'metaverse', 'nft','crypto', 'algorithm', 'bandwidth', 'cache', 'cloud', 'cookie',
   'domain', 'firewall', 'firmware', 'hardware', 'interface', 'malware', 'modem',
   'network', 'phishing', 'podcast', 'protocol', 'proxy', 'router', 'server',
   'software', 'spam', 'trojan', 'url', 'virus', 'webcam', 'widget', 'wifi',
-  'wiki', 'zip',
-  // More General & Nature
+  'wiki', 'zip', 'database',
   'anchor', 'apple', 'arrow', 'autumn', 'bamboo', 'banana', 'beacon', 'bean',
   'bear', 'beast', 'berry', 'blade', 'blossom', 'boulder', 'bow', 'branch',
   'bread', 'brook', 'bubble', 'bucket', 'bug', 'bull', 'butterfly', 'cactus',

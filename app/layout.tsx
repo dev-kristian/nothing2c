@@ -6,8 +6,10 @@ import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { Toaster } from "@/components/ui/toaster"
-import Navigation from '@/components/Navigation'; 
+import Navigation from '@/components/Navigation';
 import { ClientProviders } from '@/components/providers/ClientProviders';
+import { getFullAuthenticatedUser } from '@/lib/server-auth-utils';
+import { UserData } from '@/types/user';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -32,18 +34,20 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const initialUserData: UserData | null = await getFullAuthenticatedUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} text-foreground`}>
         <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <Navigation />
-            <ClientProviders>
+            <ClientProviders initialUserData={initialUserData}>
               <main className="pt-[var(--navbar-height)]">
                 {children}
               </main>
