@@ -9,8 +9,8 @@ import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import SectionHeader from './SectionHeader'; 
 
-const REVIEWS_PER_PAGE = 5;
-const INITIAL_VISIBLE_LINES = 3; 
+const REVIEWS_PER_PAGE = 3;
+const INITIAL_VISIBLE_LINES = 2; 
 const LINE_HEIGHT_APPROX = 1.625;
 
 const getAvatarUrl = (path: string | null | undefined): string | null => {
@@ -66,7 +66,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ reviews, mediaTitle = '
         title="Reviews" 
         subtitle={`${sortedReviews.length} ${sortedReviews.length === 1 ? 'Review' : 'Reviews'}`} 
       />
-      <div className="space-y-4 mt-6"> 
+      <div className="space-y-2 mt-6"> 
         <AnimatePresence initial={false}>
           {visibleReviews.map((review, index) => (
             <ReviewCard
@@ -231,8 +231,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
       exit="exit"
       className="bg-system-background-tertiary dark:bg-system-background-tertiary-dark rounded-2xl overflow-hidden shadow-apple dark:shadow-apple-dark transition-all duration-300 hover:shadow-apple-lg dark:hover:shadow-apple-dark-lg"
     >
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-4 mb-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-5 dark:bg-gray-5-dark flex-shrink-0  flex items-center justify-center shadow-apple-sm">
               {avatarUrl ? (

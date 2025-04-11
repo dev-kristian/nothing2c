@@ -6,6 +6,8 @@ import { AuthProvider } from '@/context/AuthContext'
 import { Analytics } from "@vercel/analytics/react"
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { Toaster } from "@/components/ui/toaster"
+import Navigation from '@/components/Navigation'; 
+import { ClientProviders } from '@/components/providers/ClientProviders';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -40,8 +42,13 @@ export default function RootLayout({
       <body className={`${inter.className} text-foreground`}>
         <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            {children}
-            <Toaster /> 
+            <Navigation />
+            <ClientProviders>
+              <main className="pt-[var(--navbar-height)]">
+                {children}
+              </main>
+            </ClientProviders>
+            <Toaster />
           </AuthProvider>
         </NextThemesProvider>
         <Analytics/>

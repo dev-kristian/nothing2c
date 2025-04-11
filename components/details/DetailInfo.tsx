@@ -60,14 +60,14 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
       animate={{ opacity: 1 }}
       className="relative overflow-hidden"
     >
-      <div className="rounded-3xl space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> 
+      <div className="rounded-3xl space-y-12 max-w-7xl mx-auto sm:px-6 lg:px-8"> 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
           <div className="flex flex-col sm:flex-row items-start sm:justify-between">
-            <div className="space-y-4 w-full sm:w-auto">
+            <div className="w-full sm:w-auto">
               <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-foreground">
                 {title}
               </h1>
@@ -78,7 +78,7 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col items-end gap-3 mt-4 sm:mt-0">
+            <div className="flex flex-col items-end mt-4 sm:mt-0">
               <div className="text-2xl sm:text-4xl font-light tracking-tight">
                 <span className={getRatingClass(voteAverage)}>
                   {voteAverage?.toFixed(1)}
@@ -92,9 +92,9 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
           </div>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-[2.5fr,1.5fr] gap-8 md:gap-12 lg:gap-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-[2.5fr,1.5fr] gap-4 md:gap-12 lg:gap-16">
           <div className="space-y-12">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <KeyInfo
                 label="Release Date"
                 value={releaseDate}
@@ -112,22 +112,22 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
               />
             </div>
 
-            <div className="space-y-4">
+            <div >
               <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">About</h3>
               <p className="text-lg sm:text-xl leading-relaxed text-foreground font-light">
                 {overview}
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div>
               <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">Genres</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {genres.split(', ').map(genre => (
                   <motion.span
                     key={genre}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="px-6 py-2.5 rounded-full bg-secondary text-secondary-foreground
+                    className="px-4 py-2 rounded-full bg-secondary text-secondary-foreground
                              backdrop-blur-sm text-sm tracking-wide"
                   >
                     {genre}
@@ -141,12 +141,12 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="space-y-8"
+            className="space-y-4"
           >
             {(!isMovie || (isMovie && ((budget && budget !== 0) || (revenue && revenue !== 0))))
             ? (
               <div className="bg-card backdrop-blur-xl rounded-2xl overflow-hidden"> 
-                <div className="px-6 py-4 border-b border-border  bg-secondary backdrop-blur-sm">
+                <div className="px-4 py-4 border-b border-border  bg-secondary backdrop-blur-sm">
                   <h3 className="text-sm font-medium text-muted-foreground  tracking-wider uppercase">
                   {isMovie ? "Movie Details" : "Series Information"}
                 </h3>
@@ -192,7 +192,7 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
             </div>
             ) : null }
 
-            <div className="flex items-center justify-between bg-secondary backdrop-blur-sm px-6 py-4 bg-card backdrop-blur-xl rounded-2xl">
+            <div className="flex items-center justify-between bg-secondary backdrop-blur-sm px-4 py-4 bg-card backdrop-blur-xl rounded-2xl">
               <span className="text-sm text-muted-foreground  tracking-wider uppercase">Status</span>
               <span className="text-sm font-medium text-foreground">{status}</span> 
             </div>
@@ -212,7 +212,7 @@ const KeyInfo: React.FC<{
   value,
   icon: Icon
 }) => (
-  <div className="space-y-2">
+  <div>
     <div className="flex items-center gap-2 text-muted-foreground">
       <Icon size={16} />
       <span className="text-xs tracking-wider uppercase">{label}</span>
@@ -234,8 +234,8 @@ const StatRow: React.FC<{
   value,
   highlight
 }) => (
-  <div className="px-6 py-5 flex items-center  bg-secondary backdrop-blur-sm justify-between group hover:bg-muted/30 transition-colors">
-    <div className="flex items-center gap-3">
+  <div className="px-4 py-2 flex items-center  bg-secondary backdrop-blur-sm justify-between ">
+    <div className="flex items-center">
       <div className="w-8 h-8 rounded-full   flex items-center justify-center">
         <Icon size={16} className="text-secondary-foreground" />
       </div>

@@ -16,7 +16,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
-  const initialSyncDoneRef = useRef<boolean>(false); 
+  // Removed unused initialSyncDoneRef
 
   const signIn = useCallback(async () => {
     try {
@@ -64,15 +64,7 @@ export function useAuth() {
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
-      if (currentUser && !initialSyncDoneRef.current) {
-        initialSyncDoneRef.current = true;
-        try {
-        } catch (error) {
-          console.error("Error during auth state processing:", error);
-        }
-      } else if (!currentUser) {
-        initialSyncDoneRef.current = false;
-      }
+      // Removed logic related to initialSyncDoneRef as it seemed unused
 
       setLoading(false);
       setInitialAuthChecked(true);

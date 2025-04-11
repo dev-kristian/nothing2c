@@ -1,16 +1,21 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { DetailsData, VideoData, Media } from '@/types'; // Use Media type
+import { DetailsData, VideoData, Media } from '@/types';
 import { format } from 'date-fns';
+import { useAuthContext } from '@/context/AuthContext';
 import { useUserData } from '@/context/UserDataContext';
-import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils'; // Added import
+import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Plus, Check, Film, Loader2 } from 'lucide-react'; // Import Loader2
+import { Play, Film, Loader2 } from 'lucide-react'; // Removed Plus, Check
+import { FaYoutube } from 'react-icons/fa'; // Added YouTube icon
+import { CiBookmarkPlus, CiBookmarkMinus } from "react-icons/ci"; // Added Watchlist icons
 import YouTubeEmbed from './YoutubeEmbed';
-import HostEmbed from './HostEmbed' 
+import HostEmbed from './HostEmbed'
 import DetailInfo from './DetailInfo'
 import { Button } from '@/components/ui/button'
+import { SignInCTA_Modal } from '@/components/auth/SignInCTA_Modal'; 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'; 
 
 interface DetailPageWrapperProps {
   details: DetailsData;
@@ -20,7 +25,7 @@ interface DetailPageWrapperProps {
 const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }) => {
   const [showTrailer, setShowTrailer] = useState(false);
   const [showFlickyEmbed, setShowFlickyEmbed] = useState(false);
-  // Updated useUserData destructuring
+  const { user } = useAuthContext(); // Get user from AuthContext
   const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
   const [isProcessingWatchlist, setIsProcessingWatchlist] = useState(false);
 
@@ -49,52 +54,34 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
 
   const trailer = videos.find(video => video.type === 'Trailer' && video.site === 'YouTube');
-  // We use localIsInWatchlist for the button state
 
   const handleWatchlistClick = async () => {
-    // Use the context's isLoading flag as well
     if (isProcessingWatchlist || isUserDataLoading) return;
 
     setIsProcessingWatchlist(true);
-    const currentMediaId = details.id; // Store id in case details change somehow
+    const currentMediaId = details.id; 
 
     try {
       if (localIsInWatchlist) {
-        // Use removeUserWatchlistItem utility
         await removeUserWatchlistItem(currentMediaId, mediaType, userData, mutateUserData);
-        // Local state will update via useEffect when userData revalidates
       } else {
-        // Construct the payload strictly conforming to the Media type
         const mediaPayload: Media = {
-          // Fields directly from Media type definition
           id: details.id,
-          vote_average: details.vote_average, // Required in Media
-          poster_path: details.poster_path, // Optional in Media
-          overview: details.overview, // Optional in Media (assuming string is okay)
-          genre_ids: details.genres?.map(g => g.id) || [], // Optional in Media
+          vote_average: details.vote_average, 
+          poster_path: details.poster_path, 
+          overview: details.overview, 
+          genre_ids: details.genres?.map(g => g.id) || [],
 
-          // Conditionally add title/name based on mediaType
           ...(isMovie ? { title: details.title } : { name: details.name }),
 
-          // Conditionally add release_date/first_air_date
           ...(isMovie ? { release_date: details.release_date } : { first_air_date: details.first_air_date }),
 
-          // Add required fields for watchlist functionality
           media_type: mediaType,
-          // addedAt is handled by the API/utility function now
         };
-        // Note: Fields like backdrop_path, popularity, vote_count, original_title/name, adult, video
-        // are NOT part of the Media type and are intentionally omitted.
-
-        // Use addUserWatchlistItem utility
         await addUserWatchlistItem(mediaPayload, mediaType, userData, mutateUserData);
-        // Local state will update via useEffect when userData revalidates
       }
     } catch (error) {
       console.error("Error updating watchlist:", error);
-      // Optionally: show a toast notification for the error
-      // Revert local state on error? Depends on desired UX.
-      // setLocalIsInWatchlist(!localIsInWatchlist);
     } finally {
       setIsProcessingWatchlist(false);
     }
@@ -123,7 +110,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full lg:w-1/4 shrink-0 space-y-4"
+              className="w-full lg:w-[450px] shrink-0 space-y-4"
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl 
                             bg-card backdrop-blur-sm">
@@ -143,50 +130,75 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                 )}
               </div>
 
-              <div className="space-y-2">
+              {/* Button Container: Apply responsive layout */}
+              <div className="flex flex-row space-x-2"> {/* Reverted space-x */}
                 {trailer && (
-                  <Button 
+                  <Button
                     variant="secondary"
                     onClick={() => setShowTrailer(true)}
-                    className="w-full h-12 rounded-xl"
+                    className="flex-1 px-3 py-2 md:px-4 md:w-full rounded-xl flex flex-row items-center justify-center" // Added flex-1 back
                   >
-                    <Play className="w-5 h-5 mr-2" />
-                    Watch Trailer
+                    <FaYoutube className="w-5 h-5" />
+                    <span className="text-xs ml-1.5 md:ml-2">Trailer</span>
                   </Button>
                 )}
 
                 <Button
-                  onClick={() => setShowFlickyEmbed(!showFlickyEmbed)} 
-                  className="w-full bg-pink hover:bg-pink/90 text-white
-                           border-0 h-12 rounded-xl"
+                  onClick={() => setShowFlickyEmbed(!showFlickyEmbed)}
+                  className="flex-1 px-3 py-2 md:px-4 md:w-full rounded-xl flex flex-row items-center justify-center bg-pink hover:bg-pink/90 text-white border-0" // Added flex-1 back
                   aria-expanded={showFlickyEmbed}
                 >
-                  <Play className="w-5 h-5 mr-2" />
-                  {showFlickyEmbed ? 'Hide Player' : 'Watch Now'}
+                  <Play className="w-5 h-5" />
+                  <span className="text-xs ml-1.5 md:ml-2">{showFlickyEmbed ? 'Player' : 'Watch Now'}</span>
                 </Button>
 
-                <Button
-                  onClick={handleWatchlistClick}
-                  disabled={isProcessingWatchlist || isUserDataLoading}
-                  className={`w-full h-12 rounded-xl flex items-center justify-center transition-colors duration-200 ${
-                    localIsInWatchlist
-                      ? 'bg-pink hover:bg-pink/90 text-white' // Style when added
-                      : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground' // Style when not added
-                  } ${isProcessingWatchlist ? 'cursor-not-allowed opacity-70' : ''}`}
-                >
-                  {isProcessingWatchlist ? (
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  ) : localIsInWatchlist ? (
-                    <Check className="w-5 h-5 mr-2" />
-                  ) : (
-                    <Plus className="w-5 h-5 mr-2" />
-                  )}
-                  {isProcessingWatchlist
-                    ? 'Processing...'
-                    : localIsInWatchlist
-                    ? 'In Watchlist'
-                    : 'Add to Watchlist'}
-                </Button>
+                {user ? (
+                  <Button
+                    onClick={handleWatchlistClick}
+                    disabled={isProcessingWatchlist || isUserDataLoading}
+                    className={`flex-1 px-3 py-2 md:px-4 md:w-full rounded-xl flex flex-row items-center justify-center transition-colors duration-200 ${ // Added flex-1 back
+                      localIsInWatchlist
+                        ? 'bg-pink hover:bg-pink/90 text-white'
+                        : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
+                    } ${isProcessingWatchlist ? 'cursor-not-allowed opacity-70' : ''}`}
+                  >
+                    {isProcessingWatchlist ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : localIsInWatchlist ? (
+                      <CiBookmarkMinus className="w-5 h-5" />
+                    ) : (
+                      <CiBookmarkPlus className="w-5 h-5" />
+                    )}
+                    <span className="text-xs ml-1.5 md:ml-2">
+                      {isProcessingWatchlist
+                        ? 'Processing...'
+                        : 'Bookmark'
+                      }
+                    </span>
+                  </Button>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <SignInCTA_Modal>
+                        <TooltipTrigger asChild>
+                          <Button
+                            disabled={false}
+                            className={`flex-1 px-3 py-2 md:px-4 md:w-full rounded-xl flex flex-row items-center justify-center transition-colors duration-200 bg-secondary hover:bg-secondary/80 text-secondary-foreground`} // Added flex-1 back
+                          >
+                            <CiBookmarkPlus className="w-5 h-5" />
+                            <span className="text-xs ml-1.5 md:ml-2">Bookmark</span>
+                          </Button>
+                        </TooltipTrigger>
+                      </SignInCTA_Modal>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-black/90 border-white/10 text-xs backdrop-blur-sm"
+                      >
+                        Sign in to add to Watchlist
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
             </motion.div>
 

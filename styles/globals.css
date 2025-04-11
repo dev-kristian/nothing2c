@@ -62,18 +62,13 @@
   }
   
   body {
-    /* Removed transition-colors to potentially reduce flash perception */
     @apply bg-background text-foreground;
-    /* Apply single background image */
     background-image: url('/background-dark.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
   }
   
-  /* Removed theme-specific body background rules */
-  
-  /* Overlay for better text readability */
   body::before {
     content: "";
     position: fixed;
@@ -83,8 +78,6 @@
     bottom: 0;
     @apply bg-background/95 backdrop-blur-sm;
     z-index: -1;
-    /* Removed transition to potentially reduce flash perception */
-    /* transition: background-color 0.3s ease; */
   }
 }
 

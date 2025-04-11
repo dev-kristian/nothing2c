@@ -10,7 +10,8 @@ export async function GET() {
   }
 
   try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true); // Check validity
+    // Remove checkRevoked (true) for faster verification in middleware context
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie); 
 
     if (!decodedClaims.email_verified) {
       console.log(`[API Verify Session] User ${decodedClaims.uid} email not verified.`);

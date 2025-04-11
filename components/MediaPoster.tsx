@@ -3,13 +3,15 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/context/UserDataContext';
+import { useAuthContext } from '@/context/AuthContext'; 
 import { Media } from '@/types';
-import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils'; // Added import
+import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
 import { Star, Film, Tv} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { shimmer, toBase64 } from '@/lib/image-shimmer';
 import { CiBookmarkPlus, CiBookmarkMinus } from "react-icons/ci";
 import { Badge } from '@/components/ui/badge';
+import { SignInCTA_Modal } from '@/components/auth/SignInCTA_Modal';
 
 interface MediaPosterProps {
   media: Media;
@@ -27,6 +29,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   index
 }) => {
   const router = useRouter();
+  const { user } = useAuthContext(); // Get user from AuthContext
   const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
   const [isLoading, setIsLoading] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -56,7 +59,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
       if (isInWatchlist) {
         await removeUserWatchlistItem(media.id, mediaTypeForWatchlist, userData, mutateUserData);
       } else {
-        const { ...mediaToAdd } = media; // Removed unused addedAt
+        const { ...mediaToAdd } = media; 
         await addUserWatchlistItem(mediaToAdd, mediaTypeForWatchlist, userData, mutateUserData);
       }
     } catch (error) {
@@ -200,44 +203,77 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
           )}
 
           {internalMediaType !== 'person' && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                <button
-                  onClick={handleToggleWatchlist}
-                  disabled={isLoading || isUserDataLoading}
-                  className={`
-                    absolute right-0 bottom-0
-                    w-12 h-8 rounded-tl-lg
-                    flex items-center justify-center 
-                    shadow-lg transition-all duration-200
-                    ${isInWatchlist
-                      ? 'bg-pink dark:bg-pink-dark backdrop-blur-md hover:dark:bg-pink/80'
-                      : 'bg-white/10 backdrop-blur-md '
-                    }
-                    ${isLoading ? 'animate-pulse' : ''}
-                    hover:bg-white/20
-                  `}
-                >
-                  {isLoading ? (
-                    <div className="h-4 w-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
-                  ) : isInWatchlist ? (
-                    <CiBookmarkMinus className="w-6 h-6 text-white" />
-                  ) : (
-                    <CiBookmarkPlus className="w-6 h-6 text-white" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                className="bg-black/90 border-white/10 text-xs backdrop-blur-sm"
-              >
-                {isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-        </div>
+            user ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleToggleWatchlist(e); 
+                      }}
+                      disabled={isLoading || isUserDataLoading}
+                      className={`
+                        absolute right-0 bottom-0
+                        w-12 h-8 rounded-tl-lg
+                        flex items-center justify-center 
+                        shadow-lg transition-all duration-200
+                        ${isInWatchlist
+                          ? 'bg-pink dark:bg-pink-dark backdrop-blur-md hover:dark:bg-pink/80'
+                          : 'bg-white/10 backdrop-blur-md '
+                        }
+                        ${isLoading ? 'animate-pulse' : ''}
+                        hover:bg-white/20
+                      `}
+                    >
+                      {isLoading ? (
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
+                      ) : isInWatchlist ? (
+                        <CiBookmarkMinus className="w-6 h-6 text-white" />
+                      ) : (
+                        <CiBookmarkPlus className="w-6 h-6 text-white" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/90 border-white/10 text-xs backdrop-blur-sm"
+                  >
+                    {isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <SignInCTA_Modal> 
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        disabled={false} 
+                        className={`
+                          absolute right-0 bottom-0
+                          w-12 h-8 rounded-tl-lg
+                          flex items-center justify-center 
+                          shadow-lg transition-all duration-200
+                          bg-white/10 backdrop-blur-md hover:bg-white/20
+                        `}
+                      >
+                        <CiBookmarkPlus className="w-6 h-6 text-white" /> 
+                      </button>
+                    </TooltipTrigger>
+                  </SignInCTA_Modal> 
+                  <TooltipContent
+                    side="right"
+                    className="bg-black/90 border-white/10 text-xs backdrop-blur-sm"
+                  >
+                    Sign in to add to Watchlist
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )
+          )}
+        </div> 
       </motion.div>
 
       {showMediaType && media.media_type && (
@@ -251,7 +287,7 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
           </span>
         </div>
       )}
-    </div>
+    </div> 
   );
 };
 

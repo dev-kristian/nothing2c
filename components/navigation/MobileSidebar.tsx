@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { User } from 'firebase/auth';
-import { LogOut, Settings, X, LucideIcon } from 'lucide-react';
+import { LogOut, Settings, X, LucideIcon, LogIn } from 'lucide-react'; // Added LogIn
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from './ThemeToggle'; // Import ThemeToggle
 
 interface NavItem {
   href: string;
@@ -115,9 +116,10 @@ export default function MobileSidebar({
               )}
             </div>
 
-            {/* Footer (Sign Out) */}
-            <div className="p-4 border-t border-foreground/10">
+            {/* Footer (Conditional: Sign Out or Sign In + Theme) */}
+            <div className="p-4 border-t border-foreground/10 space-y-2">
               {user ? (
+                // Authenticated: Show Sign Out
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
@@ -130,7 +132,24 @@ export default function MobileSidebar({
                   <LogOut className="h-5 w-5" />
                   <span>{isSigningOut ? 'Signing Out...' : 'Sign Out'}</span>
                 </motion.button>
-              ) : null}
+              ) : (
+                // Not Authenticated: Show Sign In and Theme Toggle
+                <>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Link
+                      href="/sign-in"
+                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-pink hover:text-primary-foreground focus:bg-pink focus:text-primary-foreground focus:outline-none transition-colors duration-200 text-left"
+                      onClick={onClose}
+                    >
+                      <LogIn className="h-5 w-5" />
+                      <span>Sign In</span>
+                    </Link>
+                  </motion.div>
+                  <div className="flex justify-center"> {/* Center the theme toggle */}
+                    <ThemeToggle />
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </>

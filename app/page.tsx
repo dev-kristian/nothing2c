@@ -1,14 +1,22 @@
+'use client'
 import React from 'react';
-import LandingHeader from '@/components/LandingHeader';
+import dynamic from 'next/dynamic';
+import SearchComponent from '@/components/discover/SearchComponent';
+import SpinningLoader from '@/components/SpinningLoader';
 
-export default function LandingPage() {
+const TrendingSection = dynamic(() => import('@/components/discover/TrendingSection'), {
+  ssr: false,
+  loading: () => <div className="flex justify-center items-center min-h-[300px]"><SpinningLoader /></div>
+});
+
+// Renamed function to reflect it's the main page now
+export default function HomePage() {
   return (
-    <> 
-      <LandingHeader /> 
-      <div className="flex flex-col items-center justify-center min-h-screen pt-16">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Nothing<sup>2C</sup></h1>
-        <p className="text-lg text-muted-foreground">Your new landing page content goes here.</p>
+    <div className="h-full overflow-y-auto no-scrollbar">
+      <div className="mx-2 md:mx-4"> 
+        <SearchComponent className="my-6" />
+        <TrendingSection />
       </div>
-    </>
+    </div>
   );
 }
