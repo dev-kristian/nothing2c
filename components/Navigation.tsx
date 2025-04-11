@@ -11,10 +11,12 @@ import { useFriends } from '@/hooks/user/useFriends';
 import { useSessionSubscription } from '@/hooks/session/useSessionSubscription';
 import {
   Menu,
-  DraftingCompass,
   TvMinimalPlay,
   Share2,
-  Library
+  Library,
+  LogIn,
+  LucideIcon,
+  Compass // Added Compass icon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
@@ -24,13 +26,21 @@ import NotificationDropdown from './navigation/NotificationDropdown';
 import UserProfileDropdown from './navigation/UserProfileDropdown';
 import DesktopNavLinks from './navigation/DesktopNavLinks';
 import MobileSidebar from './navigation/MobileSidebar';
+import { ThemeToggle } from './navigation/ThemeToggle'; 
+import { Button } from '@/components/ui/button';
+
+interface NavItem {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+}
 
 export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false); // Mobile sidebar state
+  const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, signOut } = useAuthContext();
-  const [displayUser, setDisplayUser] = useState<User | null>(user); // Keep local state for smoother sign-out transition
+  const [displayUser, setDisplayUser] = useState<User | null>(user); 
   const { friendRequests } = useFriends();
   const { sessions } = useSessionSubscription();
   const router = useRouter();
@@ -43,12 +53,19 @@ export default function Navigation() {
   }, [sessions, displayUser?.uid]); 
   const totalNotifications = pendingFriendRequestsCount + pendingInvitationsCount;
 
-  const navigationItems = useMemo(() => [
-    { href: '/discover', icon: DraftingCompass, label: 'Discover' },
-    { href: '/watch-together', icon: TvMinimalPlay, label: 'Watch Together' },
-    { href: '/my-library', icon: Library, label: 'My Library' },
-    { href: '/social', icon: Share2, label: 'Social' },
-  ], []);
+  const navigationItems = useMemo((): NavItem[] => { 
+    const baseItems: NavItem[] = [];
+    if (displayUser) {
+      return [
+        ...baseItems,
+        { href: '/', icon: Compass, label: 'Discover' }, // Added Discover link
+        { href: '/watch-together', icon: TvMinimalPlay, label: 'Watch Together' },
+        { href: '/my-library', icon: Library, label: 'My Library' },
+        { href: '/social', icon: Share2, label: 'Social' },
+      ];
+    }
+    return baseItems;
+  }, [displayUser]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -153,43 +170,77 @@ export default function Navigation() {
             </div>
           </Link>
           {/* Desktop Navigation Area */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2">
             <DesktopNavLinks navigationItems={navigationItems} isActivePath={isActivePath} />
-            <NotificationDropdown
-              user={displayUser}
-              friendRequests={friendRequests}
-              sessions={sessions}
-              totalNotifications={totalNotifications}
-            />
-            <UserProfileDropdown
-              user={displayUser}
-              onSignOut={handleSignOut}
-              isSigningOut={isSigningOut}
-            />
+            {displayUser ? (
+              <>
+                <NotificationDropdown
+                  user={displayUser}
+                  friendRequests={friendRequests}
+                  sessions={sessions}
+                  totalNotifications={totalNotifications}
+                />
+                <UserProfileDropdown
+                  user={displayUser}
+                  onSignOut={handleSignOut}
+                  isSigningOut={isSigningOut}
+                />
+              </>
+            ) : (
+              <>
+                <ThemeToggle /> 
+                {/* Sign In button styled like an ACTIVE nav link */}
+                <Button 
+                  asChild 
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 font-medium bg-pink text-white hover:bg-pink/90" // Apply active styles + subtle hover
+                >
+                  <Link href="/sign-in">
+                    <LogIn className="h-4 w-4 text-white" /> {/* Ensure icon is white */}
+                    <span>Sign In</span>
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Navigation Area */}
-          <div className="flex items-center md:hidden">
-            {/* Mobile Notification Bell (Placed before Menu) */}
-            <NotificationDropdown
-              user={displayUser}
-              friendRequests={friendRequests}
-              sessions={sessions}
-              totalNotifications={totalNotifications}
-              className="mr-2" // Add margin to separate from menu icon
-              onItemClick={() => setIsOpen(false)} // Close mobile sidebar when notification is clicked
-            />
-            {/* Mobile Menu Button */}
-            {!isOpen && (
-              <motion.button
-                className="p-2 rounded-full hover:bg-foreground/5 dark:hover:bg-foreground/10
-                         transition-colors duration-300"
-                onClick={() => setIsOpen(true)} // Open sidebar
-                whileTap={{ scale: 0.9 }}
-                aria-label="Open menu"
-              >
-                <Menu className="h-6 w-6" />
-              </motion.button>
+          <div className="flex items-center md:hidden space-x-2"> {/* Added space-x-2 */}
+            {displayUser ? (
+              // Authenticated User: Show Notifications & Menu
+              <>
+                <NotificationDropdown
+                  user={displayUser}
+                  friendRequests={friendRequests}
+                  sessions={sessions}
+                  totalNotifications={totalNotifications}
+                  className="mr-0" // Removed margin, using space-x now
+                  onItemClick={() => setIsOpen(false)}
+                />
+                {!isOpen && (
+                  <motion.button
+                    className="p-2 rounded-full  transition-colors duration-300"
+                    onClick={() => setIsOpen(true)}
+                    whileTap={{ scale: 0.9 }}
+                    aria-label="Open menu"
+                  >
+                    <Menu className="h-6 w-6" />
+                  </motion.button>
+                )}
+              </>
+            ) : (
+              <>
+                <ThemeToggle />
+                {/* Sign In button styled like an ACTIVE nav link */}
+                <Button 
+                  asChild 
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 font-medium bg-pink text-white hover:bg-pink/90" // Apply active styles + subtle hover
+                >
+                  <Link href="/sign-in">
+                    <LogIn className="h-4 w-4 text-white" /> {/* Ensure icon is white */}
+                    <span>Sign In</span>
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
         </div>

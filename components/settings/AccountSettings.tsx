@@ -363,7 +363,7 @@ export default function AccountSettings() {
                   )}
                 </div>
                 <DialogFooter>
-                  <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
+                  <DialogClose asChild><Button type="button" variant="ghost" className='hover:border hover:border-pink hover:bg-transparent '>Cancel</Button></DialogClose>
                   <Button
                     type="button"
                     onClick={handleUsernameSave}

@@ -15,10 +15,9 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={`${inter.className} min-h-screen flex items-center justify-center p-2`}>
-      <div className="max-w-xl w-full bg-white/60 dark:bg-[#1c1c1e]/80 backdrop-blur-[30px] backdrop-saturate-[180%] rounded-2xl overflow-hidden border border-white/30 dark:border-white/10 relative shadow-apple dark:shadow-apple-dark">
-        <div className="relative z-10 p-6">
-          <div className="max-w-7xl mx-auto px-4 mb-6">
+    <div className={`${inter.className} flex items-center justify-center py-6 `}>
+      <div className="max-w-xl w-full  bg-white/60 dark:bg-[#1c1c1e]/80 backdrop-blur-[30px] backdrop-saturate-[180%] rounded-2xl overflow-hidden border border-white/30 dark:border-white/10  shadow-apple dark:shadow-apple-dark">
+          <div className=" mx-auto px-4 ">
             <div className="flex justify-start items-center h-16 relative nav-container">
               <Link href="/" className="group flex items-center space-x-3" aria-label="Nothing2C Home">
                 <div className="relative">
@@ -59,8 +58,6 @@ export default function AuthLayout({
           </div>
           {children}
         </div>
-      </div>
-      {/* Removed Toaster instance */}
     </div>
   );
 }

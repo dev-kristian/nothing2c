@@ -83,7 +83,8 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
       if (searchQuery.trim()) {
         searchPath += `/${encodeURIComponent(searchQuery)}`;
       } else {
-        searchPath += '/discover';
+        // If no search query, but filters are applied, target the root (discover) page
+        searchPath = '/'; 
       }
       
       const advancedParams = new URLSearchParams();
@@ -156,22 +157,6 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
             transition={{ duration: 0.7 }}
             className="text-center w-full mb-3 sm:mb-4 md:mb-6"
           >
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-foreground/70 text-xs sm:text-sm font-medium mb-1"
-            >
-              {userData ? (
-                <>
-                  Hi, <span className="text-pink font-semibold">{userData.username}</span>. Ready to
-                  discover?
-                </>
-              ) : (
-                <>Welcome to Nothing <sup>2C</sup></>
-              )}
-            </motion.p>
-    
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -180,7 +165,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
                 duration: 0.5,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl mb-3 sm:mb-4 md:mb-6"
+              className="font-semibold tracking-tight text-lg sm:text-xl md:text-2xl lg:text-4xl"
             >
               <span className="text-gray-5-dark dark:text-gray-5">Explore </span>
               <span className="text-pink dark:text-pink-dark font-semibold">Movies</span>

@@ -27,7 +27,7 @@ const TrendingSection: React.FC = () => {
     if (typeParam === 'movie' || typeParam === 'tv') {
       setMediaType(typeParam as DiscoverMediaType);
     }
-  }, [searchParams, setMediaType]); // Added dependencies
+  }, [searchParams, setMediaType]);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -85,15 +85,6 @@ const TrendingSection: React.FC = () => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription className="flex items-center">
             {error}
-            {/* Consider a way to retry the *initial* fetch if it fails */}
-            {/* <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => refetch()} // Assuming SWR provides a refetch
-              className="ml-2 text-pink hover:text-pink-hover transition-colors"
-            >
-              Try again
-            </motion.button> */}
           </AlertDescription>
         </Alert>
       </motion.div>
@@ -128,15 +119,17 @@ const TrendingSection: React.FC = () => {
       ref={containerRef}
       className="container mx-auto px-4 py-6 overflow-y-auto"
     >
+      {/* Header Section */}
       <motion.div
-        className="flex flex-col md:flex-row md:items-start justify-between mb-8"
+        className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4" // Added gap for spacing
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Title and Description */}
         <div className="md:flex-1">
           <motion.h2
-            className="text-3xl font-bold mb-2 text-foreground"
+            className="text-2xl md:text-3xl font-bold mb-2 text-foreground" // Responsive text size
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -144,17 +137,18 @@ const TrendingSection: React.FC = () => {
             Trending
           </motion.h2>
           <motion.p
-            className="text-foreground/60 text-sm max-w-2xl mb-4 md:mb-0"
+            className="text-foreground/60 text-xs md:text-sm max-w-2xl" // Responsive text size
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Discover what&apos;s capturing the world&apos;s attention right now.
+            Discover what's capturing the world's attention right now.
           </motion.p>
         </div>
 
+        {/* Media Type Toggle Container */}
         <motion.div
-          className="flex flex-wrap gap-4 justify-center md:justify-end"
+          className="flex justify-start md:justify-end" // Align start on mobile, end on medium+
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -167,16 +161,17 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       </motion.div>
 
+      {/* Grid Section */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6"
       >
         <AnimatePresence mode="popLayout">
           {data.map((item) => (
             <motion.div
-              key={`${item.id}-${item.media_type}`}
+              key={`${item.id}-${item.media_type || mediaType}`} // Ensure key uniqueness
               variants={itemVariants}
               layout
               className="w-full"
@@ -189,6 +184,7 @@ const TrendingSection: React.FC = () => {
         </AnimatePresence>
       </motion.div>
 
+      {/* Loading Indicator */}
       {isLoading && (
         <motion.div
           className="flex justify-center items-center my-8"
@@ -200,6 +196,7 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       )}
 
+      {/* No Items Found Message */}
       {data.length === 0 && !isLoading && (
         <motion.div
           className="text-center text-muted-foreground my-12 space-y-4 frosted-panel p-8 rounded-2xl"
@@ -212,6 +209,7 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       )}
 
+      {/* Infinite Scroll Trigger */}
       <div ref={loadMoreTriggerRef} className="h-20" />
     </div>
   );

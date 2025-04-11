@@ -22,7 +22,7 @@ function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [redirectPath, setRedirectPath] = useState('/discover');
+  const [redirectPath, setRedirectPath] = useState('/'); // Changed default redirect to root
 
   useEffect(() => {
     const redirectedFrom = searchParams.get('redirectedFrom');
@@ -103,7 +103,7 @@ function SignInContent() {
           redirectPath={redirectPath}
         />
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4 pb-8">
+      <CardFooter className="flex flex-col space-y-4">
         <div className="text-center">
           <span className="text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}

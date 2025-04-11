@@ -1,18 +1,14 @@
 // app/(root)/layout.tsx 
 import React, { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; // Changed import
-import { ClientProviders } from '@/components/providers/ClientProviders';
-import Navigation from '@/components/Navigation';
+import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; 
 import SpinningLoader from '@/components/SpinningLoader';
-// Removed PullToRefreshWrapper import
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Call the correct function and check for null
   const userProfile = await getAuthenticatedUserProfile(); 
 
   if (!userProfile) {
@@ -22,23 +18,17 @@ export default async function RootLayout({
 
   return (
     <>
-      <div className="flex flex-col h-screen">
-        <Navigation /> 
-        <main className="flex-grow">
-          <Suspense fallback={
-            <div className="w-full h-full flex items-center justify-center mt-[var(--navbar-height)]">
+      <main className="flex-grow"> 
+        <Suspense fallback={
+          <div className="w-full h-full flex items-center justify-center">
               <SpinningLoader />
             </div>
           }>
-            {/* Removed PullToRefreshWrapper */}
-            <div className="mt-[var(--navbar-height)]">
-              <ClientProviders>
-                {children}
-              </ClientProviders>
+            <div>
+              {children}
             </div>
           </Suspense>
         </main>
-      </div>
     </>
   );
 }
