@@ -1,5 +1,5 @@
 // hooks/useAuth.ts 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   onIdTokenChanged,
   User,
@@ -16,6 +16,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
+  const [isSessionVerified, setIsSessionVerified] = useState(false); // Re-add session verification state
   // Removed unused initialSyncDoneRef
 
   const signIn = useCallback(async () => {
@@ -26,6 +27,11 @@ export function useAuth() {
     } catch (error) {
       handleAuthError(error, 'Failed to sign in. Please try again.');
     }
+  }, []);
+
+  // Re-add function to explicitly mark session as verified
+  const markSessionVerified = useCallback((verified: boolean) => {
+    setIsSessionVerified(verified);
   }, []);
 
   const signOut = useCallback(async (): Promise<boolean> => {
@@ -64,6 +70,11 @@ export function useAuth() {
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
+      // If user logs out, reset session verification status
+      if (!currentUser) {
+        setIsSessionVerified(false);
+      }
+
       // Removed logic related to initialSyncDoneRef as it seemed unused
 
       setLoading(false);
@@ -80,6 +91,8 @@ export function useAuth() {
     signOut,
     isAuthenticated: !!user,
     initialAuthChecked,
-    auth
+    isSessionVerified, // Add isSessionVerified back to return
+    markSessionVerified, // Re-add markSessionVerified
+    auth,
   };
 }

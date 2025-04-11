@@ -10,7 +10,9 @@ export interface AuthState {
   signOut: () => Promise<boolean>; // Changed return type to Promise<boolean>
   isAuthenticated: boolean;
   initialAuthChecked: boolean;
-  auth: Auth; 
+  isSessionVerified: boolean; // Restore session verification state
+  markSessionVerified: (verified: boolean) => void; // Restore function to update session state
+  auth: Auth;
 }
 
 export interface AuthFormData {
@@ -24,6 +26,7 @@ export interface AuthFormData {
 export interface UserData {
   username: string;
   email?: string;
+  photoURL?: string | null; // Add optional photoURL here too
   createdAt?: Date;
   updatedAt?: Date;
   // Removed setupCompleted
@@ -39,6 +42,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   username: string;
+  photoURL?: string | null; // Add optional photoURL
   // Removed setupCompleted
   createdAt: string;
   updatedAt: string;

@@ -1,7 +1,7 @@
 // app/api/friends/reject/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, writeBatch, deleteField } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const authenticatedUserId = userProfile.uid;
 
     const body = await request.json();
-    const { requesterId } = body; // Only expect requesterId from body
+    const { requesterId } = body;
 
     if (!requesterId) {
       return NextResponse.json(
@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prevent rejecting self (edge case)
     if (authenticatedUserId === requesterId) {
         return NextResponse.json(
             { error: 'Invalid operation' },
@@ -32,22 +31,8 @@ export async function POST(request: NextRequest) {
 
     const batch = writeBatch(db);
 
-    // Use authenticatedUserId for the path
     const requestRef = doc(db, 'users', authenticatedUserId, 'friendRequests', requesterId);
-    // Consider deleting instead of updating status? For now, keep update.
-    batch.update(requestRef, { status: 'rejected' });
-
-    // Use authenticatedUserId for current user's data
-    const currentUserFriendsRef = doc(db, 'users', authenticatedUserId, 'friends', 'data');
-    batch.set(currentUserFriendsRef, {
-      receivedRequests: { [requesterId]: deleteField() } // Remove from received
-    }, { merge: true });
-
-    // Use requesterId for requester's data
-    const requesterFriendsRef = doc(db, 'users', requesterId, 'friends', 'data');
-    batch.set(requesterFriendsRef, {
-      sentRequests: { [authenticatedUserId]: deleteField() } // Remove from their sent
-    }, { merge: true });
+    batch.delete(requestRef);
 
     await batch.commit();
 

@@ -3,10 +3,10 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/context/UserDataContext';
-import { useAuthContext } from '@/context/AuthContext'; 
+import { useAuthContext } from '@/context/AuthContext';
 import { Media } from '@/types';
 import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
-import { Star, Film, Tv} from 'lucide-react';
+import { Star, Film, Tv } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { shimmer, toBase64 } from '@/lib/image-shimmer';
 import { CiBookmarkPlus, CiBookmarkMinus } from "react-icons/ci";
@@ -26,46 +26,55 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   showMediaType = false,
   variant = 'default',
   showRank = false,
-  index
+  index,
 }) => {
   const router = useRouter();
-  const { user } = useAuthContext(); // Get user from AuthContext
-  const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const { user} = useAuthContext(); 
+  const { userData: contextUserData, isLoading: isUserDataLoading } = useUserData();
+  const [isMutating, setIsMutating] = useState(false);
 
   const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv' | 'person';
 
-  useEffect(() => {
-    if (userData?.watchlist && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
-      const currentWatchlist = userData.watchlist[internalMediaType] || [];
-      const isItemInWatchlist = currentWatchlist.some(item => item.id === media.id);
-      setIsInWatchlist(isItemInWatchlist);
-    } else {
-      setIsInWatchlist(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(() => {
+    if (user && contextUserData?.watchlist && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
+      const currentWatchlist = contextUserData.watchlist[internalMediaType] || [];
+      return currentWatchlist.some(item => item.id === media.id);
     }
-  }, [userData, internalMediaType, media.id]);
+    return false;
+  });
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    let shouldBeInWatchlist = false;
+    if (user && contextUserData?.watchlist && (internalMediaType === 'movie' || internalMediaType === 'tv')) {
+      const currentWatchlist = contextUserData.watchlist[internalMediaType] || [];
+      shouldBeInWatchlist = currentWatchlist.some(item => item.id === media.id);
+    }
+    if (shouldBeInWatchlist !== isInWatchlist) {
+      setIsInWatchlist(shouldBeInWatchlist);
+    }
+  }, [user, contextUserData, internalMediaType, media.id, isInWatchlist]);
+
 
   const handleToggleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isLoading || isUserDataLoading || internalMediaType === 'person') return;
+    if (isMutating || isUserDataLoading || internalMediaType === 'person') return;
 
-    setIsLoading(true);
+    setIsMutating(true);
     try {
       const mediaTypeForWatchlist = internalMediaType as 'movie' | 'tv';
       if (isInWatchlist) {
-        await removeUserWatchlistItem(media.id, mediaTypeForWatchlist, userData, mutateUserData);
+        await removeUserWatchlistItem(media.id, mediaTypeForWatchlist);
       } else {
-        const { ...mediaToAdd } = media; 
-        await addUserWatchlistItem(mediaToAdd, mediaTypeForWatchlist, userData, mutateUserData);
+        const { ...mediaToAdd } = media;
+        await addUserWatchlistItem(mediaToAdd, mediaTypeForWatchlist);
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
   };
 
@@ -208,25 +217,25 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        handleToggleWatchlist(e); 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleWatchlist(e);
                       }}
-                      disabled={isLoading || isUserDataLoading}
+                      disabled={isMutating || isUserDataLoading}
                       className={`
                         absolute right-0 bottom-0
                         w-12 h-8 rounded-tl-lg
-                        flex items-center justify-center 
+                        flex items-center justify-center
                         shadow-lg transition-all duration-200
-                        ${isInWatchlist
+                        ${isInWatchlist 
                           ? 'bg-pink dark:bg-pink-dark backdrop-blur-md hover:dark:bg-pink/80'
                           : 'bg-white/10 backdrop-blur-md '
                         }
-                        ${isLoading ? 'animate-pulse' : ''}
-                        hover:bg-white/20
+                        ${isMutating ? 'animate-pulse' : ''}
+                        ${isUserDataLoading ? 'cursor-wait' : 'hover:bg-white/20'}
                       `}
                     >
-                      {isLoading ? (
+                      {isMutating ? (
                         <div className="h-4 w-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
                       ) : isInWatchlist ? (
                         <CiBookmarkMinus className="w-6 h-6 text-white" />

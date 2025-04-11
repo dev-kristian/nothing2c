@@ -37,15 +37,19 @@ export function handleInputChange(
 ) {
   const value = e.target.value;
   setInputMovieTitle(value);
-  if (value.length > 1) {
-    const allSuggestions = [...friendsWatchlistItems.movie, ...friendsWatchlistItems.tv];
-    const filteredSuggestions = allSuggestions
-      .filter((item) => item.title?.toLowerCase().includes(value.toLowerCase()))
-      .slice(0, 3); 
+  const allSuggestions = [...friendsWatchlistItems.movie, ...friendsWatchlistItems.tv];
 
-    setSuggestions(filteredSuggestions);
+  if (value.trim() === '') {
+    // Show all suggestions if input is empty
+    setSuggestions(allSuggestions);
   } else {
-    setSuggestions([]);
+    // Filter suggestions based on input value
+    const filteredSuggestions = allSuggestions
+      .filter((item) => 
+        item.title?.toLowerCase().includes(value.toLowerCase()) || 
+        item.name?.toLowerCase().includes(value.toLowerCase()) // Also check 'name' for TV shows
+      );
+    setSuggestions(filteredSuggestions);
   }
 }
 

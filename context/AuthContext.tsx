@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import type { AuthState } from '@/types'; 
+import type { AuthState } from '@/types';
 
 const AuthContext = createContext<AuthState | null>(null);
 

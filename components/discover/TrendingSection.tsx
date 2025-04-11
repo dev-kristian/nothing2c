@@ -1,33 +1,38 @@
-// components/TrendingSection.tsx
+'use client';
+
 import React, { useRef, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import MediaPoster from '../MediaPoster';
 import SpinningLoader from '../SpinningLoader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MediaTypeToggle from '../MediaTypeToggle';
-import { useTrending, DiscoverMediaType } from '@/hooks/discover/useTrending';
+import { useTrending } from '@/hooks/discover/useTrending';
+import { ApiResponse, DiscoverMediaType } from '@/lib/fetchers';
+import { useAuthContext } from '@/context/AuthContext';
+import { useUserData } from '@/context/UserDataContext'; 
+import { Skeleton } from '@/components/ui/skeleton';
 
-const TrendingSection: React.FC = () => {
+interface TrendingSectionProps {
+  initialData: ApiResponse;
+  initialMediaType: DiscoverMediaType;
+}
+
+const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialMediaType }) => {
   const {
     data,
-    isLoading,
+    isLoading: isTrendingLoading,
     isInitialLoading,
     error,
     hasMore,
     loadMore,
     mediaType,
     setMediaType,
-  } = useTrending();
+  } = useTrending({ initialData, initialMediaType });
 
-  const searchParams = useSearchParams();
+  const { initialAuthChecked } = useAuthContext();
+  const { isLoading: isUserDataLoading } = useUserData();
 
-  useEffect(() => {
-    const typeParam = searchParams.get('type');
-    if (typeParam === 'movie' || typeParam === 'tv') {
-      setMediaType(typeParam as DiscoverMediaType);
-    }
-  }, [searchParams, setMediaType]);
+  const isContextLoading = !initialAuthChecked || isUserDataLoading;
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -119,17 +124,15 @@ const TrendingSection: React.FC = () => {
       ref={containerRef}
       className="container mx-auto px-4 py-6 overflow-y-auto"
     >
-      {/* Header Section */}
       <motion.div
-        className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4" // Added gap for spacing
+        className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Title and Description */}
         <div className="md:flex-1">
           <motion.h2
-            className="text-2xl md:text-3xl font-bold mb-2 text-foreground" // Responsive text size
+            className="text-2xl md:text-3xl font-bold mb-2 text-foreground" 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -137,18 +140,17 @@ const TrendingSection: React.FC = () => {
             Trending
           </motion.h2>
           <motion.p
-            className="text-foreground/60 text-xs md:text-sm max-w-2xl" // Responsive text size
+            className="text-foreground/60 text-xs md:text-sm max-w-2xl"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Discover what's capturing the world's attention right now.
+            Discover what&apos;s capturing the world&apos;s attention right now.
           </motion.p>
         </div>
 
-        {/* Media Type Toggle Container */}
         <motion.div
-          className="flex justify-start md:justify-end" // Align start on mobile, end on medium+
+          className="flex justify-start md:justify-end"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
@@ -161,31 +163,41 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       </motion.div>
 
-      {/* Grid Section */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6"
-      >
-        <AnimatePresence mode="popLayout">
-          {data.map((item) => (
-            <motion.div
-              key={`${item.id}-${item.media_type || mediaType}`} // Ensure key uniqueness
-              variants={itemVariants}
-              layout
-              className="w-full"
-            >
-              <MediaPoster
-                media={{ ...item, media_type: item.media_type || mediaType }}
-              />
-            </motion.div>
+      {isContextLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <div key={index} className="w-full">
+              <Skeleton className="aspect-[2/3] rounded-[20px]" />
+              <Skeleton className="h-4 w-3/4 mt-2" />
+              <Skeleton className="h-3 w-1/2 mt-1" />
+            </div>
           ))}
-        </AnimatePresence>
-      </motion.div>
+        </div>
+      ) : (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6"
+        >
+          <AnimatePresence mode="popLayout">
+            {data.map((item) => (
+              <motion.div
+                key={`${item.id}-${item.media_type || mediaType}`}
+                variants={itemVariants}
+                layout
+                className="w-full"
+              >
+                <MediaPoster
+                  media={{ ...item, media_type: item.media_type || mediaType }}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
 
-      {/* Loading Indicator */}
-      {isLoading && (
+      {isTrendingLoading && !isInitialLoading && (
         <motion.div
           className="flex justify-center items-center my-8"
           initial={{ opacity: 0 }}
@@ -196,8 +208,7 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       )}
 
-      {/* No Items Found Message */}
-      {data.length === 0 && !isLoading && (
+      {!isContextLoading && data.length === 0 && !isTrendingLoading && (
         <motion.div
           className="text-center text-muted-foreground my-12 space-y-4 frosted-panel p-8 rounded-2xl"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -209,7 +220,6 @@ const TrendingSection: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Infinite Scroll Trigger */}
       <div ref={loadMoreTriggerRef} className="h-20" />
     </div>
   );

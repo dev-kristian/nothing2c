@@ -3,14 +3,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWRInfinite from 'swr/infinite';
 import { Media } from '@/types/media';
-
-export type DiscoverMediaType = 'movie' | 'tv' | 'upcoming';
-
-interface ApiResponse {
-  results: Media[];
-  total_pages: number;
-  page?: number;
-}
+import { fetcher, ApiResponse, DiscoverMediaType } from '@/lib/fetchers';
 
 interface UseTrendingReturn {
   data: Media[];
@@ -24,44 +17,19 @@ interface UseTrendingReturn {
   refetch: () => void;
 }
 
-const fetcher = async (url: string, mediaType: DiscoverMediaType, page: number): Promise<ApiResponse> => {
-  const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
-  
-  let requestOptions: RequestInit = {};
-  let finalUrl = url; 
+interface UseTrendingOptions {
+  initialData?: ApiResponse;
+  initialMediaType?: DiscoverMediaType;
+}
 
-  if (mediaType === 'upcoming') {
-    finalUrl = `${endpoint}?page=${page}`; 
-    requestOptions = {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    };
-  } else {
-    requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mediaType, page }),
-    };
-    finalUrl = endpoint;
-  }
-
-  const response = await fetch(finalUrl, requestOptions);
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Failed to fetch data from ${endpoint}: ${response.statusText} - ${errorData}`);
-  }
-
-  return await response.json();
-};
-
-export const useTrending = (): UseTrendingReturn => {
+export const useTrending = (options?: UseTrendingOptions): UseTrendingReturn => {
   const searchParams = useSearchParams();
-  const initialType = searchParams.get('type');
+  const urlType = searchParams.get('type');
 
   const getInitialMediaType = (): DiscoverMediaType => {
-    if (initialType === 'movie' || initialType === 'tv' || initialType === 'upcoming') {
-      return initialType;
+    if (options?.initialMediaType) return options.initialMediaType;
+    if (urlType === 'movie' || urlType === 'tv' || urlType === 'upcoming') {
+      return urlType;
     }
     return 'movie';
   };
@@ -71,11 +39,11 @@ export const useTrending = (): UseTrendingReturn => {
   useEffect(() => {
     const currentUrlType = searchParams.get('type');
     if (currentUrlType === 'movie' || currentUrlType === 'tv' || currentUrlType === 'upcoming') {
-      if (currentUrlType !== mediaType) {
+      if (currentUrlType !== mediaType && currentUrlType !== options?.initialMediaType) {
         setMediaTypeState(currentUrlType);
       }
     }
-  }, [searchParams, mediaType]);
+  }, [searchParams, mediaType, options?.initialMediaType]);
 
   const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
     if (previousPageData && !previousPageData.results.length) return null;
@@ -92,10 +60,16 @@ export const useTrending = (): UseTrendingReturn => {
     isLoading,
     isValidating,
     mutate,
-  } = useSWRInfinite<ApiResponse, Error>(getKey, ([url, type, page]) => fetcher(url, type, page), {
-    revalidateFirstPage: false,
-    keepPreviousData: true, 
-  });
+  } = useSWRInfinite<ApiResponse, Error>(
+    getKey, 
+    ([url, type, page]) => fetcher(url, type, page), 
+    {
+      revalidateFirstPage: false,
+      keepPreviousData: true,
+      fallbackData: options?.initialData ? [options.initialData] : undefined,
+      revalidateOnReconnect: false, // Add this line
+    }
+  );
 
   const isLoadingInitialData = !apiResponses && !error;
   const isLoadingMore =

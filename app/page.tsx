@@ -1,21 +1,55 @@
-'use client'
 import React from 'react';
-import dynamic from 'next/dynamic';
 import SearchComponent from '@/components/discover/SearchComponent';
-import SpinningLoader from '@/components/SpinningLoader';
+import TrendingSection from '@/components/discover/TrendingSection';
+import { fetcher, ApiResponse } from '@/lib/fetchers';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const TrendingSection = dynamic(() => import('@/components/discover/TrendingSection'), {
-  ssr: false,
-  loading: () => <div className="flex justify-center items-center min-h-[300px]"><SpinningLoader /></div>
-});
+interface HomePageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
-// Renamed function to reflect it's the main page now
-export default function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  let initialTrendingData: ApiResponse | null = null;
+  let fetchError: string | null = null;
+
+  const initialMediaType =
+    searchParams?.type === 'tv' || searchParams?.type === 'upcoming'
+    ? searchParams.type
+    : 'movie';
+
+  try {
+    initialTrendingData = await fetcher(
+        initialMediaType === 'upcoming' ? '/api/upcoming' : '/api/trending',
+        initialMediaType,
+        1
+      );
+  } catch (error) {
+    console.error("[HomePage Fetch Error - Trending Only]", error);
+    fetchError = error instanceof Error ? error.message : "An unknown error occurred while fetching trending data.";
+    initialTrendingData = { results: [], total_pages: 0, page: 1 };
+  }
+
+  if (!initialTrendingData) {
+      initialTrendingData = { results: [], total_pages: 0, page: 1 };
+      if (!fetchError) fetchError = "Failed to load initial trending data.";
+  }
+
   return (
     <div className="h-full overflow-y-auto no-scrollbar">
       <div className="mx-2 md:mx-4"> 
-        <SearchComponent className="my-6" />
-        <TrendingSection />
+        <SearchComponent className="my-6" /> 
+
+        {fetchError && (
+          <Alert variant="destructive" className="my-4">
+            <AlertTitle>Error Loading Trending Section</AlertTitle>
+            <AlertDescription>{fetchError}</AlertDescription>
+          </Alert>
+        )}
+
+        <TrendingSection
+          initialData={initialTrendingData}
+          initialMediaType={initialMediaType}
+        />
       </div>
     </div>
   );

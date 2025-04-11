@@ -26,7 +26,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   const [showTrailer, setShowTrailer] = useState(false);
   const [showFlickyEmbed, setShowFlickyEmbed] = useState(false);
   const { user } = useAuthContext(); // Get user from AuthContext
-  const { userData, mutateUserData, isLoading: isUserDataLoading } = useUserData();
+  const { userData, isLoading: isUserDataLoading } = useUserData();
   const [isProcessingWatchlist, setIsProcessingWatchlist] = useState(false);
 
   const isMovie = 'title' in details;
@@ -63,7 +63,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
 
     try {
       if (localIsInWatchlist) {
-        await removeUserWatchlistItem(currentMediaId, mediaType, userData, mutateUserData);
+        await removeUserWatchlistItem(currentMediaId, mediaType);
       } else {
         const mediaPayload: Media = {
           id: details.id,
@@ -78,7 +78,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
 
           media_type: mediaType,
         };
-        await addUserWatchlistItem(mediaPayload, mediaType, userData, mutateUserData);
+        await addUserWatchlistItem(mediaPayload, mediaType);
       }
     } catch (error) {
       console.error("Error updating watchlist:", error);

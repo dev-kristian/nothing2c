@@ -77,34 +77,35 @@ export async function GET() {
     }
 
     const userDocRef = adminDb.collection('users').doc(userProfile.uid);
-    const watchlistDocRef = adminDb.collection('watchlists').doc(userProfile.uid);
+    // Removed watchlistDocRef
 
     let userData: UserData | null = null;
      const userDocSnapshot = await userDocRef.get();
- 
+
      if (!userDocSnapshot.exists) {
         console.error(`User document not found for authenticated user UID: ${userProfile.uid}. This should not happen.`);
         return NextResponse.json({ error: 'User data not found despite valid authentication.' }, { status: 404 });
      }
- 
+
      const userInfo = userDocSnapshot.data();
-     const watchlistSnapshot = await watchlistDocRef.get();
-    const watchlistData = watchlistSnapshot.exists ? watchlistSnapshot.data() : { movie: [], tv: [] }; // Use empty arrays as default
+     // Removed watchlistSnapshot fetch and watchlistData definition
 
     if (userInfo) {
+      // Construct UserData without fetching watchlist here
+      // The client hook will merge the real-time watchlist data
       userData = {
         username: userInfo.username,
         email: userInfo.email,
         createdAt: userInfo.createdAt?.toDate(),
         updatedAt: userInfo.updatedAt?.toDate(),
-        // Removed setupCompleted
         uid: userInfo.uid,
         notification: userInfo.notification,
+        // Initialize watchlist as empty; client listener will populate it
         watchlist: {
-          movie: watchlistData?.movie || [],
-          tv: watchlistData?.tv || []
+          movie: [],
+          tv: []
         }
-      } as UserData;
+      } as UserData; // Still assert as UserData, but watchlist part is just placeholder
     }
 
     if (!userData) {

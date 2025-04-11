@@ -147,10 +147,11 @@ export default function SocialPage() {
         description: `Friend request sent to ${targetUser.username}`,
         variant: 'default',
       });
-      setSearchResults(prev =>
-        prev.map(user =>
+      // Optimistically update the UI
+      setSearchResults(prevResults =>
+        prevResults.map(user =>
           user.uid === targetUser.uid
-            ? { ...user, requestStatus: { exists: true, type: 'sent' } }
+            ? { ...user, friendshipStatus: 'pending_sent' } // Correctly update status
             : user
         )
       );

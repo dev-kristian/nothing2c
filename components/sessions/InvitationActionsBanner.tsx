@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 interface InvitationActionsBannerProps {
   session: Session;
   onDeclineInitiated: () => void;
-  // Removed isReadOnly prop
 }
 
 const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ session, onDeclineInitiated }) => {
@@ -68,7 +67,7 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
           variant="outline"
           size="sm"
           onClick={() => handleUpdateStatus('declined')}
-          disabled={isLoadingAccept || isLoadingDecline} // Reverted disabled condition
+          disabled={isLoadingAccept || isLoadingDecline}
           className="bg-white/50 dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-black/30"
         >
           {isLoadingDecline ? 'Declining...' : 'Decline'}
@@ -77,7 +76,7 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
           variant="default"
           size="sm"
           onClick={() => handleUpdateStatus('accepted')}
-          disabled={isLoadingAccept || isLoadingDecline} // Reverted disabled condition
+          disabled={isLoadingAccept || isLoadingDecline}
           className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
         >
           {isLoadingAccept ? 'Accepting...' : (
