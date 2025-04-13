@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext';
-import { DateTimeSelection, Friend } from '@/types'; 
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { DateTimeSelection, Friend } from '@/types';
 
 interface CreateSessionResponse {
   sessionId: string;
@@ -9,7 +9,7 @@ interface CreateSessionResponse {
 
 export const useCreateSession = () => {
   const { user } = useAuthContext();
-  const { userData } = useUserData(); 
+  const { userData } = useAuthUser(); // Use new hook
 
   return useCallback(async (
     dates: DateTimeSelection[],

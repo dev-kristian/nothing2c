@@ -68,6 +68,10 @@ export const useTrending = (options?: UseTrendingOptions): UseTrendingReturn => 
       keepPreviousData: true,
       fallbackData: options?.initialData ? [options.initialData] : undefined,
       revalidateOnReconnect: false, // Add this line
+      // --- Add these lines ---
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      // ----------------------
     }
   );
 

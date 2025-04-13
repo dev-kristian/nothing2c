@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Bell, BellOff } from 'lucide-react';
-import { useUserData } from '@/context/UserDataContext';
-import { useNotification } from '@/hooks/user/useNotification';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { useNotificationsContext } from '@/context/NotificationsContext'; // Updated import
 import { toast } from "@/hooks/use-toast";
 import { requestForToken } from '@/lib/firebaseMessaging';
 import { getAuth } from 'firebase/auth';
 import SpinningLoader from '../SpinningLoader'; 
 
 export default function NotificationSettings() {
-  const [isLoading, setIsLoading] = useState(false); 
+  const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
-  const { userData, mutateUserData } = useUserData();
-  const { updateNotificationStatus } = useNotification();
+  const { userData, mutateUserData } = useAuthUser(); // Get user data/mutate
+  const { updateNotificationStatus } = useNotificationsContext(); // Get function
 
   useEffect(() => {
     const checkSupport = () => {
@@ -74,8 +74,15 @@ export default function NotificationSettings() {
       
               setIsUpdatingStatus(true);
               try {
-                await updateNotificationStatus("allowed");
-                mutateUserData(); 
+                // Optimistic UI update first using optimisticData
+                await mutateUserData(
+                  userData ? { ...userData, notification: 'allowed' } : null,
+                  {
+                    optimisticData: userData ? { ...userData, notification: 'allowed' } : null,
+                    revalidate: false // Prevent immediate re-fetch
+                  }
+                );
+                await updateNotificationStatus("allowed"); // Then update backend
               } finally {
                 setIsUpdatingStatus(false);
               }
@@ -96,8 +103,15 @@ export default function NotificationSettings() {
         } else {
           setIsUpdatingStatus(true);
           try {
-            await updateNotificationStatus("denied");
-            mutateUserData();
+            // Optimistic UI update first using optimisticData
+            await mutateUserData(
+              userData ? { ...userData, notification: 'denied' } : null,
+              {
+                optimisticData: userData ? { ...userData, notification: 'denied' } : null,
+                revalidate: false
+              }
+            );
+            await updateNotificationStatus("denied"); // Then update backend
           } finally {
             setIsUpdatingStatus(false);
           }
@@ -133,8 +147,15 @@ export default function NotificationSettings() {
 
         setIsUpdatingStatus(true);
         try {
-          await updateNotificationStatus("denied");
-          mutateUserData();
+          // Optimistic UI update first using optimisticData
+          await mutateUserData(
+            userData ? { ...userData, notification: 'denied' } : null,
+            {
+              optimisticData: userData ? { ...userData, notification: 'denied' } : null,
+              revalidate: false
+            }
+          );
+          await updateNotificationStatus("denied"); // Then update backend
         } finally {
           setIsUpdatingStatus(false);
         }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from "@/hooks/use-toast";
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { useNotificationsContext } from '@/context/NotificationsContext'; // Updated import
 import { requestForToken, onMessageListener } from '@/lib/firebaseMessaging';
 import NotificationSubscriptionUI from './NotificationSubscriptionUI';
 import { NotificationPayload } from '@/types';
@@ -10,7 +11,8 @@ const NotificationSubscription = () => {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [isIOS166OrHigher, setIsIOS166OrHigher] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const { userData, updateNotificationStatus } = useUserData();
+  const { userData } = useAuthUser(); // Get userData from AuthUserContext
+  const { updateNotificationStatus } = useNotificationsContext(); // Get function from NotificationsContext
   const [showDetails, setShowDetails] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -53,7 +55,6 @@ const NotificationSubscription = () => {
     if (isSupported) {
       const setupMessaging = async () => {
         const unsubscribe = await onMessageListener((payload: NotificationPayload) => {
-          console.log('New foreground notification:', payload);
           toast({
             title: payload?.notification?.title || "New Notification",
             description: payload?.notification?.body || "You have a new notification.",
@@ -100,7 +101,6 @@ const NotificationSubscription = () => {
     if ('Notification' in window) {
       const permission = await window.Notification.requestPermission();
       if (permission === "granted") {
-        console.log("Notification permission granted. Requesting for token.");
         const token = await requestForToken();
         if (token) {
           try {

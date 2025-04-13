@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
 
   const baseUrl = 'https://s.to';
 
-  console.log(`Scraping s.to URL: ${targetUrl}`);
 
   try {
     const response = await fetch(targetUrl, {
@@ -80,16 +79,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ links: [] });
     }
 
-    console.log(`Found ${hosterLinks.length} potential German hoster links.`);
-
     const resolvedLinksPromises = hosterLinks.map(async (link) => {
       const finalUrl = await resolveRedirect(baseUrl + link.redirectPath, targetUrl);
       return finalUrl ? { hoster: link.hoster, url: finalUrl } : null;
     });
 
     const resolvedLinks = (await Promise.all(resolvedLinksPromises)).filter(link => link !== null);
-
-    console.log(`Successfully resolved ${resolvedLinks.length} links for ${targetUrl}`);
 
     return NextResponse.json({ links: resolvedLinks });
 

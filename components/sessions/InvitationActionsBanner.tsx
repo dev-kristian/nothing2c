@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/context/SessionContext'; 
 import { Session } from '@/types';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import SpinningLoader from '@/components/SpinningLoader';
 
 interface InvitationActionsBannerProps {
   session: Session;
@@ -19,7 +20,6 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
   const [isLoadingDecline, setIsLoadingDecline] = useState(false);
 
   const handleUpdateStatus = async (status: 'accepted' | 'declined') => {
-
     const isLoadingSetter = status === 'accepted' ? setIsLoadingAccept : setIsLoadingDecline;
     isLoadingSetter(true);
 
@@ -31,8 +31,8 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
       await updateParticipantStatus(session.id, status);
 
       toast({
-        title: `Invitation ${status}`,
-        description: `You have successfully ${status} the invitation.`,
+        title: `Invitation ${status === 'accepted' ? 'Accepted' : 'Declined'}`,
+        description: `You have successfully ${status === 'accepted' ? 'accepted' : 'declined'} the invitation.`,
         variant: 'default',
       });
 
@@ -53,39 +53,61 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
   };
 
   return (
-    <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-400/10 dark:to-purple-400/10 border border-blue-500/20 dark:border-blue-400/20 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-      <div>
-        <h3 className="font-semibold text-base text-gray-800 dark:text-gray-100">
-          You&apos;re Invited!
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-          {session.createdBy} has invited you to this movie night session. Accept to participate.
-        </p>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleUpdateStatus('declined')}
-          disabled={isLoadingAccept || isLoadingDecline}
-          className="bg-white/50 dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-black/30"
-        >
-          {isLoadingDecline ? 'Declining...' : 'Decline'}
-        </Button>
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => handleUpdateStatus('accepted')}
-          disabled={isLoadingAccept || isLoadingDecline}
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-        >
-          {isLoadingAccept ? 'Accepting...' : (
-            <>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Accept Invitation
-            </>
-          )}
-        </Button>
+    <div className="mb-6">
+      <div className="bg-white/70 dark:bg-gray-6-dark/70 backdrop-blur-md border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left">
+            <h3 className="font-semibold text-base text-label dark:text-label-dark flex items-center justify-center sm:justify-start">
+              <span className="inline-block w-6 h-6 rounded-full bg-system-pink/10 dark:bg-system-pink-dark/20 flex items-center justify-center mr-2">
+                <span className="block w-2 h-2 rounded-full bg-system-pink dark:bg-system-pink-dark animate-pulse"></span>
+              </span>
+              You&apos;re Invited!
+            </h3>
+            <p className="text-sm text-label-secondary dark:text-label-secondary-dark mt-1">
+              {session.createdBy} has invited you to join this movie night session
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleUpdateStatus('declined')}
+              disabled={isLoadingAccept || isLoadingDecline}
+              className="border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+            >
+              {isLoadingDecline ? (
+                <>
+                  <SpinningLoader size={14} className="mr-2" />
+                  <span>Declining...</span>
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 mr-1.5" />
+                  <span>Decline</span>
+                </>
+              )}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleUpdateStatus('accepted')}
+              disabled={isLoadingAccept || isLoadingDecline}
+              className="bg-system-pink hover:bg-system-pink/90 dark:bg-system-pink-dark dark:hover:bg-system-pink-dark/90 text-white"
+            >
+              {isLoadingAccept ? (
+                <>
+                  <SpinningLoader size={14} className="mr-2" />
+                  <span>Accepting...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-1.5" />
+                  <span>Accept Invitation</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

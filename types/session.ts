@@ -1,15 +1,16 @@
-// types/session.ts
+
 
 import { UserDate } from "./context";
 
 export interface Session {
-  finalDate?: string | Date;
+  finalDate?: number; 
   id: string;
-  createdAt: Date;
+  createdAtEpoch: number; 
   createdBy: string;
   createdByUid: string;
   userDates: {
-    [username: string]: UserDate[];
+    // Key is userId
+    [userId: string]: UserDate[];
   };
   participants: {
     [uid: string]: {
@@ -17,12 +18,14 @@ export interface Session {
       status: 'invited' | 'accepted' | 'declined';
     };
   };
-  participantIds: string[]; 
+  participantIds: string[];
+  aggregatedAvailability?: DatePopularity[]; 
   poll?: {
     id: string;
     movieTitles: string[];
     votes: {
-      [username: string]: string[];
+      // Key is userId
+      [userId: string]: string[];
     };
   };
   status: 'active' | 'completed';
@@ -33,14 +36,21 @@ export interface Session {
     movieTitles: string[];
     votes: { [username: string]: string[] };
   }
+
 export interface DatePopularity {
-    hours: Record<string, { count: number; users: string[] }>; 
-    date: string;
-    count: number;
-    users: string[];
-  }
+  dateEpoch: number;
+  count: number;
+  users: string[]; // Stores userIds
+  hours: Record<string, { 
+    count: number; 
+    users: string[]; 
+    hourEpoch: number; 
+  }>; 
+}
+  
+  
   
   export interface DateTimeSelection {
     date: Date;
-    hours: number[] | 'all';
+    hours: number[]; 
   }

@@ -1,5 +1,5 @@
 // hooks/useSendInvitation.ts
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import useSWRMutation from 'swr/mutation';
 import { Friend } from '@/types';
 
@@ -30,7 +30,7 @@ async function sendInvitationFetcher(url: string, { arg }: { arg: SendInvitation
 }
 
 export const useSendInvitation = () => {
-  const { userData } = useUserData();
+  const { userData } = useAuthUser(); // Use new hook
   const { trigger, isMutating, error } = useSWRMutation('/api/send-notification', sendInvitationFetcher);
 
   const sendInvitation = async (selectedFriends: Friend[], sessionId: string) => {

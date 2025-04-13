@@ -1,17 +1,17 @@
-// types/user.ts
-// types/user.ts
+
+
 import { User, Auth } from 'firebase/auth';
-import { Media } from './media'; // Add this import
+import { Media } from './media'; 
 
 export interface AuthState {
   user: User | null;
   loading: boolean;
   signIn: () => Promise<User | undefined>;
-  signOut: () => Promise<boolean>; // Changed return type to Promise<boolean>
+  signOut: () => Promise<boolean>; 
   isAuthenticated: boolean;
   initialAuthChecked: boolean;
-  isSessionVerified: boolean; // Restore session verification state
-  markSessionVerified: (verified: boolean) => void; // Restore function to update session state
+  isSessionVerified: boolean; 
+  markSessionVerified: (verified: boolean) => void; 
   auth: Auth;
 }
 
@@ -26,14 +26,14 @@ export interface AuthFormData {
 export interface UserData {
   username: string;
   email?: string;
-  photoURL?: string | null; // Add optional photoURL here too
+  photoURL?: string | null; 
   createdAt?: Date;
   updatedAt?: Date;
-  // Removed setupCompleted
+  
   uid?: string;
   watchlist: {
     movie: Media[];
-    tv: Media[];    // Changed from object to array of Media
+    tv: Media[];    
   };
   notification?: NotificationStatus;
 }
@@ -42,8 +42,8 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   username: string;
-  photoURL?: string | null; // Add optional photoURL
-  // Removed setupCompleted
+  photoURL?: string | null; 
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -59,7 +59,7 @@ export interface FriendRequest {
   id: string;
   fromUid: string;
   fromUsername: string;
-  fromPhotoURL?: string; // Add optional photoURL
+  fromPhotoURL?: string; 
   status: 'pending' | 'accepted' | 'rejected';
   timestamp: string;
   exists?: boolean;
@@ -77,12 +77,12 @@ export interface FriendSearchResult {
   username: string;
 }
 
-// Define the possible friendship statuses (can also be defined here or imported)
+
 type FriendshipStatus = 'friends' | 'pending_sent' | 'pending_received' | 'none';
 
 export interface FriendSearchResultWithStatus extends FriendSearchResult {
-  photoURL?: string; // Add optional photoURL
-  friendshipStatus: FriendshipStatus; // Replace requestStatus with combined status
+  photoURL?: string; 
+  friendshipStatus: FriendshipStatus; 
 }
 
 export type NotificationStatus = 'allowed' | 'denied' | 'unsupported';

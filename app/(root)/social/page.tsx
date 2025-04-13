@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useSearchParams } from 'next/navigation'; 
 import { Users, Bell, Search, ChevronRight, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FriendsList, RequestsList, SearchUsers } from '@/components/social';
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; 
+import { useFriendsContext } from '@/context/FriendsContext'; 
 import { toast } from "@/hooks/use-toast";
 import { Friend, FriendRequest, FriendSearchResult, FriendSearchResultWithStatus } from '@/types';
 
@@ -36,8 +37,8 @@ const socialCategories = [
 ];
 
 export default function SocialPage() {
+  const { userData } = useAuthUser(); 
   const {
-    userData,
     friends,
     friendRequests,
     isLoadingFriends,
@@ -46,18 +47,18 @@ export default function SocialPage() {
     rejectFriendRequest,
     removeFriend,
     sendFriendRequest,
-  } = useUserData();
+  } = useFriendsContext(); 
 
-  const searchParams = useSearchParams(); // Get search params
-  const initialTab = searchParams.get('tab'); // Read the 'tab' parameter
+  const searchParams = useSearchParams(); 
+  const initialTab = searchParams.get('tab'); 
 
-  // Set initial active category based on query param or default to 'friends'
+  
   const [activeCategory, setActiveCategory] = useState(() => {
     if (initialTab === 'requests') {
       return 'requests';
     }
-    // Add other potential initial tabs here if needed
-    return socialCategories[0].id; // Default to 'friends'
+    
+    return socialCategories[0].id; 
   });
 
 
@@ -94,7 +95,7 @@ export default function SocialPage() {
 
     try {
       const params = new URLSearchParams();
-      params.append('username', searchQuery.trim());
+      params.append('username', searchQuery.trim().toLowerCase()); 
       params.append('currentUserId', userData.uid);
 
       const response = await fetch(`/api/friends/search?${params.toString()}`);
@@ -147,11 +148,11 @@ export default function SocialPage() {
         description: `Friend request sent to ${targetUser.username}`,
         variant: 'default',
       });
-      // Optimistically update the UI
+      
       setSearchResults(prevResults =>
         prevResults.map(user =>
           user.uid === targetUser.uid
-            ? { ...user, friendshipStatus: 'pending_sent' } // Correctly update status
+            ? { ...user, friendshipStatus: 'pending_sent' } 
             : user
         )
       );

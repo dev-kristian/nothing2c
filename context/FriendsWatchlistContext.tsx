@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { FirestoreWatchlistItem, FriendsWatchlistItem, Friend } from '@/types';
 import { useAuthContext } from './AuthContext';
-import { useUserData } from './UserDataContext'; // Import useUserData
+import { useFriendsContext } from './FriendsContext'; // Updated import
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, Unsubscribe, DocumentSnapshot, FirestoreError } from 'firebase/firestore';
 
@@ -69,7 +69,7 @@ const processWatchlistItems = (
 
 export const FriendsWatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthContext();
-  const { friends, isLoadingFriends } = useUserData();
+  const { friends, isLoadingFriends } = useFriendsContext(); // Use new hook
 
   const [friendsWatchlistItems, setFriendsWatchlistItems] = useState<FriendsWatchlistApiResponse>({ movie: [], tv: [] });
   const [allWatchlistsData, setAllWatchlistsData] = useState<Map<string, UserWatchlistData>>(new Map());

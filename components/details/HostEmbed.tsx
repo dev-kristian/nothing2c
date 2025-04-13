@@ -94,7 +94,6 @@ const HostEmbed: React.FC<HostEmbedProps> = ({
     setEmbedUrl('');
 
     try {
-      console.log(`Fetching S.to links for: ${sToUrl}`);
       const response = await fetch(`/api/german-host?url=${encodeURIComponent(sToUrl)}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));

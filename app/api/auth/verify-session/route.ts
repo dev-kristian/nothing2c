@@ -14,7 +14,6 @@ export async function GET() {
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie); 
 
     if (!decodedClaims.email_verified) {
-      console.log(`[API Verify Session] User ${decodedClaims.uid} email not verified.`);
       const response = NextResponse.json({ isAuthenticated: false, reason: 'email_not_verified' }, { status: 401 });
       response.cookies.set('__session', '', { maxAge: 0, path: '/' });
       return response;

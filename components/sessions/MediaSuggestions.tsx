@@ -12,7 +12,7 @@ import {
   useOutsideClickHandler,
 } from '@/utils/movieNightInvitationUtils';
 import { useSession } from '@/context/SessionContext';
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { FriendsWatchlistItem, Session, Poll } from '@/types';
 import Link from 'next/link';
 
@@ -20,9 +20,10 @@ interface MediaSuggestionsProps {
   session: Session;
   poll: Poll | undefined;
   isReadOnly?: boolean;
+  userId?: string; // Added userId prop
 }
 
-const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isReadOnly = false }) => {
+const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isReadOnly = false, userId }) => {
   const [inputMediaTitle, setInputMediaTitle] = useState<string>('');
   const [suggestions, setSuggestions] = useState<FriendsWatchlistItem[]>([]);
   const [showInput, setShowInput] = useState<boolean>(false);
@@ -30,7 +31,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
 
   const { friendsWatchlistItems } = useFriendsWatchlist();
   const { toggleVote, addMovieToPoll, removeMovieFromPoll } = useSession();
-  const { userData } = useUserData();
+  const { userData } = useAuthUser(); // Use new hook
 
   useOutsideClickHandler(inputContainerRef, () => {
     setSuggestions([]);
@@ -39,7 +40,8 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
     }
   });
 
-  const isSessionCreator = userData?.username === session.createdBy;
+  // Use createdByUid for creator check
+  const isSessionCreator = userId === session.createdByUid;
 
   const handleAddMedia = async () => {
     if (isReadOnly) return;
@@ -68,8 +70,9 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
   };
 
   const hasVoted = (mediaTitle: string) => {
-    if (!poll?.votes || !userData?.username) return false;
-    const userVotes = poll.votes[userData.username] || [];
+    // Use userId prop to check votes
+    if (!poll?.votes || !userId) return false;
+    const userVotes = poll.votes[userId] || [];
     return userVotes.includes(mediaTitle);
   };
 
@@ -114,7 +117,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
   };
 
   return (
-    <div className="mt-6 frosted-panel p-6">
+    <div className="mt-6 frosted-panel p-2">
       <div className="flex items-center justify-between mb-5">
         <div ref={inputContainerRef} className="relative">
           {showInput ? (
@@ -159,7 +162,7 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
           )}
 
           {suggestions.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full max-h-44 overflow-y-auto rounded-xl border border-gray-4 dark:border-white no-scrollbar shadow-apple dark:shadow-apple-dark bg-white dark:bg-gray-6-dark/90 backdrop-blur-md backdrop-saturate-150">
+            <div className="absolute z-10 mt-1 w-full max-h-44 overflow-y-auto rounded-xl border border-gray-4 dark:border-white no-scrollbar shadow-apple dark:shadow-apple-dark bg-white dark:bg-gray-6-dark backdrop-blur-md backdrop-saturate-150">
               {suggestions.map((media) => (
                 <div
                   key={media.id}

@@ -9,7 +9,7 @@ import MediaTypeToggle from '../MediaTypeToggle';
 import { useTrending } from '@/hooks/discover/useTrending';
 import { ApiResponse, DiscoverMediaType } from '@/lib/fetchers';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext'; 
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TrendingSectionProps {
@@ -30,7 +30,7 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
   } = useTrending({ initialData, initialMediaType });
 
   const { initialAuthChecked } = useAuthContext();
-  const { isLoading: isUserDataLoading } = useUserData();
+  const { isLoading: isUserDataLoading } = useAuthUser(); // Use new hook
 
   const isContextLoading = !initialAuthChecked || isUserDataLoading;
 

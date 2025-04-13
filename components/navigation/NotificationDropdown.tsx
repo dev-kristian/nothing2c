@@ -206,7 +206,7 @@ export default function NotificationDropdown({
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5 truncate group-hover:text-primary-foreground/80 transition-colors duration-150">
-                               {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                               {new Date(session.createdAtEpoch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>

@@ -74,8 +74,9 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
         return NextResponse.json({ error: 'Movie title not found in the poll' }, { status: 404 });
     }
 
-    const userVotesPath = `poll.votes.${username}`;
-    const currentUserVotes: string[] = sessionData.poll.votes?.[username] || [];
+    // Use userId as the key for poll votes
+    const userVotesPath = `poll.votes.${userId}`;
+    const currentUserVotes: string[] = sessionData.poll.votes?.[userId] || [];
 
     let updateOperation;
     if (currentUserVotes.includes(movieTitle)) {

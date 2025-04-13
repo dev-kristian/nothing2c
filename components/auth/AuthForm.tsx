@@ -119,7 +119,6 @@ import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContex
         router.push(redirectPath); 
 
       } else {
-         console.log("Google Sign In popup closed or did not return a user.");
          toast({
             title: "Google Sign In Cancelled",
           variant: "default",

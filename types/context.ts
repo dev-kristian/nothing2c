@@ -1,5 +1,4 @@
-// types/context.ts
-import { Timestamp } from 'firebase/firestore';
+
 import { Media, UserData, Friend, FriendRequest, DateTimeSelection, Session, SearchResult } from './';
 import { KeyedMutator } from 'swr';
 
@@ -8,9 +7,6 @@ export type TopWatchlistItem = FirestoreWatchlistItem;
 export interface UserDataContextType {
     userData: UserData | null;
     isLoading: boolean;
-    // Removed: watchlistItems
-    // Removed: addToWatchlist
-    // Removed: removeFromWatchlist
     mutateUserData: KeyedMutator<UserData | null>;
     friends: Friend[];
     friendRequests: FriendRequest[];
@@ -76,14 +72,16 @@ export interface SessionContextType {
   isLoading: boolean;
 }
 
+
 export interface FirestoreUserDate {
-  date: Timestamp;
-  hours: Timestamp[] | 'all';
+  dateEpoch: number; 
+  hoursEpoch: number[]; 
 }
 
+
 export interface UserDate {
-  date: string;
-  hours: string[] | 'all';
+  dateEpoch: number;
+  hoursEpoch: number[];
 }
 
 export interface SearchState {
