@@ -1,4 +1,4 @@
-// app/search/[query]/page.tsx
+
 'use client';
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
@@ -27,17 +27,17 @@ const fetcher = async (url: string): Promise<SearchApiResponse> => {
   return response.json();
 };
 
-// More specific debounce type to handle arguments correctly
+
 function debounce<A extends unknown[], R>(func: (...args: A) => R, wait: number): (...args: A) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   return function(this: ThisParameterType<typeof func>, ...args: A) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const context = this; 
-    
+    // Removed 'const context = this;' alias
+
     const later = () => {
       timeoutId = null;
-      func.apply(context, args);
+      // Use 'this' directly as arrow functions inherit it
+      func.apply(this, args);
     };
 
     if (timeoutId !== null) {
@@ -156,7 +156,7 @@ export default function SearchResultsPage() {
   const observer = useRef<IntersectionObserver>();
   const lastItemRef = useRef<HTMLDivElement>(null);
 
-  // Explicitly type the debounced function
+  
   const debouncedSetSize = useMemo(
     () => debounce<[number], Promise<SearchApiResponse[] | undefined>>(setSize, 300),
     [setSize]
