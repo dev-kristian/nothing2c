@@ -136,15 +136,12 @@ export const sendNotificationToRecipients = async (
     const message: admin.messaging.Message = {
         // NO 'notification' field
         data: dataPayload,      // All info needed by SW is here
-        webpush: webpushConfig, // Webpush specific config
+        // REMOVED webpush: webpushConfig - Let SW handle all display logic from data
         apns: { // APNS specific config
             payload: {
                 aps: {
-                    // 'content-available': 1 // Use this for silent background updates if needed
-                    // DO NOT include 'alert' field here to prevent default iOS notification
-                    // Include other APNS specific fields if necessary (e.g., badge, sound)
-                    // badge: 1, // Example: set badge number
-                    // sound: 'default', // Example: play default sound
+                    'content-available': 1 // Signal background update, omit 'alert' entirely
+                    // No other fields like alert, badge, sound to minimize default behavior triggers
                 }
             }
         },
