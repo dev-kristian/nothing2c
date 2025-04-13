@@ -44,8 +44,8 @@ import { useAuthContext } from '@/context/AuthContext';
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const router = useRouter(); 
-  const { markSessionVerified } = useAuthContext(); 
+  const router = useRouter();
+  const { setServerSessionPending } = useAuthContext(); // Get the new function
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
@@ -85,6 +85,7 @@ import { useAuthContext } from '@/context/AuthContext';
 
   const onGoogleSignIn = async () => {
     setGoogleLoading(true);
+    setServerSessionPending(true); // Set pending state before API call
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -109,8 +110,6 @@ import { useAuthContext } from '@/context/AuthContext';
           });
           return;
         }
-
-        markSessionVerified(true); 
 
         toast({
           title: "Google Sign In Successful",
@@ -142,6 +141,7 @@ import { useAuthContext } from '@/context/AuthContext';
       }
     } finally {
       setGoogleLoading(false);
+      setServerSessionPending(false); // Reset pending state after API call completes
     }
   };
 

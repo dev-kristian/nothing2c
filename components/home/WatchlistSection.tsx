@@ -18,8 +18,8 @@ interface EmptyStateProps {
 
 const MemoizedMediaPoster = React.memo(MediaPoster);
 
-const WatchlistSkeleton = ({ count = 8, gridCols }: { count?: number, gridCols: string }) => (
-  <div className={`grid ${gridCols} gap-4 md:gap-6`}>
+const WatchlistSkeleton = ({ count = 8 }: { count?: number}) => (
+  <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4`}>
     {Array.from({ length: count }).map((_, index) => (
       <div key={`skeleton-${index}`} className="space-y-2">
         <Skeleton className="aspect-[2/3] rounded-lg" />
@@ -52,7 +52,7 @@ export function WatchlistSection() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const gridCols = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+  const gridCols = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -243,7 +243,7 @@ export function WatchlistSection() {
       </div>
 
       {isLoading ? (
-         <WatchlistSkeleton count={initialBatchSize} gridCols={gridCols} />
+         <WatchlistSkeleton count={initialBatchSize} />
       ) : displayItems.length > 0 ? (
         <div className="transition-opacity duration-300 ease-in-out">
           <div className={`grid ${gridCols} gap-4 md:gap-6`}>

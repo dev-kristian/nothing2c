@@ -82,7 +82,7 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
 
 
 const CommunitySkeleton = () => {
-  const gridCols = "grid-cols-2 md:grid-cols-3"; 
+  const gridCols = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 md:gap-4"; 
   const posterCount = 6; 
 
   return (
@@ -153,7 +153,7 @@ export function CommunitySection() {
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
   
-  const gridCols = "grid-cols-2 md:grid-cols-3";
+  const gridCols = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4";
 
   const items = friendsWatchlistItems[mediaType].slice(0, visibleItems);
 

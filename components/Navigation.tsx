@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
 import { useFriends } from '@/hooks/user/useFriends';
@@ -26,8 +25,9 @@ import NotificationDropdown from './navigation/NotificationDropdown';
 import UserProfileDropdown from './navigation/UserProfileDropdown';
 import DesktopNavLinks from './navigation/DesktopNavLinks';
 import MobileSidebar from './navigation/MobileSidebar';
-import { ThemeToggle } from './navigation/ThemeToggle'; 
+import { ThemeToggle } from './navigation/ThemeToggle';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface NavItem {
   href: string;
@@ -39,8 +39,7 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, signOut } = useAuthContext();
-  const [displayUser, setDisplayUser] = useState<User | null>(user); 
+  const { user, signOut, isServerSessionPending, loading } = useAuthContext();
   const { friendRequests } = useFriends();
   const { sessions } = useSessionSubscription();
   const router = useRouter();
@@ -48,24 +47,25 @@ export default function Navigation() {
 
   const pendingFriendRequestsCount = friendRequests.length;
   const pendingInvitationsCount = useMemo(() => {
-    if (!displayUser?.uid || !sessions) return 0;
-    return sessions.filter(session => session.participants?.[displayUser.uid]?.status === 'invited').length;
-  }, [sessions, displayUser?.uid]); 
+    // Use user directly
+    if (!user?.uid || !sessions) return 0;
+    return sessions.filter(session => session.participants?.[user.uid]?.status === 'invited').length;
+  }, [sessions, user?.uid]);
   const totalNotifications = pendingFriendRequestsCount + pendingInvitationsCount;
 
-  const navigationItems = useMemo((): NavItem[] => { 
+  const navigationItems = useMemo((): NavItem[] => {
     const baseItems: NavItem[] = [];
-    if (displayUser) {
+    if (user && user.emailVerified && !isServerSessionPending) {
       return [
         ...baseItems,
-        { href: '/', icon: Compass, label: 'Discover' }, // Added Discover link
+        { href: '/', icon: Compass, label: 'Discover' },
         { href: '/watch-together', icon: TvMinimalPlay, label: 'Watch Together' },
         { href: '/my-library', icon: Library, label: 'My Library' },
         { href: '/social', icon: Share2, label: 'Social' },
       ];
     }
     return baseItems;
-  }, [displayUser]);
+  }, [user, isServerSessionPending]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,19 +80,12 @@ export default function Navigation() {
 
   useEffect(() => {
     setIsOpen(false);
-    setIsOpen(false); // Close mobile sidebar on navigation
   }, [pathname]);
-
-  useEffect(() => {
-    if (!isSigningOut) {
-      setDisplayUser(user);
-    }
-  }, [user, isSigningOut]);
 
   const handleSignOut = useCallback(async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
-    setIsOpen(false); // Close mobile sidebar if open
+    setIsOpen(false);
 
     try {
       const success = await signOut();
@@ -120,12 +113,42 @@ export default function Navigation() {
 
   const isActivePath = (path: string) => pathname === path;
 
+  if (loading) {
+    return (
+      <nav className="fixed w-full z-50 py-1 h-[var(--navbar-height)] bg-background/60 dark:bg-background/30 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 h-full">
+          <div className="flex justify-between items-center h-full">
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="flex flex-col space-y-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-2 w-20" />
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+            <div className="flex items-center md:hidden space-x-2">
+               <Skeleton className="h-9 w-9 rounded-full" />
+               <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Removed intermediate isAuthenticated variable, check directly where needed
+
   return (
     <>
     {!isOpen && (
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
+      <nav
       className={`fixed w-full z-50 py-1 h-[var(--navbar-height)] transition-all duration-500 ${
         scrolled
           ? 'bg-background/60 dark:bg-background/30 backdrop-blur-xl shadow-lg'
@@ -169,19 +192,19 @@ export default function Navigation() {
               </span>
             </div>
           </Link>
-          {/* Desktop Navigation Area */}
           <div className="hidden md:flex items-center space-x-2">
             <DesktopNavLinks navigationItems={navigationItems} isActivePath={isActivePath} />
-            {displayUser ? (
+            {/* Restore original check: user exists, email verified, AND server session is NOT pending */}
+            {user && user.emailVerified && !isServerSessionPending ? (
               <>
                 <NotificationDropdown
-                  user={displayUser}
+                  user={user}
                   friendRequests={friendRequests}
                   sessions={sessions}
                   totalNotifications={totalNotifications}
                 />
                 <UserProfileDropdown
-                  user={displayUser}
+                  user={user}
                   onSignOut={handleSignOut}
                   isSigningOut={isSigningOut}
                 />
@@ -189,13 +212,12 @@ export default function Navigation() {
             ) : (
               <>
                 <ThemeToggle /> 
-                {/* Sign In button styled like an ACTIVE nav link */}
                 <Button 
                   asChild 
                   className="flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 font-medium bg-pink text-white hover:bg-pink/90" // Apply active styles + subtle hover
                 >
                   <Link href="/sign-in">
-                    <LogIn className="h-4 w-4 text-white" /> {/* Ensure icon is white */}
+                    <LogIn className="h-4 w-4 text-white" />
                     <span>Sign In</span>
                   </Link>
                 </Button>
@@ -203,17 +225,16 @@ export default function Navigation() {
             )}
           </div>
 
-          {/* Mobile Navigation Area */}
-          <div className="flex items-center md:hidden space-x-2"> {/* Added space-x-2 */}
-            {displayUser ? (
-              // Authenticated User: Show Notifications & Menu
+          <div className="flex items-center md:hidden space-x-2">
+            {/* Restore original check: user exists, email verified, AND server session is NOT pending */}
+            {user && user.emailVerified && !isServerSessionPending ? (
               <>
                 <NotificationDropdown
-                  user={displayUser}
+                  user={user}
                   friendRequests={friendRequests}
                   sessions={sessions}
                   totalNotifications={totalNotifications}
-                  className="mr-0" // Removed margin, using space-x now
+                  className="mr-0"
                   onItemClick={() => setIsOpen(false)}
                 />
                 {!isOpen && (
@@ -230,13 +251,12 @@ export default function Navigation() {
             ) : (
               <>
                 <ThemeToggle />
-                {/* Sign In button styled like an ACTIVE nav link */}
                 <Button 
                   asChild 
                   className="flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 font-medium bg-pink text-white hover:bg-pink/90" // Apply active styles + subtle hover
                 >
                   <Link href="/sign-in">
-                    <LogIn className="h-4 w-4 text-white" /> {/* Ensure icon is white */}
+                    <LogIn className="h-4 w-4 text-white" />
                     <span>Sign In</span>
                   </Link>
                 </Button>
@@ -245,16 +265,15 @@ export default function Navigation() {
           </div>
         </div>
       </div>
-    </motion.nav>
+    </nav>
     )}
 
-    {/* Mobile Sidebar Component */}
     <MobileSidebar
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       navigationItems={navigationItems}
       isActivePath={isActivePath}
-      user={displayUser}
+      user={user}
       onSignOut={handleSignOut}
       isSigningOut={isSigningOut}
     />

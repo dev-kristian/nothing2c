@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   onIdTokenChanged,
   User,
@@ -11,9 +11,11 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; 
+import { auth } from '@/lib/firebase';
 import { handleAuthError } from '@/lib/utils';
-import type { AuthState } from '@/types'; 
+import type { AuthState } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { mutate } from 'swr'; // Import global mutate from SWR
 
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -22,9 +24,11 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
-  const [isSessionVerified, setIsSessionVerified] = useState(false);
+  const [loading, setLoading] = useState(true); // Will be set to false after initial check
+  const [isServerSessionPending, setServerSessionPending] = useState(false); // NEW state
+  const initialCheckDone = useRef(false); // Use ref for initial loading flag
+
+  // Removed initialAuthChecked and isSessionVerified states
 
   const signIn = useCallback(async () => {
     try {
@@ -34,10 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       handleAuthError(error, 'Failed to sign in. Please try again.');
     }
-  }, []);
-
-  const markSessionVerified = useCallback((verified: boolean) => {
-    setIsSessionVerified(verified);
   }, []);
 
   const signOut = useCallback(async (): Promise<boolean> => {
@@ -60,77 +60,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await firebaseSignOut(auth);
-      
-      markSessionVerified(false);
       return true;
     } catch (error) {
       console.error('Firebase sign out error:', error);
       throw error;
     }
-  }, [markSessionVerified]); 
+  }, []);
 
-  
+
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence)
       .catch((error) => {
         console.error("Auth persistence error:", error);
       });
 
-    
+    // No longer need initialCheckDone variable inside the effect
     const unsubscribe = onIdTokenChanged(auth, (currentUser) => {
-      setUser(currentUser); 
-      
-    });
+      const previousUser = user; // 'user' is now correctly captured due to dependency
+      setUser(currentUser);
 
-    return () => unsubscribe(); 
-  }, []); 
-
-  
-  useEffect(() => {
-    const verifySessionWithBackend = async () => {
-      if (!user) {
-        markSessionVerified(false);
-        setLoading(false);
-        setInitialAuthChecked(true); 
-        return;
+      // Trigger revalidation only if auth state actually changes (login/logout)
+      if (previousUser?.uid !== currentUser?.uid) {
+        mutate('/api/users/me'); // Revalidate user profile data
       }
 
-
-      try {
-        
-        const response = await fetch('/api/users/me');
-
-        if (response.ok) {
-          markSessionVerified(true);
-        } else {
-          markSessionVerified(false);
-          
-          
-        }
-      } catch (error) {
-        console.error('[AuthContext] Network error during backend verification:', error);
-        markSessionVerified(false); 
-      } finally {
+      // Set loading to false only once after the first check
+      if (!initialCheckDone.current) {
         setLoading(false);
-        setInitialAuthChecked(true); 
+        initialCheckDone.current = true;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]); // Add 'user' dependency
+
+  // NEW: Effect to verify server session when Firebase user is detected client-side
+  useEffect(() => {
+    const verifyServerSession = async () => {
+      // Only run if Firebase client detects a user AND we are NOT actively trying to set up a server session
+      if (user && !isServerSessionPending) {
+        try {
+          const response = await fetch('/api/auth/verify-session');
+          if (!response.ok) {
+            // Server session is invalid, show toast and force client sign out
+            console.warn('[AuthContext] Server session invalid, forcing client sign out.');
+            toast({
+              title: "Session Invalid",
+              description: "Your session has expired or become invalid. You have been signed out.",
+              variant: "destructive",
+            });
+            await signOut();
+          }
+        } catch (error) {
+          console.error('[AuthContext] Error verifying server session:', error);
+          // Optional: Sign out on network error too? Depends on desired behavior.
+          // await signOut();
+        }
       }
     };
 
-    verifySessionWithBackend();
-  }, [user, markSessionVerified]); 
-  
+    verifyServerSession();
+  }, [user, signOut, isServerSessionPending]); // Add isServerSessionPending dependency
 
-  
+
+  // Removed redundant useEffect for backend session verification
+
+
   const value: AuthState = {
     user,
-    loading,
+    loading, // Reflects initial Firebase auth check
     signIn,
     signOut,
     isAuthenticated: !!user,
-    initialAuthChecked,
-    isSessionVerified,
-    markSessionVerified,
-    auth, 
+    isServerSessionPending,
+    setServerSessionPending,
+    auth,
   };
 
   return (

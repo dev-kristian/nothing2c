@@ -248,43 +248,34 @@ export async function PATCH(
 
     
     if (sendNotification) {
-        
         const notificationTitle = "Session Finalized!";
-        let notificationBody = "Movie Night details are set!";
-        const formattedWinningTime = winningDateEpoch ? formatEpochToLocalTime(winningDateEpoch) : null;
-
-        if (winningMovieTitle && formattedWinningTime) {
-          notificationBody = `Watch '${winningMovieTitle}' on ${formattedWinningTime}.`;
-        } else if (winningMovieTitle) {
-          notificationBody = `The winning movie is '${winningMovieTitle}'. Time TBD.`;
-        } else if (formattedWinningTime) {
-          notificationBody = `The winning time is ${formattedWinningTime}. Movie TBD.`;
-        } else {
-          
-          notificationBody = "The session details have been finalized.";
-        }
-
+        // Generic body, details will be constructed client-side from data payload
+        const notificationBody = "Movie Night details are set! Tap to view.";
 
         const recipients = (sessionData.participantIds || []).filter(id => id !== userId);
 
         if (recipients.length > 0) {
           const clickAction = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/watch-together/${sessionId}`;
-          // Construct enhanced payload
+
+          // Construct enhanced payload including data for client-side formatting
           const notificationPayload = {
             title: notificationTitle,
-            body: notificationBody,
-            icon: '/icon-192x192.png', // Standard icon
-            image: '/images/notification-banner.jpg', // Placeholder banner image URL
-            badge: '/icons/badge-monochrome.png', // Placeholder badge icon URL
-            tag: sessionId, // Use sessionId to group/replace notifications
-            clickAction: clickAction, // URL for default click and service worker
-            actions: [ // Add action buttons
+            body: notificationBody, // Generic body
+            icon: '/icon-192x192.png',
+            image: '/images/notification-banner.jpg',
+            badge: '/icons/badge-monochrome.png',
+            tag: sessionId,
+            clickAction: clickAction, // Still needed for the data payload
+            actions: [
               { action: 'view_session', title: 'View Session' },
-              // { action: 'dismiss', title: 'Dismiss' } // Optional dismiss action
-            ]
+            ],
+            // Add custom data for the service worker
+            // Ensure epoch is sent as a string as data payloads typically expect strings
+            sessionEpoch: winningDateEpoch ? winningDateEpoch.toString() : '',
+            sessionMovieTitle: winningMovieTitle || '', // Send empty string if null
           };
 
-          console.log(`[${sessionId}] Attempting to send completion notification to ${recipients.length} recipients.`);
+          console.log(`[${sessionId}] Attempting to send completion notification to ${recipients.length} recipients with data payload.`);
           
           const notificationResult = await sendNotificationToRecipients(recipients, notificationPayload);
 

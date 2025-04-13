@@ -81,35 +81,66 @@ export const sendNotificationToRecipients = async (
       ...otherFields // Capture any remaining fields for custom data
   } = payload;
 
-  // Base notification payload for FCM (title and body are standard)
-  const fcmNotificationPayload = { title, body };
+  // REMOVED: Base notification payload - will be sent in data payload instead
+  // const fcmNotificationPayload = { title, body };
 
-  // Construct the webpush specific config, including new visual options
-  const webpushConfig: admin.messaging.WebpushConfig = { // Use specific type
+  // Construct the webpush specific config for visual/interactive elements
+  // Note: Webpush notification options might still be useful for some platforms/settings,
+  // but the core display logic will rely on data payload.
+  const webpushConfig: admin.messaging.WebpushConfig = {
       notification: {
-          icon, // Standard icon
-          image, // Add image if provided
-          badge, // Add badge if provided
-          actions, // Add actions if provided
-          tag, // Add tag if provided
-          // Include click_action and any other custom data in the 'data' payload
-          // This is the standard way to handle clicks and custom info in service workers
-          data: { click_action: clickAction, ...otherFields },
-          // Spread other custom data fields here ONLY if they are valid Webpush Notification options
-          // Example: requireInteraction, silent, etc. Check MDN docs for valid options.
-          // ...otherFields
+          icon,
+          image,
+          badge,
+          actions,
+          tag,
+          // DO NOT put custom data here. Put it in the top-level 'data' field of the message.
+          // Visual options only. Check MDN Web Push Notification docs for valid fields.
       },
       // fcmOptions.link is deprecated for web push actions, use data payload instead
   };
 
+  // Construct the data payload (must be key-value pairs of strings)
+  // Include ALL necessary info for the SW to build the notification
+  const dataPayload: { [key: string]: string } = {
+      click_action: clickAction || '',
+      // Add display fields previously in 'notification' or 'webpush.notification'
+      title: title || 'Notification', // Provide default if needed
+      body: body || '', // Generic body template if needed, SW will override for sessions
+      icon: icon || '/icon-192x192.png',
+      image: image || '',
+      badge: badge || '',
+      tag: tag || '',
+      // Actions need careful handling - stringify the array
+      actions: actions ? JSON.stringify(actions) : '',
+  };
+  // Add other custom fields (sessionEpoch, sessionMovieTitle), ensuring they are strings
+  for (const key in otherFields) {
+      if (Object.prototype.hasOwnProperty.call(otherFields, key)) {
+          const value = otherFields[key];
+          // Ensure value is a string. Convert if necessary, or skip if complex type.
+          if (typeof value === 'string') {
+              dataPayload[key] = value;
+          } else if (typeof value === 'number' || typeof value === 'boolean') {
+              dataPayload[key] = String(value); // Convert numbers/booleans to strings
+          } else {
+              console.warn(`[notificationUtils] Skipping non-string data field '${key}' for FCM payload.`);
+          }
+      }
+  }
+
+
   const sendPromises = recipients.map(uid => {
     const topic = `user_${uid}`;
-    // Construct the final message for FCM, including webpush config
+    // Construct the final message for FCM - DATA-ONLY message
     const message: admin.messaging.Message = {
-        notification: fcmNotificationPayload,
-        webpush: webpushConfig,
+        // NO 'notification' field - prevents automatic display by FCM SDK
+        webpush: webpushConfig, // Keep for potential platform-specific enhancements? Test removal if needed.
+        data: dataPayload,      // All info needed by SW is here
         topic: topic,
     };
+
+    // console.log(`[${topic}] Sending FCM message:`, JSON.stringify(message, null, 2)); // DEBUG
 
     return admin.messaging().send(message)
       .then(response => ({ uid, status: 'success' as const, response }))
