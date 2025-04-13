@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "esModuleInterop": true,
-    "moduleResolution": "nodenext", // Revert back to nodenext
+    "moduleResolution": "nodenext", 
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
@@ -10,8 +10,6 @@
     "strict": true,
     "target": "es2017"
   },
-  "compileOnSave": true,
-  "include": [
-    "src"
-  ]
+  "compileOnSave": true
+  
 }

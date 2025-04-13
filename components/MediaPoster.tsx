@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { useAuthContext } from '@/context/AuthContext';
 import { Media } from '@/types';
 import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
@@ -29,8 +29,9 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
   index,
 }) => {
   const router = useRouter();
-  const { user} = useAuthContext(); 
-  const { userData: contextUserData, isLoading: isUserDataLoading } = useUserData();
+  const { user } = useAuthContext();
+  // Use new hook, keep aliases for consistency within this file
+  const { userData: contextUserData, isLoading: isUserDataLoading } = useAuthUser();
   const [isMutating, setIsMutating] = useState(false);
 
   const internalMediaType = (media.media_type === 'upcoming' ? 'movie' : media.media_type) as 'movie' | 'tv' | 'person';

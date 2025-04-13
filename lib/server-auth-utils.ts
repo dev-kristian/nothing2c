@@ -1,10 +1,8 @@
 import { cookies } from 'next/headers';
-import * as admin from 'firebase-admin'; // Import the admin namespace
+import * as admin from 'firebase-admin';
 import { adminAuth, adminDb } from './firebase-admin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { UserData, UserProfile } from '@/types/user'; // Import UserProfile from types/user
-
-// Removed local UserProfile interface definition
+import { UserData, UserProfile } from '@/types/user'; 
 
 export async function getAuthenticatedUserProfile(): Promise<UserProfile | null> {
   const sessionCookie = cookies().get('__session')?.value;
@@ -20,16 +18,13 @@ export async function getAuthenticatedUserProfile(): Promise<UserProfile | null>
     const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
     const firestoreData = userDoc.exists ? userDoc.data() : {};
 
-    // Ensure firestoreData is treated as potentially having any user fields
-    // Ensure firestoreData is treated as potentially having any user fields, including Timestamps
     const userDataFromFirestore = firestoreData as Partial<UserData & { createdAt?: admin.firestore.Timestamp, updatedAt?: admin.firestore.Timestamp }>;
 
     return {
       uid: decodedToken.uid,
-      email: decodedToken.email || null, // Ensure email is null if undefined
-      username: userDataFromFirestore?.username || '', // Provide default empty string
-      photoURL: userDataFromFirestore?.photoURL || null, // Fetch photoURL
-      // Convert timestamps if they exist, otherwise use defaults or handle appropriately
+      email: decodedToken.email || null,
+      username: userDataFromFirestore?.username || '',
+      photoURL: userDataFromFirestore?.photoURL || null, 
       createdAt: userDataFromFirestore?.createdAt?.toDate?.().toISOString() || new Date(0).toISOString(),
       updatedAt: userDataFromFirestore?.updatedAt?.toDate?.().toISOString() || new Date(0).toISOString(),
     };
@@ -56,7 +51,7 @@ export async function getAuthenticatedUserProfile(): Promise<UserProfile | null>
   }
 }
 
-export async function getFullAuthenticatedUser(): Promise<UserData | null> {
+export async function getFullAuthenticatedUser(): Promise<Omit<UserData, 'watchlist'> | null> {
   const sessionCookie = cookies().get('__session')?.value;
   if (!sessionCookie) {
     return null;
@@ -78,15 +73,21 @@ export async function getFullAuthenticatedUser(): Promise<UserData | null> {
 
     const firestoreData = userDoc.data() || {};
 
-    const userData: UserData = {
+    const userData: Omit<UserData, 'watchlist'> = {
       uid: decodedToken.uid,
-      email: decodedToken.email,
-      username: firestoreData.username || '', 
-      watchlist: firestoreData.watchlist || { movie: [], tv: [] },
+      email: decodedToken.email ?? undefined, 
+      username: firestoreData.username || '',
+      photoURL: firestoreData.photoURL || null,
     };
-    
+
     if (firestoreData.notification) {
       userData.notification = firestoreData.notification;
+    }
+    if (firestoreData.createdAt) {
+        userData.createdAt = (firestoreData.createdAt as admin.firestore.Timestamp).toDate();
+    }
+     if (firestoreData.updatedAt) {
+        userData.updatedAt = (firestoreData.updatedAt as admin.firestore.Timestamp).toDate();
     }
 
     return userData;

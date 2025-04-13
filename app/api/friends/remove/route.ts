@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     try {
       await currentUserBatch.commit();
-      console.log(`Successfully removed friend ${friendId} from user ${authenticatedUserId}'s data.`);
     } catch (currentUserError) {
       console.error(`Error cleaning up current user's (${authenticatedUserId}) data for friend ${friendId}:`, currentUserError);
       return NextResponse.json(
@@ -61,14 +60,12 @@ export async function POST(request: NextRequest) {
           [`friendsList.${authenticatedUserId}`]: deleteField()
         });
     } else {
-         console.log(`Removed friend ${friendId}'s friends/data document does not exist. Skipping update.`);
     }
     friendBatch.delete(friendFriendOfRef);
     friendBatch.delete(sentRequestRef);
 
     try {
       await friendBatch.commit();
-      console.log(`Successfully cleaned up removed friend ${friendId}'s data.`);
     } catch (friendCleanupError) {
       console.error(`Non-critical error cleaning up removed friend's (${friendId}) data for user ${authenticatedUserId}:`, friendCleanupError);
     }

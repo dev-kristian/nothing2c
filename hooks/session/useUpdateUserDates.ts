@@ -1,20 +1,23 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { DateTimeSelection } from '@/types';
+import { DateTimeSelection } from '@/types'; // UserDate is implicitly handled by the util
+import { localSelectionsToUTCEpoch } from '@/lib/dateTimeUtils'; // Import the centralized function
+
+// Removed the local convertToEpochUserDates function
 
 export const useUpdateUserDates = () => {
   const { user } = useAuthContext();
 
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const DEBOUNCE_DELAY = 1500;
-
-  const executeUpdate = useCallback(async (sessionId: string, dates: DateTimeSelection[]) => {
+  const updateUserDates = useCallback(async (sessionId: string, dates: DateTimeSelection[]) => {
     if (!user) {
-        console.error('User must be logged in to update dates');
-        return;
+      console.error('User must be logged in to update dates');
+      return Promise.reject(new Error('User not logged in')); 
     }
 
-    console.log(`Executing update for session ${sessionId} with ${dates.length} dates after debounce.`); // Added log
+
+    // Use the centralized utility function for conversion
+    const epochUserDates = localSelectionsToUTCEpoch(dates); 
+    const payload = { dates: epochUserDates }; 
 
     try {
       const response = await fetch(`/api/sessions/${sessionId}/userDates`, {
@@ -22,34 +25,22 @@ export const useUpdateUserDates = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          dates: dates.map(d => ({ ...d, date: d.date.toISOString() }))
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
         console.error("API Error updating user dates:", response.status, errorData);
+        throw new Error(errorData.message || `Failed to update availability: ${response.statusText}`);
       } else {
-        console.log(`Successfully updated dates for session ${sessionId}`); 
+        return await response.json().catch(() => ({ success: true })); 
       }
 
     } catch (error) {
-      console.error("Error during executeUpdate:", error);
+      console.error("Error updating user dates:", error);
+      throw error;
     }
   }, [user]);
 
-  return useCallback((sessionId: string, dates: DateTimeSelection[]) => {
-    return new Promise<void>((resolve, reject) => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-
-      updateTimeoutRef.current = setTimeout(() => {
-        executeUpdate(sessionId, dates)
-          .then(resolve) 
-          .catch(reject);
-      }, DEBOUNCE_DELAY);
-    });
-  }, [executeUpdate]);
+  return updateUserDates;
 };

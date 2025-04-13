@@ -1,17 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Check, X } from 'lucide-react';
-import { format, addMonths, subMonths, isSameDay, parseISO, isBefore, startOfDay, isToday } from 'date-fns';
-import { DatePopularity, DateTimeSelection } from '@/types';
+import React, { useState, useCallback, useEffect, } from 'react';
+import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { addMonths, subMonths, isSameDay, isBefore, startOfDay, isToday } from 'date-fns'; 
+import { DatePopularity, DateTimeSelection, UserDate } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getUTCDayEpochFromDate, getUTCHourEpochFromDateAndHour } from '@/lib/dateTimeUtils';
+import { Session } from '@/types'; // Import Session type
 
 interface MovieNightCalendarProps {
   selectedDates: DateTimeSelection[];
   onDatesSelected: (dates: DateTimeSelection[]) => void;
   datePopularity?: DatePopularity[];
-  activeUsername?: string;
-  userDates?: { [username: string]: { date: string; hours: string[] | 'all' }[] };
+  activeUserId?: string; // Changed from activeUsername
+  userDates?: { [userId: string]: UserDate[] }; // Changed key to userId
+  participants: Session['participants']; // Added participants prop
   isReadOnly?: boolean;
 }
+
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -20,15 +24,14 @@ export default function MovieNightCalendar({
   selectedDates,
   onDatesSelected,
   datePopularity = [],
-  activeUsername,
+  activeUserId, // Changed from activeUsername
   userDates = {},
+  participants, // Added participants
   isReadOnly = false
 }: MovieNightCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showHourPicker, setShowHourPicker] = useState(false);
   const [animation, setAnimation] = useState<'left' | 'right' | null>(null);
-
   useEffect(() => {
     if (animation) {
       const timer = setTimeout(() => setAnimation(null), 300);
@@ -37,7 +40,7 @@ export default function MovieNightCalendar({
   }, [animation]);
 
   const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getUTCDate();
   };
 
   const getFirstDayOfMonth = (date: Date) => {
@@ -46,89 +49,77 @@ export default function MovieNightCalendar({
 
   const handleDateClick = useCallback((day: number) => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    setSelectedDate(newDate);
-    
-    const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), newDate));
-    let newSelectedDates: DateTimeSelection[];
-
-    if (existingSelection) {
-      newSelectedDates = selectedDates.filter(d => !isSameDay(new Date(d.date), newDate));
+    const existingSelection = selectedDates.find((d: DateTimeSelection) => isSameDay(new Date(d.date), newDate));
+    if (selectedDate && isSameDay(newDate, selectedDate)) {
+      setSelectedDate(null);
+      const nextSelectedDates = selectedDates.filter((d: DateTimeSelection) => !isSameDay(new Date(d.date), newDate));
+      onDatesSelected(nextSelectedDates);
     } else {
-      newSelectedDates = [...selectedDates, { date: newDate, hours: 'all' }];
+      setSelectedDate(newDate);
+      if (!existingSelection) {
+        const allHoursArray = Array.from({ length: 24 }, (_, i) => i);
+        const nextSelectedDates = [...selectedDates, { date: newDate, hours: allHoursArray }];
+        onDatesSelected(nextSelectedDates);
+      }
     }
-
-    onDatesSelected(newSelectedDates);
-  }, [currentDate, selectedDates, onDatesSelected]); 
-
+  }, [currentDate, selectedDates, onDatesSelected, selectedDate]);
   const handleHourClick = useCallback((hour: number) => {
     if (isReadOnly || !selectedDate) return;
-
-    const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
-    let newSelectedDates: DateTimeSelection[];
-  
-    if (existingSelection) {
-      if (existingSelection.hours === 'all') {
-        newSelectedDates = selectedDates.map(d => 
-          isSameDay(new Date(d.date), selectedDate) 
-            ? { ...d, hours: [hour] } 
-            : d
-        );
+    let nextSelectedDates: DateTimeSelection[];
+    const existingSelectionIndex = selectedDates.findIndex((d: DateTimeSelection) => isSameDay(new Date(d.date), selectedDate));
+    if (existingSelectionIndex > -1) {
+      const existingSelection = selectedDates[existingSelectionIndex];
+      let newHours: number[];
+      const allHoursSelected = Array.isArray(existingSelection.hours) && existingSelection.hours.length === 24;
+      if (allHoursSelected) {
+        newHours = [hour];
+        const updatedDates = [...selectedDates];
+        updatedDates[existingSelectionIndex] = { ...existingSelection, hours: newHours };
+        nextSelectedDates = updatedDates;
       } else if (Array.isArray(existingSelection.hours)) {
         if (existingSelection.hours.includes(hour)) {
-          const newHours = existingSelection.hours.filter(h => h !== hour);
+          newHours = existingSelection.hours.filter((h: number) => h !== hour);
           if (newHours.length === 0) {
-            newSelectedDates = selectedDates.filter(d => !isSameDay(new Date(d.date), selectedDate));
+            nextSelectedDates = selectedDates.filter((_: DateTimeSelection, index: number) => index !== existingSelectionIndex);
+            setSelectedDate(null);
           } else {
-            newSelectedDates = selectedDates.map(d => 
-              isSameDay(new Date(d.date), selectedDate) 
-                ? { ...d, hours: newHours } 
-                : d
-            );
+            const updatedDates = [...selectedDates];
+            updatedDates[existingSelectionIndex] = { ...existingSelection, hours: newHours };
+            nextSelectedDates = updatedDates;
           }
         } else {
-          newSelectedDates = selectedDates.map(d => 
-            isSameDay(new Date(d.date), selectedDate) 
-              ? { ...d, hours: [...d.hours as number[], hour] } 
-              : d
-          );
+          newHours = [...existingSelection.hours, hour].sort((a: number, b: number) => a - b);
+          const updatedDates = [...selectedDates];
+          updatedDates[existingSelectionIndex] = { ...existingSelection, hours: newHours };
+          nextSelectedDates = updatedDates;
         }
       } else {
-        newSelectedDates = [...selectedDates];
+        console.warn("Existing selection hours was not an array:", existingSelection.hours);
+        newHours = [hour];
+        const updatedDates = [...selectedDates];
+        updatedDates[existingSelectionIndex] = { ...existingSelection, hours: newHours };
+        nextSelectedDates = updatedDates;
       }
     } else {
-      newSelectedDates = [...selectedDates, { date: selectedDate, hours: [hour] }];
+      nextSelectedDates = [...selectedDates, { date: selectedDate, hours: [hour] }];
     }
-  
-    onDatesSelected(newSelectedDates);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]);
-
+    onDatesSelected(nextSelectedDates);
+  }, [selectedDate, isReadOnly, selectedDates, onDatesSelected]);
   const handleSelectAllHours = useCallback(() => {
-    if (isReadOnly || !selectedDate) return; 
-
-    const existingSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
-    let newSelectedDates: DateTimeSelection[];
-    
-    if (existingSelection) {
-      newSelectedDates = selectedDates.map(d => 
-        isSameDay(new Date(d.date), selectedDate) 
-          ? { ...d, hours: 'all' } 
-          : d
-      );
-    } else {
-      newSelectedDates = [...selectedDates, { date: selectedDate, hours: 'all' }];
-    }
-    
-    onDatesSelected(newSelectedDates);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]); // Re-added eslint-disable for persistent warning
-
-  const handleClearSelection = useCallback(() => {
     if (isReadOnly || !selectedDate) return;
+    let nextSelectedDates: DateTimeSelection[];
+    const existingSelectionIndex = selectedDates.findIndex((d: DateTimeSelection) => isSameDay(new Date(d.date), selectedDate));
+    const allHoursArray = Array.from({ length: 24 }, (_, i) => i);
 
-    onDatesSelected(selectedDates.filter(d => !isSameDay(new Date(d.date), selectedDate)));
-    setShowHourPicker(false);
-  }, [selectedDate, selectedDates, onDatesSelected, isReadOnly]); // Kept added isReadOnly
+    if (existingSelectionIndex > -1) {
+      const updatedDates = [...selectedDates];
+      updatedDates[existingSelectionIndex] = { ...updatedDates[existingSelectionIndex], hours: allHoursArray };
+      nextSelectedDates = updatedDates;
+    } else {
+      nextSelectedDates = [...selectedDates, { date: selectedDate, hours: allHoursArray }];
+    }
+    onDatesSelected(nextSelectedDates);
+  }, [selectedDate, isReadOnly, selectedDates, onDatesSelected]);
 
   const handlePrevMonth = useCallback(() => {
     setAnimation('left');
@@ -155,10 +146,12 @@ export default function MovieNightCalendar({
       const isPastDate = isBefore(date, today);
       const isCurrentDay = isToday(date);
       const isActiveUserSelected = selectedDates.some(d => isSameDay(new Date(d.date), date));
-      
-      const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => 
-        username !== activeUsername && dates.some(d => isSameDay(new Date(d.date), date))
-      );
+      const currentDayEpoch = getUTCDayEpochFromDate(date);
+      // Filter using userId now
+      const otherUsersSelected = Object.entries(userDates).filter(([userId, epochDates]) => {
+          if (userId === activeUserId || !Array.isArray(epochDates)) return false;
+          return epochDates.some(d => d && typeof d.dateEpoch === 'number' && d.dateEpoch === currentDayEpoch);
+      });
 
       const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
 
@@ -187,65 +180,50 @@ export default function MovieNightCalendar({
         >
           {i}
           {totalUsersSelected > 0 && !isPastDate && (
-            <span className="absolute top-0 right-0 text-xs bg-white text-gray rounded-bl-sm rounded-tr-sm w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-center">
+            <span className="absolute top-0 right-0 text-xs bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-bl-md rounded-tr-md px-1 py-0.5 flex items-center justify-center shadow-sm">
               {totalUsersSelected}
             </span>
           )}
         </motion.button>
       );
     }
-
     return days;
-  }, [currentDate, selectedDates, userDates, activeUsername, handleDateClick, isReadOnly]);
+    // Update dependency array
+  }, [currentDate, selectedDates, userDates, activeUserId, handleDateClick, isReadOnly]);
 
   const renderHours = useCallback(() => {
     if (!selectedDate) return null;
-  
-    const selectedDateTimes = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
-    const popularityForDate = datePopularity.find(d => isSameDay(parseISO(d.date), selectedDate));
-    const isAllHoursSelected = selectedDateTimes?.hours === 'all';
-    
+    const selectedDayEpoch = getUTCDayEpochFromDate(selectedDate);
+    const popularityForDate = datePopularity?.find(d => d && typeof d.dateEpoch === 'number' && d.dateEpoch === selectedDayEpoch);
     const amHours = HOURS.slice(0, 12);
     const pmHours = HOURS.slice(12);
     
     const renderHourGroup = (hours: number[]) => (
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
         {hours.map(hour => {
-          const hourPopularity = popularityForDate?.hours?.[hour]; 
-          const isActiveUserSelected = isAllHoursSelected || 
-            (Array.isArray(selectedDateTimes?.hours) && selectedDateTimes?.hours.includes(hour));
-  
-          const otherUsersSelected = Object.entries(userDates).filter(([username, dates]) => {
-            if (username === activeUsername) return false;
-            
-            return dates.some(d => {
-              if (!isSameDay(new Date(d.date), selectedDate)) return false;
-              
-              if (d.hours === 'all') return true;
-              
-              if (Array.isArray(d.hours)) {
-                return d.hours.some(h => {
-                  if (typeof h === 'number') return h === hour;
-                  if (typeof h === 'string') {
-                    try {
-                      const hourFromString = new Date(h).getHours();
-                      return hourFromString === hour;
-                    } catch {
-                      const parsedInt = parseInt(h);
-                      return !isNaN(parsedInt) && parsedInt === hour;
-                    }
-                  }
-                  return false;
-                });
-              }
-              
-              return false;
-            });
+          const targetHourEpoch = getUTCHourEpochFromDateAndHour(selectedDate, hour); 
+          const hourPopularityData = popularityForDate?.hours?.[hour.toString()];
+          const activeUserSelection = selectedDates.find(d => isSameDay(new Date(d.date), selectedDate));
+          const isActiveUserSelected = activeUserSelection ?
+              (Array.isArray(activeUserSelection.hours) && activeUserSelection.hours.includes(hour))
+              : false;
+
+          // Filter using userId now
+          const otherUsersSelected = Object.entries(userDates).filter(([userId, epochDates]) => {
+            if (userId === activeUserId || !Array.isArray(epochDates)) return false;
+            const dateEntry = epochDates.find(d => d && typeof d.dateEpoch === 'number' && d.dateEpoch === selectedDayEpoch);
+            if (!dateEntry || !Array.isArray(dateEntry.hoursEpoch)) return false;
+            return dateEntry.hoursEpoch.includes(targetHourEpoch);
           });
-  
           const totalUsersSelected = otherUsersSelected.length + (isActiveUserSelected ? 1 : 0);
-          
-          const hourDisplay = hour === 0 ? '12am' : 
+
+          // Map userIds from popularity data to usernames for display
+          const userNamesForHour = hourPopularityData?.users
+            .map(uid => participants[uid]?.username || 'Unknown') // Map userId to username
+            .filter(name => name !== 'Unknown') // Filter out if user not found in participants
+            .join(', ') || '';
+
+          const hourDisplay = hour === 0 ? '12am' :
                              hour < 12 ? `${hour}am` : 
                              hour === 12 ? '12pm' : 
                              `${hour-12}pm`;
@@ -266,13 +244,14 @@ export default function MovieNightCalendar({
               onClick={() => handleHourClick(hour)}
               className={hourClasses}
               disabled={isReadOnly}
-              title={hourPopularity ? `Selected by: ${hourPopularity.users.join(', ')}` : ''}
+              // Display usernames in title
+              title={userNamesForHour ? `Selected by: ${userNamesForHour}` : ''}
               whileHover={!isReadOnly ? { scale: 1.05 } : {}}
               whileTap={!isReadOnly ? { scale: 0.95 } : {}}
             >
               {hourDisplay}
-              {totalUsersSelected > 0 && (
-                <span className="absolute top-0 right-0 text-xs bg-white text-gray rounded-bl-sm rounded-tr-sm w-3 lg:w-4 h-3 lg:h-4 flex items-center justify-center">
+              {totalUsersSelected > 0 && ( 
+                <span className="absolute top-0 right-0 text-xs bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-bl-md rounded-tr-md px-1 py-0.5 flex items-center justify-center shadow-sm">
                   {totalUsersSelected}
                 </span>
               )}
@@ -285,17 +264,17 @@ export default function MovieNightCalendar({
     return (
       <div className="space-y-4">
         <div>
-          <h4 className="text-sm text-gray dark:text-gray-dark mb-2 font-medium">Morning</h4>
+          <h4 className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Morning</h4>
           {renderHourGroup(amHours)}
         </div>
         <div>
-          <h4 className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">Afternoon & Evening</h4>
+          <h4 className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Afternoon & Evening</h4>
           {renderHourGroup(pmHours)}
         </div>
       </div>
     );
-  }, [selectedDate, selectedDates, datePopularity, userDates, activeUsername, handleHourClick, isReadOnly]);
-  
+    // Update dependency array
+  }, [selectedDate, selectedDates, datePopularity, userDates, activeUserId, participants, handleHourClick, isReadOnly]);
 
   return (
     <div className="mt-4 flex flex-col lg:flex-row gap-4">
@@ -324,7 +303,7 @@ export default function MovieNightCalendar({
               exit={{ opacity: 0, x: animation === 'left' ? -20 : 20 }}
               transition={{ duration: 0.3 }}
             >
-              {format(currentDate, 'MMMM yyyy')}
+              {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
             </motion.h3>
           </AnimatePresence>
           
@@ -366,7 +345,7 @@ export default function MovieNightCalendar({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full border border-pink dark:border-pink-dark" />
-            <span>Others&apos; selections</span>
+            <span>Others' selections</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-blue/20" />
@@ -374,19 +353,9 @@ export default function MovieNightCalendar({
           </div>
         </div>
         
-        {selectedDate && (
-          <motion.button
-            onClick={() => setShowHourPicker(!showHourPicker)}
-            className="mt-4 py-2 px-4 rounded-xl text-sm font-medium button-neutral w-full flex items-center justify-center "
-            disabled={isReadOnly}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            {showHourPicker ? 'Hide Hours' : 'Select Hours'} for {format(selectedDate, 'MMM d')}
-          </motion.button>
-        )}
       </motion.div>
       
-      {selectedDate && showHourPicker && (
+      {selectedDate && ( 
         <motion.div 
           className="frosted-panel p-4 lg:w-[400px]"
           initial={{ opacity: 0, y: 20 }}
@@ -399,7 +368,7 @@ export default function MovieNightCalendar({
               Available Hours
             </h3>
             <div className="text-sm text-gray dark:text-gray-dark">
-              {format(selectedDate, 'MMM d')}
+              {selectedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             </div>
           </div>
           
@@ -419,16 +388,6 @@ export default function MovieNightCalendar({
               All Hours
             </motion.button>
             
-            <motion.button
-              onClick={handleClearSelection}
-              className="flex-1 py-2 px-3 rounded-xl text-xs font-medium button-neutral flex items-center justify-center"
-              disabled={isReadOnly}
-              whileHover={!isReadOnly ? { scale: 1.02 } : {}}
-              whileTap={!isReadOnly ? { scale: 0.98 } : {}}
-            >
-              <X className="w-3 h-3 mr-1" />
-              Clear
-            </motion.button>
           </div>
         </motion.div>
       )}

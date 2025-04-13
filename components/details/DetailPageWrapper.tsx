@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { DetailsData, VideoData, Media } from '@/types';
 import { format } from 'date-fns';
 import { useAuthContext } from '@/context/AuthContext';
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Film, Loader2 } from 'lucide-react'; // Removed Plus, Check
@@ -26,7 +26,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   const [showTrailer, setShowTrailer] = useState(false);
   const [showFlickyEmbed, setShowFlickyEmbed] = useState(false);
   const { user } = useAuthContext(); // Get user from AuthContext
-  const { userData, isLoading: isUserDataLoading } = useUserData();
+  const { userData, isLoading: isUserDataLoading } = useAuthUser(); // Use new hook
   const [isProcessingWatchlist, setIsProcessingWatchlist] = useState(false);
 
   const isMovie = 'title' in details;

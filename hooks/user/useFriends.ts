@@ -4,6 +4,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import { Friend, FriendRequest } from '@/types';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Timestamp, doc } from 'firebase/firestore';
+import isEqual from 'lodash/isEqual'; // Import isEqual
 
 interface UseFriendsReturn {
   friends: Friend[];
@@ -107,7 +108,13 @@ export const useFriends = (): UseFriendsReturn => {
         };
       });
 
-      setFriends(friendsData);
+      setFriends(prevFriends => {
+        if (!isEqual(prevFriends, friendsData)) {
+          return friendsData;
+        } else {
+          return prevFriends;
+        }
+      });
       setIsLoadingFriends(false);
 
     }, (error) => {

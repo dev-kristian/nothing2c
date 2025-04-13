@@ -1,6 +1,6 @@
 "use client"
 
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
@@ -39,7 +39,7 @@ const WelcomeHeroSkeleton = () => (
 
 
 export function WelcomeHero() {
-  const { userData, isLoading } = useUserData();
+  const { userData, isLoading } = useAuthUser(); // Use new hook
   const router = useRouter();
 
   const topRatedPosters = useMemo(() => {

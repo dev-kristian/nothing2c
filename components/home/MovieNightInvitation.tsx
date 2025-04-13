@@ -4,7 +4,8 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "@/hooks/use-toast";
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { useFriendsContext } from '@/context/FriendsContext'; // Updated import
 import { useSession } from '@/context/SessionContext';
 import { useSendInvitation } from '@/hooks/useSendInvitation';
 import MovieNightCalendar from './MovieNightCalendar';
@@ -176,7 +177,8 @@ SectionHeader.displayName = "SectionHeader";
 
 export default function MovieNightInvitation() {
   const router = useRouter();
-  const { userData, isLoading: userLoading, friends, isLoadingFriends } = useUserData();
+  const { userData, isLoading: userLoading } = useAuthUser(); // Get user data/loading
+  const { friends, isLoadingFriends } = useFriendsContext(); // Get friends data/loading
   const { createSession, createPoll } = useSession();
   const { sendInvitation } = useSendInvitation(); // Removed unused invitationError
   const [selectedDates, setSelectedDates] = useState<DateTimeSelection[]>([]);
@@ -349,9 +351,8 @@ export default function MovieNightInvitation() {
           />
           <div className="rounded-xl overflow-hidden">
             <MovieNightCalendar 
-              selectedDates={selectedDates} 
-              onDatesSelected={handleDatesSelected}
-            />
+              selectedDates={selectedDates}
+              onDatesSelected={handleDatesSelected} participants={{}}            />
           </div>
           <div className="mt-2 text-xs text-foreground/60 flex items-center">
             <Badge variant="outline" className="mr-2 bg-pink/10 dark:bg-pink-dark/10 text-pink dark:text-pink-dark border-pink/20 dark:border-pink-dark/20">
@@ -544,7 +545,7 @@ export default function MovieNightInvitation() {
                 <Checkbox
                   id="sendNotification"
                   checked={sendNotification}
-                  onCheckedChange={(checked) => setSendNotification(checked as boolean)}
+                  onCheckedChange={(checked: boolean) => setSendNotification(checked)}
                   className="data-[state=checked]:bg-gray data-[state=checked]:border-gray"
                 />
                 <label htmlFor="sendNotification" className="text-xs text-foreground/70 cursor-pointer">

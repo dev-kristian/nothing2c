@@ -1,9 +1,9 @@
-// app/api/subscribe-to-topic/route.ts
+
 import { NextResponse } from 'next/server';
 import admin from 'firebase-admin';
-import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; // Import auth utility
+import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; 
 
-// Keep local initialization as admin.messaging() is used directly
+
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
@@ -14,30 +14,30 @@ if (!admin.apps.length) {
       }),
     });
   } catch (initError) {
-     // Log error but don't return here, check inside POST handler
+     
      console.error("Firebase Admin Init Error at top level (subscribe-to-topic):", initError);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    // --- Check Admin SDK Initialization ---
+    
     if (!admin.apps.length) {
         console.error("Firebase Admin SDK not initialized. Cannot process subscribe-to-topic request.");
         return NextResponse.json({ success: false, error: 'Internal Server Error (Admin Init)' }, { status: 500 });
     }
-    // --- End Check ---
+    
 
-    // --- Authentication ---
+    
     const userProfile = await getAuthenticatedUserProfile();
     if (!userProfile?.uid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const authenticatedUserId = userProfile.uid;
-    // --- End Authentication ---
+    
 
     const body = await request.json();
-    const { token, topic } = body; // Destructure topic here
+    const { token, topic } = body; 
 
     if (!token) {
       return NextResponse.json({
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // --- Authorization ---
+    
     if (!topic || !topic.startsWith('user_')) {
       return NextResponse.json({
         success: false,
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const targetUid = topic.substring(5); // Extract UID from topic
+    const targetUid = topic.substring(5); 
     if (authenticatedUserId !== targetUid) {
       console.warn(`Forbidden attempt: User ${authenticatedUserId} tried to subscribe to topic ${topic}`);
       return NextResponse.json({
@@ -62,11 +62,10 @@ export async function POST(request: Request) {
         error: 'Forbidden: Cannot subscribe to another user\'s topic'
       }, { status: 403 });
     }
-    // --- End Authorization ---
+    
 
     await admin.messaging().subscribeToTopic([token], topic);
 
-    console.log(`User ${authenticatedUserId} successfully subscribed token to topic ${topic}`);
     return NextResponse.json({
       success: true,
       message: `Subscribed to "${topic}" topic`

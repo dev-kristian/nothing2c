@@ -6,9 +6,9 @@ import { Users, Heart, Popcorn, TrendingUp, Film, Tv } from 'lucide-react';
 import Link from 'next/link';
 import MediaTypeToggle from '@/components/MediaTypeToggle';
 import MediaPoster from '@/components/MediaPoster';
-import { Card, CardContent, CardHeader } from '@/components/ui/card'; // Added CardHeader, CardContent
+import { Card, CardContent, CardHeader } from '@/components/ui/card'; 
 import useSWR from 'swr';
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MemoizedMediaPoster = React.memo(MediaPoster);
 
@@ -38,7 +38,7 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
     return stats.sort((a: GenreWithCount, b: GenreWithCount) => b.count - a.count).slice(0, 5);
   }, [genreData, friendsWatchlistItems, mediaType]);
 
-  // Skeleton for GenreStats while genreData is loading
+  
   if (!genreData?.genres) {
     return (
       <Card>
@@ -80,10 +80,10 @@ function GenreStats({ mediaType }: { mediaType: 'movie' | 'tv' }) {
   );
 }
 
-// Skeleton component for the entire Community Section
+
 const CommunitySkeleton = () => {
-  const gridCols = "grid-cols-2 md:grid-cols-3"; // Match the actual grid
-  const posterCount = 6; // Number of poster skeletons to show
+  const gridCols = "grid-cols-2 md:grid-cols-3"; 
+  const posterCount = 6; 
 
   return (
     <div className="space-y-6 animate-pulse">
@@ -152,7 +152,7 @@ export function CommunitySection() {
   const [visibleItems, setVisibleItems] = useState(12);
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
-  // Grid columns defined directly with Tailwind responsive classes
+  
   const gridCols = "grid-cols-2 md:grid-cols-3";
 
   const items = friendsWatchlistItems[mediaType].slice(0, visibleItems);
@@ -175,7 +175,7 @@ export function CommunitySection() {
     return () => observer.disconnect();
   }, [friendsWatchlistItems, mediaType, visibleItems]);
 
-  // Reset visible items when media type changes
+  
   useEffect(() => {
     setVisibleItems(12);
   }, [mediaType]);
@@ -200,7 +200,7 @@ export function CommunitySection() {
               if (newType === 'movie' || newType === 'tv') {
                 setMediaType(newType);
               }
-              // Ignore 'upcoming' type if received
+              
             }}
             compact={true}
           />

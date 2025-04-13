@@ -17,7 +17,6 @@ if (!admin.apps.length) {
         privateKey,
       }),
     });
-    console.log('Firebase Admin SDK initialized successfully.');
   } catch (error) {
     console.error('Error initializing Firebase Admin SDK:', error);
   }

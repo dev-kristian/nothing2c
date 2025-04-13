@@ -39,7 +39,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const initialUserData: UserData | null = await getFullAuthenticatedUser();
+  const initialUserData: Omit<UserData, 'watchlist'> | null = await getFullAuthenticatedUser();
 
   return (
     <html lang="en" suppressHydrationWarning>

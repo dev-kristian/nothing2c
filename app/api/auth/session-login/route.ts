@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
       const userDoc = await userDocRef.get();
 
       if (!userDoc.exists) {
-        console.log(`[API Session Login] User document not found for UID: ${uid}. Attempting to generate unique username.`);
         let username: string | null = null;
         let attempts = 0;
 
@@ -75,10 +74,8 @@ export async function POST(request: NextRequest) {
           candidate = candidate.toLowerCase().replace(/[^a-z0-9_]/g, ''); 
           if (candidate.length < 3) continue; 
 
-          console.log(`[API Session Login] Attempt ${attempts}: Checking availability for username: ${candidate}`);
           if (await isUsernameAvailable(candidate)) {
             username = candidate;
-            console.log(`[API Session Login] Username '${username}' is available.`);
           }
         }
 
@@ -102,7 +99,6 @@ export async function POST(request: NextRequest) {
           updatedAt: FieldValue.serverTimestamp(),
         };
         await userDocRef.set(newUserDocument);
-        console.log(`[API Session Login] Successfully created user document for UID: ${uid}`);
       }
     } catch (dbError) {
       console.error(`[API Session Login] Error checking/creating user document for UID: ${uid}`, dbError);

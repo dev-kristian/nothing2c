@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { SWRProvider } from '@/context/SWRContext';
-import { UserDataProvider } from '@/context/UserDataContext';
+import { AuthUserProvider } from '@/context/AuthUserContext'; // New
+import { FriendsProvider } from '@/context/FriendsContext'; // New
+import { NotificationsProvider } from '@/context/NotificationsContext'; // New
 import { FriendsWatchlistProvider } from '@/context/FriendsWatchlistContext';
 import { SearchProvider } from '@/context/SearchContext';
 import { SessionProvider } from '@/context/SessionContext';
@@ -10,21 +12,25 @@ import { UserData } from '@/types/user';
 
 interface ClientProvidersProps {
   children: React.ReactNode;
-  initialUserData: UserData | null;
+  initialUserData: Omit<UserData, 'watchlist'> | null;
 }
 
 export function ClientProviders({ children, initialUserData }: ClientProvidersProps) {
   return (
     <SWRProvider>
-      <UserDataProvider initialUserData={initialUserData}>
-        <FriendsWatchlistProvider>
-            <SearchProvider>
-              <SessionProvider>
+      <AuthUserProvider initialUserData={initialUserData}>
+        <FriendsProvider>
+          <NotificationsProvider>
+            <FriendsWatchlistProvider>
+              <SearchProvider>
+                <SessionProvider>
                 {children}
-              </SessionProvider>
-            </SearchProvider>
-          </FriendsWatchlistProvider>
-        </UserDataProvider>
-      </SWRProvider> 
+                </SessionProvider>
+              </SearchProvider>
+            </FriendsWatchlistProvider>
+          </NotificationsProvider>
+        </FriendsProvider>
+      </AuthUserProvider>
+    </SWRProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { useUserData } from '@/context/UserDataContext';
+import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { Clock, X, Loader2, AlertTriangle, ChevronDown, Search, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import MediaPoster from '@/components/MediaPoster';
@@ -32,8 +32,8 @@ const WatchlistSkeleton = ({ count = 8, gridCols }: { count?: number, gridCols: 
 
 
 export function WatchlistSection() {
-  // Destructure userData instead of watchlistItems
-  const { userData, isLoading: isUserDataLoading } = useUserData();
+  // Use new hook
+  const { userData, isLoading: isUserDataLoading } = useAuthUser();
 
   const [mediaType, setMediaType] = useState<DiscoverMediaType>('movie');
   const [searchQuery, setSearchQuery] = useState('');

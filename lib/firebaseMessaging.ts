@@ -9,7 +9,6 @@ const RETRY_DELAY = 1000;
 export const requestForToken = async (retryCount = 0): Promise<string | null> => {
   const messaging = await getMessagingInstance();
   if (!messaging) {
-    console.log('Firebase messaging is not supported in this browser');
     return null;
   }
 
@@ -19,7 +18,6 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
     });
     
     if (currentToken) {
-      console.log('Token:', currentToken);
       
       const auth = getAuth();
       const user = auth.currentUser;
@@ -37,7 +35,6 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
 
       return currentToken;
     } else {
-      console.log('No registration token available.');
       if (retryCount < MAX_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
         return requestForToken(retryCount + 1);
@@ -58,12 +55,10 @@ export const requestForToken = async (retryCount = 0): Promise<string | null> =>
 export const onMessageListener = async (callback: (payload: MessagePayload) => void) => {
   const messaging = await getMessagingInstance();
   if (!messaging) {
-    console.log('Firebase messaging is not supported in this browser');
     return () => {};
   }
 
   return onMessage(messaging, (payload: MessagePayload) => {
-    console.log("Received foreground message", payload);
     callback(payload);
   });
 };
