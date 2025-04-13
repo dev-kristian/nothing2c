@@ -1,7 +1,5 @@
 import admin from 'firebase-admin';
 
-
-
 if (!admin.apps.length) {
   try {
     console.warn("Attempting to initialize Firebase Admin SDK from notificationUtils.ts - should be initialized earlier.");
@@ -17,24 +15,23 @@ if (!admin.apps.length) {
   }
 }
 
-// Define the structure for notification actions
 interface NotificationAction {
-    action: string; // Identifier for the action
-    title: string; // Text displayed on the button
-    icon?: string; // Optional icon for the button
+    action: string; 
+    title: string; 
+    icon?: string; 
 }
 
 interface NotificationPayload {
   title: string;
   body: string;
   icon?: string;
-  clickAction?: string; // Keep for data payload
-  image?: string; // Optional large image
-  badge?: string; // Optional monochrome badge icon
-  tag?: string; // Optional tag for grouping/replacing notifications
-  actions?: NotificationAction[]; // Optional action buttons
-  // Allow other custom data fields for webpush.notification, typically strings for data payload
-  [key: string]: string | NotificationAction[] | undefined; // Use string, allow existing types
+  clickAction?: string; 
+  image?: string; 
+  badge?: string; 
+  tag?: string; 
+  actions?: NotificationAction[]; 
+  
+  [key: string]: string | NotificationAction[] | undefined; 
 }
 
 interface SendNotificationResult {
@@ -68,88 +65,58 @@ export const sendNotificationToRecipients = async (
     return { successCount: 0, failureCount: 0, totalAttempted: 0, errors: [] };
   }
 
-  // Destructure all potential fields from the payload
+  
   const {
       title,
       body,
-      icon = '/icon-192x192.png', // Default icon
-      clickAction, // Keep for data payload
+      icon = '/icon-192x192.png', 
+      clickAction, 
       image,
       badge,
       tag,
       actions,
-      ...otherFields // Capture any remaining fields for custom data
+      ...otherFields 
   } = payload;
-
-  // REMOVED: Base notification payload - will be sent in data payload instead
-  // const fcmNotificationPayload = { title, body };
-
-  // Construct the webpush specific config for visual/interactive elements
-  // Note: Webpush notification options might still be useful for some platforms/settings,
-  // but the core display logic will rely on data payload.
-  const webpushConfig: admin.messaging.WebpushConfig = {
-      notification: {
-          icon,
-          image,
-          badge,
-          actions,
-          tag,
-          // DO NOT put custom data here. Put it in the top-level 'data' field of the message.
-          // Visual options only. Check MDN Web Push Notification docs for valid fields.
-      },
-      // fcmOptions.link is deprecated for web push actions, use data payload instead
-  };
-
-  // Construct the data payload (must be key-value pairs of strings)
-  // Include ALL necessary info for the SW to build the notification
+  
   const dataPayload: { [key: string]: string } = {
       click_action: clickAction || '',
-      // Add display fields previously in 'notification' or 'webpush.notification'
-      title: title || 'Notification', // Provide default if needed
-      body: body || '', // Generic body template if needed, SW will override for sessions
+      title: title || 'Notification', 
+      body: body || '', 
       icon: icon || '/icon-192x192.png',
       image: image || '',
       badge: badge || '',
       tag: tag || '',
-      // Actions need careful handling - stringify the array
       actions: actions ? JSON.stringify(actions) : '',
   };
-  // Add other custom fields (sessionEpoch, sessionMovieTitle), ensuring they are strings
+  
   for (const key in otherFields) {
       if (Object.prototype.hasOwnProperty.call(otherFields, key)) {
           const value = otherFields[key];
-          // Ensure value is a string. Convert if necessary, or skip if complex type.
+          
           if (typeof value === 'string') {
               dataPayload[key] = value;
           } else if (typeof value === 'number' || typeof value === 'boolean') {
-              dataPayload[key] = String(value); // Convert numbers/booleans to strings
+              dataPayload[key] = String(value); 
           } else {
               console.warn(`[notificationUtils] Skipping non-string data field '${key}' for FCM payload.`);
           }
       }
   }
 
-
   const sendPromises = recipients.map(uid => {
     const topic = `user_${uid}`;
-    // Construct the final message for FCM - DATA-ONLY message with specific APNS config
     const message: admin.messaging.Message = {
-        // NO 'notification' field
-        data: dataPayload,      // All info needed by SW is here
-        // REMOVED webpush: webpushConfig - Let SW handle all display logic from data
-        apns: { // APNS specific config
+        data: dataPayload,      
+        apns: { 
             payload: {
                 aps: {
-                    'content-available': 1 // Signal background update, omit 'alert' entirely
-                    // No other fields like alert, badge, sound to minimize default behavior triggers
+                    'content-available': 1 
                 }
             }
         },
         topic: topic,
     };
-
-    // console.log(`[${topic}] Sending FCM message:`, JSON.stringify(message, null, 2)); // DEBUG
-
+    
     return admin.messaging().send(message)
       .then(response => ({ uid, status: 'success' as const, response }))
       .catch(error => {

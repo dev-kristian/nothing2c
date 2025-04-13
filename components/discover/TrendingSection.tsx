@@ -29,7 +29,6 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
 
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
   
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -42,7 +41,6 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
     [hasMore, loadMore, isTrendingLoading] 
   );
 
-  
   useEffect(() => {
     
     const observer = new IntersectionObserver(handleObserver, {
@@ -52,10 +50,6 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
     });
 
     const currentTrigger = loadMoreTriggerRef.current;
-
-    
-    
-    
     if (currentTrigger && !isInitialLoading) {
       observer.observe(currentTrigger);
     }
