@@ -7,11 +7,10 @@ export interface AuthState {
   user: User | null;
   loading: boolean;
   signIn: () => Promise<User | undefined>;
-  signOut: () => Promise<boolean>; 
+  signOut: () => Promise<boolean>;
   isAuthenticated: boolean;
-  initialAuthChecked: boolean;
-  isSessionVerified: boolean; 
-  markSessionVerified: (verified: boolean) => void; 
+  isServerSessionPending: boolean;
+  setServerSessionPending: (pending: boolean) => void; 
   auth: Auth;
 }
 

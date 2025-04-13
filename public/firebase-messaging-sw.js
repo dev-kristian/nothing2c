@@ -7,32 +7,90 @@ firebase.initializeApp(self.firebaseConfig);
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  console.log('[firebase-messaging-sw.js] Received background data message ', payload);
 
-  // Customize notification appearance
-  const notificationTitle = payload.notification.title;
+  // Read ALL notification data from the top-level 'data' field
+  const notificationData = payload.data || {};
+
+  // Extract display details from data payload
+  const notificationTitle = notificationData.title || 'Notification'; // Use title from data
+  let notificationBody = notificationData.body || ''; // Use default body from data
+
+  // Attempt to construct a more specific body for session notifications
+  try {
+    // Use the actual keys from the data payload
+    const sessionEpochStr = notificationData.sessionEpoch; // Correct key
+    const sessionMovieTitle = notificationData.sessionMovieTitle; // Correct key
+
+    console.log(`[SW] Checking for sessionEpoch: ${sessionEpochStr}, sessionMovieTitle: ${sessionMovieTitle}`); // Log with correct keys
+
+    if (sessionEpochStr && typeof sessionEpochStr === 'string') {
+      const sessionEpoch = parseInt(sessionEpochStr, 10);
+      if (!isNaN(sessionEpoch)) {
+        const date = new Date(sessionEpoch);
+        const formattedTime = date.toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+        const formattedDate = date.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric'
+        });
+
+        if (sessionMovieTitle && typeof sessionMovieTitle === 'string' && sessionMovieTitle.trim() !== '') {
+          notificationBody = `Watch '${sessionMovieTitle}' on ${formattedDate} at ${formattedTime}.`;
+        } else {
+          notificationBody = `Movie Night set for ${formattedDate} at ${formattedTime}.`;
+        }
+      } else {
+        console.warn('[firebase-messaging-sw.js] sessionEpoch data was not a valid number string:', sessionEpochStr);
+      }
+    } else if (sessionMovieTitle && typeof sessionMovieTitle === 'string' && sessionMovieTitle.trim() !== '') {
+        // Fallback if only movie title is present
+        notificationBody = `The winning movie is '${sessionMovieTitle}'. Time TBD.`;
+    }
+    // If neither epoch nor title is present, the default body remains.
+
+  } catch (error) {
+    console.error('[firebase-messaging-sw.js] Error processing notification data:', error);
+    // Fallback to default body in case of error
+    notificationBody = payload.notification.body;
+  }
+
+
+  // Attempt to parse actions if they exist
+  let parsedActions;
+  if (notificationData.actions && typeof notificationData.actions === 'string') {
+    try {
+      parsedActions = JSON.parse(notificationData.actions);
+    } catch (e) {
+      console.error('[firebase-messaging-sw.js] Error parsing notification actions:', e);
+      parsedActions = undefined;
+    }
+  }
+
+  // Construct notification options using data from the payload
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.webpush?.notification?.icon || payload.notification?.icon || '/icon-192x192.png', // Prefer webpush specific icon
-    image: payload.webpush?.notification?.image, // Use image from webpush config
-    badge: payload.webpush?.notification?.badge, // Use badge from webpush config
-    tag: payload.webpush?.notification?.tag, // Use tag from webpush config
-    actions: payload.webpush?.notification?.actions, // Use actions from webpush config
-    data: payload.webpush?.notification?.data || {}, // Use data from webpush config (contains click_action)
-    vibrate: [200, 100, 200], // Example vibration pattern
-    // requireInteraction: true, // Optional: Keep notification until user interacts
+    body: notificationBody, // Use the potentially updated body
+    icon: notificationData.icon || '/icon-192x192.png', // Use icon from data
+    image: notificationData.image || undefined, // Use image from data
+    badge: notificationData.badge || undefined, // Use badge from data
+    tag: notificationData.tag || undefined, // Use tag from data
+    actions: parsedActions, // Use parsed actions from data
+    data: notificationData, // Pass the full data object along
+    vibrate: [200, 100, 200],
+    // requireInteraction: true, // Optional
   };
 
-  // Check if the payload structure is as expected
+  // Check if title is present (it should be, as it's now required in data)
   if (!notificationTitle) {
-      console.error("Notification title is missing in payload:", payload);
+      console.error("Notification title is missing in data payload:", notificationData);
       return; // Don't show notification without a title
   }
 
   // Show the notification
-  // Use `self.registration.showNotification` which is standard for service workers
   self.registration.showNotification(notificationTitle, notificationOptions);
-
 });
 
 self.addEventListener('notificationclick', function(event) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react'; // Import useRef
 import { useAuthContext } from '@/context/AuthContext';
 import { UserData, FirestoreWatchlistItem } from '@/types';
 import useSWR, { KeyedMutator } from 'swr';
@@ -29,8 +29,8 @@ interface UseUserDataOptions {
 }
 
 export const useUserProfileAndWatchlist = (options?: UseUserDataOptions) => {
-  const { user, isSessionVerified } = useAuthContext();
-  const userKey = user && isSessionVerified ? '/api/users/me' : null;
+  const { user, loading: authLoading } = useAuthContext(); // Get auth loading state
+  const userKey = user ? '/api/users/me' : null; // Key depends only on user presence
 
   const {
     data: profileData,
@@ -42,7 +42,7 @@ export const useUserProfileAndWatchlist = (options?: UseUserDataOptions) => {
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnMount: !options?.fallbackData,
+      revalidateOnMount: !options?.fallbackData, // Revert: Only revalidate if no fallback
       fallbackData: options?.fallbackData === undefined ? undefined : options.fallbackData,
       // Removed onSuccess and onError related to initialProfileLoaded
     }
@@ -50,11 +50,14 @@ export const useUserProfileAndWatchlist = (options?: UseUserDataOptions) => {
 
   const [realtimeWatchlist, setRealtimeWatchlist] = useState<RealtimeWatchlist>({ movie: [], tv: [] });
   const [watchlistError, setWatchlistError] = useState<FirestoreError | null>(null);
-
-  // Removed initialProfileLoaded and initialWatchlistLoaded states
+  const [isWatchlistInitiallyLoaded, setIsWatchlistInitiallyLoaded] = useState(false); // Track initial watchlist load
+  const hasWatchlistLoadedOnce = useRef(false); // Prevent setting true multiple times
 
   useEffect(() => {
     let unsubscribe: Unsubscribe | null = null;
+    // Reset initial load state when user changes
+    hasWatchlistLoadedOnce.current = false;
+    setIsWatchlistInitiallyLoaded(false);
 
     if (user?.uid) {
       setWatchlistError(null);
@@ -68,20 +71,30 @@ export const useUserProfileAndWatchlist = (options?: UseUserDataOptions) => {
             tv: (data?.tv || []) as FirestoreWatchlistItem[],
           });
           setWatchlistError(null);
-          // Removed initialWatchlistLoaded update
+          // Set initial load to true only once
+          if (!hasWatchlistLoadedOnce.current) {
+            setIsWatchlistInitiallyLoaded(true);
+            hasWatchlistLoadedOnce.current = true;
+          }
         },
         (error: FirestoreError) => {
           console.error("Error fetching user watchlist:", error);
+          // Also mark as loaded on error to avoid infinite loading state
+          if (!hasWatchlistLoadedOnce.current) {
+            setIsWatchlistInitiallyLoaded(true);
+            hasWatchlistLoadedOnce.current = true;
+          }
           setWatchlistError(error);
           setRealtimeWatchlist({ movie: [], tv: [] });
           // Removed initialWatchlistLoaded update
         }
       );
     } else {
-      // Reset watchlist if no user
+      // Reset watchlist and mark as loaded if no user
       setRealtimeWatchlist({ movie: [], tv: [] });
       setWatchlistError(null);
-      // Removed logic related to initialProfileLoaded/initialWatchlistLoaded
+      setIsWatchlistInitiallyLoaded(true); // No user means watchlist is effectively "loaded" (as empty)
+      hasWatchlistLoadedOnce.current = true;
     }
 
     return () => {
@@ -100,12 +113,13 @@ export const useUserProfileAndWatchlist = (options?: UseUserDataOptions) => {
       : null;
   }, [profileData, realtimeWatchlist]);
 
-  // Removed isInitialLoadingComplete and finalIsLoading calculations
+  // Calculate final loading state
+  const finalIsLoading = authLoading || isProfileLoading || (!!user && !isWatchlistInitiallyLoaded);
 
   return useMemo(() => ({
     userData: combinedUserData,
-    isLoading: isProfileLoading, // Use SWR loading state directly
+    isLoading: finalIsLoading, // Use combined loading state
     error: swrError || watchlistError,
     mutateUserData: mutateProfile as KeyedMutator<UserData | null>
-  }), [combinedUserData, isProfileLoading, swrError, watchlistError, mutateProfile]); // Update dependencies
+  }), [combinedUserData, finalIsLoading, swrError, watchlistError, mutateProfile]); // Removed authLoading dependency
 };

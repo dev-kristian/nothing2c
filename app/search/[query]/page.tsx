@@ -2,13 +2,12 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation'; 
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import useSWRInfinite from 'swr/infinite';
 import MediaPoster from '@/components/MediaPoster';
 import { SearchResult } from '@/types';
-import SpinningLoader from '@/components/SpinningLoader';
-import SearchComponent from '@/components/discover/SearchComponent'; 
+import SearchComponent from '@/components/discover/SearchComponent';
 import { Button } from '@/components/ui/button';
 import { GENRES_BY_TYPE, Genre } from '@/constants/genres';
 
@@ -140,7 +139,6 @@ export default function SearchResultsPage() {
   }, [apiResponses, type]); 
 
   const isLoadingInitialData = !apiResponses && !error && isLoading;
-  const isLoadingMore = isLoading && size > 1;
   const isEmpty = apiResponses?.[0]?.results?.length === 0 && !isLoadingInitialData;
 
   const isReachingEnd = useMemo(() => {
@@ -248,14 +246,10 @@ export default function SearchResultsPage() {
             initialGenre={genre}
             initialIncludeAdult={includeAdult}
            hideTitleSection={true}
-          />
+         />
         </div>
 
-      {isLoadingInitialData ? (
-        <div className="flex justify-center items-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-pink" />
-        </div>
-      ) : errorMessage ? (
+      {errorMessage ? (
         <div className="text-center py-10">
           <p className="text-red-500">{errorMessage}</p>
         </div>
@@ -281,7 +275,7 @@ export default function SearchResultsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 md:gap-4">
             {results.map((result, index) => {
               const isLastItem = index === results.length - 1;
 
@@ -293,11 +287,7 @@ export default function SearchResultsPage() {
             })}
           </div>
 
-          {(isLoadingMore || (isValidating && !isLoadingInitialData)) && (
-            <div className="flex justify-center items-center my-8" aria-live="polite" aria-busy="true">
-              <SpinningLoader />
-            </div>
-          )}
+          {/* Removed loading more spinner */}
         </>
       )}
     </div>

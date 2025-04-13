@@ -23,8 +23,8 @@ function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [redirectPath, setRedirectPath] = useState('/'); 
-  const { markSessionVerified } = useAuthContext(); 
+  const [redirectPath, setRedirectPath] = useState('/');
+  const { setServerSessionPending } = useAuthContext(); // Get the new function
 
   useEffect(() => {
     const redirectedFrom = searchParams.get('redirectedFrom');
@@ -37,6 +37,7 @@ function SignInContent() {
   const handleSubmit = async (data: SignInData) => {
     const { email, password } = data;
     setLoading(true);
+    setServerSessionPending(true); // Set pending state before API call
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -67,9 +68,6 @@ function SignInContent() {
          return;
         }
 
-        markSessionVerified(true); 
-
-        
         toast({
           title: "Sign In Successful",
           description: "Welcome back!",
@@ -86,6 +84,7 @@ function SignInContent() {
       }
     } finally {
       setLoading(false);
+      setServerSessionPending(false); // Reset pending state after API call completes
     }
   };
 
