@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
@@ -10,7 +11,7 @@ export async function GET() {
   }
 
   try {
-    // Remove checkRevoked (true) for faster verification in middleware context
+    
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie); 
 
     if (!decodedClaims.email_verified) {

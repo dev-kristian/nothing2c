@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -27,7 +28,7 @@ export default function VerifyEmail(): JSX.Element {
           description: "Your email has been verified.",
           variant: "default",
         });
-        router.push('/sign-in'); // Redirect to sign-in page
+        router.push('/sign-in'); 
       } else {
         toast({
           title: "Email Not Verified",

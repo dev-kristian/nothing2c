@@ -9,7 +9,7 @@ import MediaTypeToggle from '../MediaTypeToggle';
 import { useTrending } from '@/hooks/discover/useTrending';
 import { ApiResponse, DiscoverMediaType } from '@/lib/fetchers';
 import { useAuthContext } from '@/context/AuthContext';
-import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { useAuthUser } from '@/context/AuthUserContext'; 
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TrendingSectionProps {
@@ -30,47 +30,59 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
   } = useTrending({ initialData, initialMediaType });
 
   const { initialAuthChecked } = useAuthContext();
-  const { isLoading: isUserDataLoading } = useAuthUser(); // Use new hook
+  const { isLoading: isUserDataLoading } = useAuthUser(); 
 
   const isContextLoading = !initialAuthChecked || isUserDataLoading;
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const target = entries[0];
-      if (target.isIntersecting && hasMore) {
+      
+      if (target.isIntersecting && hasMore && !isTrendingLoading) {
         loadMore();
       }
     },
-    [hasMore, loadMore]
+    [hasMore, loadMore, isTrendingLoading] 
   );
 
+  
   useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    observerRef.current = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: '200px',
-      threshold: 0.1,
+    
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null, 
+      rootMargin: '100px', 
+      threshold: 0.1, 
     });
 
-    if (loadMoreTriggerRef.current) {
-      observerRef.current.observe(loadMoreTriggerRef.current);
+    const currentTrigger = loadMoreTriggerRef.current;
+
+    
+    
+    
+    if (currentTrigger && !isInitialLoading) {
+      observer.observe(currentTrigger);
     }
 
+    
+    
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
+      if (currentTrigger) {
+        observer.unobserve(currentTrigger); 
       }
+      observer.disconnect(); 
     };
-  }, [handleObserver]);
+
+    
+    
+    
+  }, [handleObserver, isInitialLoading, mediaType]);
 
 
+  
   if (isInitialLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -163,7 +175,8 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
         </motion.div>
       </motion.div>
 
-      {isContextLoading ? (
+      {/* Show skeletons ONLY if context is loading OR initial data for the current type is loading */}
+      {(isContextLoading || isInitialLoading) ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6">
           {Array.from({ length: 12 }).map((_, index) => (
             <div key={index} className="w-full">
@@ -174,11 +187,12 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
           ))}
         </div>
       ) : (
+       
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-2 md:gap-6"
         >
           <AnimatePresence mode="popLayout">
             {data.map((item) => (
@@ -197,8 +211,9 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
         </motion.div>
       )}
 
+      {/* Show loader BELOW grid when loading next page (isLoading is true, but isInitialLoading is false) */}
       {isTrendingLoading && !isInitialLoading && (
-        <motion.div
+         <motion.div
           className="flex justify-center items-center my-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -208,7 +223,8 @@ const TrendingSection: React.FC<TrendingSectionProps> = ({ initialData, initialM
         </motion.div>
       )}
 
-      {!isContextLoading && data.length === 0 && !isTrendingLoading && (
+      {/* Show "No items found" only if NOT loading and data is empty */}
+      {!isContextLoading && !isTrendingLoading && !isInitialLoading && data.length === 0 && (
         <motion.div
           className="text-center text-muted-foreground my-12 space-y-4 frosted-panel p-8 rounded-2xl"
           initial={{ opacity: 0, scale: 0.9 }}

@@ -1,9 +1,12 @@
-// hooks/useTrending.ts
+
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import useSWRInfinite from 'swr/infinite';
+import useSWRInfinite, { SWRInfiniteResponse } from 'swr/infinite';
 import { Media } from '@/types/media';
 import { fetcher, ApiResponse, DiscoverMediaType } from '@/lib/fetchers';
+
+
+type SWRInfiniteHookResponse = SWRInfiniteResponse<ApiResponse, Error>;
 
 interface UseTrendingReturn {
   data: Media[];
@@ -22,6 +25,44 @@ interface UseTrendingOptions {
   initialMediaType?: DiscoverMediaType;
 }
 
+
+const swrOptions = {
+  revalidateFirstPage: false,
+  revalidateOnReconnect: false,
+  revalidateOnFocus: false,
+  
+};
+
+
+const processSWRData = (apiResponses: ApiResponse[] | undefined): Media[] => {
+  const data = apiResponses ? apiResponses.flatMap((response) => response.results) : [];
+  
+  const seen = new Set<string>();
+  return data.filter((item) => {
+    const key = `${item.id}-${item.media_type || 'unknown'}`; 
+    return seen.has(key) ? false : seen.add(key);
+  });
+};
+
+
+const calculateIsReachingEnd = (
+  apiResponses: ApiResponse[] | undefined,
+  mediaType: 'movie' | 'tv' | 'upcoming' 
+): boolean => {
+  if (!apiResponses || apiResponses?.[0]?.results.length === 0) return true;
+
+  const lastResponse = apiResponses[apiResponses.length - 1];
+  if (!lastResponse) return true;
+
+  
+  if (mediaType === 'upcoming') {
+    return lastResponse.page !== undefined && lastResponse.page >= lastResponse.total_pages;
+  } else {
+    
+    return lastResponse.results.length < 20;
+  }
+};
+
 export const useTrending = (options?: UseTrendingOptions): UseTrendingReturn => {
   const searchParams = useSearchParams();
   const urlType = searchParams.get('type');
@@ -36,21 +77,63 @@ export const useTrending = (options?: UseTrendingOptions): UseTrendingReturn => 
 
   const [mediaType, setMediaTypeState] = useState<DiscoverMediaType>(getInitialMediaType);
 
-  useEffect(() => {
-    const currentUrlType = searchParams.get('type');
-    if (currentUrlType === 'movie' || currentUrlType === 'tv' || currentUrlType === 'upcoming') {
-      if (currentUrlType !== mediaType && currentUrlType !== options?.initialMediaType) {
-        setMediaTypeState(currentUrlType);
-      }
-    }
-  }, [searchParams, mediaType, options?.initialMediaType]);
+  
 
-  const getKey = (pageIndex: number, previousPageData: ApiResponse | null) => {
-    if (previousPageData && !previousPageData.results.length) return null;
+  const movieSWR: SWRInfiniteHookResponse = useSWRInfinite(
+    (pageIndex, prevData) => {
+      if (prevData && !prevData.results.length) return null;
+      return ['/api/trending', 'movie', pageIndex + 1];
+    },
     
-    const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
-    return [endpoint, mediaType, pageIndex + 1]; 
-  };
+    ([url, type, page]) => fetcher(url, type as DiscoverMediaType, page),
+    {
+      ...swrOptions,
+      fallbackData: mediaType === 'movie' && options?.initialData ? [options.initialData] : undefined,
+    }
+  );
+
+  const tvSWR: SWRInfiniteHookResponse = useSWRInfinite(
+    (pageIndex, prevData) => {
+      if (prevData && !prevData.results.length) return null;
+      return ['/api/trending', 'tv', pageIndex + 1];
+    },
+    
+    ([url, type, page]) => fetcher(url, type as DiscoverMediaType, page),
+    {
+      ...swrOptions,
+      fallbackData: mediaType === 'tv' && options?.initialData ? [options.initialData] : undefined,
+    }
+  );
+
+  const upcomingSWR: SWRInfiniteHookResponse = useSWRInfinite(
+    (pageIndex, prevData) => {
+      if (prevData && !prevData.results.length) return null;
+      
+      return ['/api/upcoming', 'upcoming', pageIndex + 1]; 
+    },
+    
+    ([url, , page]) => fetcher(url, 'upcoming', page), 
+    {
+      ...swrOptions,
+      fallbackData: mediaType === 'upcoming' && options?.initialData ? [options.initialData] : undefined,
+    }
+  );
+
+  
+
+  const activeSWR = useMemo(() => {
+    switch (mediaType) {
+      case 'tv':
+        return tvSWR;
+      case 'upcoming':
+        return upcomingSWR;
+      case 'movie':
+      default:
+        return movieSWR;
+    }
+  }, [mediaType, movieSWR, tvSWR, upcomingSWR]);
+
+  
 
   const {
     data: apiResponses,
@@ -60,82 +143,76 @@ export const useTrending = (options?: UseTrendingOptions): UseTrendingReturn => 
     isLoading,
     isValidating,
     mutate,
-  } = useSWRInfinite<ApiResponse, Error>(
-    getKey, 
-    ([url, type, page]) => fetcher(url, type, page), 
-    {
-      revalidateFirstPage: false,
-      keepPreviousData: true,
-      fallbackData: options?.initialData ? [options.initialData] : undefined,
-      revalidateOnReconnect: false, // Add this line
-      // --- Add these lines ---
-      revalidateOnFocus: false,
-      revalidateIfStale: false,
-      // ----------------------
-    }
-  );
+  } = activeSWR;
 
-  const isLoadingInitialData = !apiResponses && !error;
-  const isLoadingMore =
-    isLoading || (size > 0 && apiResponses && typeof apiResponses[size - 1] === 'undefined');
-  const isEmpty = apiResponses?.[0]?.results.length === 0;
+  const processedData = useMemo(() => processSWRData(apiResponses), [apiResponses]);
+  const isReachingEnd = useMemo(() => calculateIsReachingEnd(apiResponses, mediaType), [apiResponses, mediaType]);
+  const hasMore = !isReachingEnd;
+  const errorMessage = error ? `An error occurred: ${error.message}` : null;
 
-  const isReachingEnd = useMemo(() => {
-    if (!apiResponses || isEmpty) return true;
-
-    const lastResponse = apiResponses[apiResponses.length - 1];
-    if (!lastResponse) return true; 
-
-    if (mediaType === 'upcoming') {
-      return lastResponse.page !== undefined && lastResponse.page >= lastResponse.total_pages;
-    } else {
-      return lastResponse.results.length < 20;
-    }
-  }, [apiResponses, isEmpty, mediaType]);
-
-  const data = useMemo(() => {
-    return apiResponses ? apiResponses.flatMap((response) => response.results) : [];
-  }, [apiResponses]);
+  
+  const isInitialLoading = !apiResponses && !error;
+  
+  const isLoadingMore = isLoading || isValidating;
 
 
-  const uniqueItems = useMemo(() => {
-    const seen = new Set<string>();
-    return data.filter((item) => {
-      const key = `${item.id}-${item.media_type}`;
-      return seen.has(key) ? false : seen.add(key);
-    });
-  }, [data]);
+  
 
   const loadMore = useCallback(() => {
-    if (!isLoadingMore && !isReachingEnd) {
+    if (!isLoadingMore && hasMore) {
       setSize(size + 1);
     }
-  }, [setSize, isLoadingMore, isReachingEnd, size]);
-
-  const hasMore = !isReachingEnd;
-
-  const errorMessage = error
-    ? `An error occurred: ${error.message}` 
-    : null;
+  }, [setSize, isLoadingMore, hasMore, size]);
 
   const refetch = useCallback(() => {
-    setSize(1).then(() => mutate()); 
+    
+    setSize(1).then(() => mutate());
   }, [mutate, setSize]);
 
+  
   const handleSetMediaType = useCallback((type: DiscoverMediaType) => {
-    setMediaTypeState(type);
-    setSize(1); 
-  }, [setMediaTypeState, setSize]);
+      setMediaTypeState(type);
+
+      
+      
+      switch (type) {
+          case 'movie':
+              
+              movieSWR.setSize?.(1);
+              break;
+          case 'tv':
+              tvSWR.setSize?.(1);
+              break;
+          case 'upcoming':
+              upcomingSWR.setSize?.(1);
+              break;
+      }
+  }, [setMediaTypeState, movieSWR, tvSWR, upcomingSWR]); 
+
+  
+  useEffect(() => {
+    const currentUrlType = searchParams.get('type');
+    if (currentUrlType === 'movie' || currentUrlType === 'tv' || currentUrlType === 'upcoming') {
+      
+      
+      if (currentUrlType !== mediaType) {
+         setMediaTypeState(currentUrlType);
+      }
+    }
+     
+     
+  }, [searchParams, mediaType]);
+
 
   return {
-    data: uniqueItems,
-    isLoading: isLoadingMore || isValidating,
-    isInitialLoading: isLoadingInitialData,
+    data: processedData,
+    isLoading: isLoadingMore, 
+    isInitialLoading: isInitialLoading,
     error: errorMessage,
     hasMore,
     loadMore,
     mediaType,
-    setMediaType: handleSetMediaType, 
+    setMediaType: handleSetMediaType,
     refetch,
   };
 };

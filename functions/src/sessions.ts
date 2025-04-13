@@ -1,10 +1,9 @@
 import * as functions from "firebase-functions"; // Keep for logger
 import * as admin from "firebase-admin";
-// Import v2 Firestore trigger and types
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { FirestoreEvent, Change, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
+// Import v2 Firestore trigger and types from a single statement
+import { onDocumentUpdated, FirestoreEvent, Change, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 // Corrected path to types relative to the compiled 'lib' folder
-import { UserDate, DatePopularity } from "../../types"; 
+import { UserDate, DatePopularity } from "../../types";
 
 // Assuming admin is initialized in index.ts
 const db = admin.firestore();
@@ -131,8 +130,8 @@ export const updateAggregatedAvailability = onDocumentUpdated(
             }
           });
         } else {
-           // Log a warning if hoursEpoch is somehow not an array (shouldn't happen with TS)
-           functions.logger.warn(`[${sessionId}] User ${userId} has unexpected hoursEpoch format (expected array): ${JSON.stringify(userDate.hoursEpoch)}. Skipping date entry.`);
+          // Log a warning if hoursEpoch is somehow not an array (shouldn't happen with TS)
+          functions.logger.warn(`[${sessionId}] User ${userId} has unexpected hoursEpoch format (expected array): ${JSON.stringify(userDate.hoursEpoch)}. Skipping date entry.`);
         }
       });
     });
@@ -145,8 +144,8 @@ export const updateAggregatedAvailability = onDocumentUpdated(
         // Calculate hourEpoch based on dateEpoch and hourKey
         const hourEpoch = aggDate.dateEpoch + parseInt(hourKey, 10) * 60 * 60 * 1000;
         acc[hourKey] = { ...hourData, hourEpoch };
-      return acc;
-    }, {} as DatePopularity["hours"]) // Explicitly type the accumulator
+        return acc;
+      }, {} as DatePopularity["hours"]) // Explicitly type the accumulator
     // Add explicit types for sort parameters and secondary sort by date
     })).sort((a: DatePopularity, b: DatePopularity) => {
       let sortResult = 0;

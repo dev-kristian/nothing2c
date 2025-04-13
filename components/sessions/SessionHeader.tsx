@@ -15,7 +15,6 @@ interface SessionHeaderProps {
 
 const SessionHeader: React.FC<SessionHeaderProps> = ({
   session,
-  datePopularity,
   currentUserId,
   onInitiateCompleteSession,
 }) => {

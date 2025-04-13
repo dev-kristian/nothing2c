@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { getFirebaseErrorMessage } from '@/lib/firebaseErrors';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { AuthFormData } from '@/types';
-import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContext import
+import { useAuthContext } from '@/context/AuthContext'; 
 
   interface AuthFormProps {
     isSignUp: boolean;
@@ -43,8 +44,8 @@ import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContex
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const router = useRouter(); // Initialize useRouter
-  const { markSessionVerified } = useAuthContext(); // Restore markSessionVerified from context
+  const router = useRouter(); 
+  const { markSessionVerified } = useAuthContext(); 
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
@@ -109,7 +110,7 @@ import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContex
           return;
         }
 
-        markSessionVerified(true); // Restore marking session as verified
+        markSessionVerified(true); 
 
         toast({
           title: "Google Sign In Successful",
@@ -245,7 +246,7 @@ import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContex
             required
             checked={agreeToTerms}
             onCheckedChange={handleAgreeToTermsChange}
-            className="data-[state=checked]:bg-pink data-[state=checked]:text-pink-foreground data-[state=checked]:border-pink" // Added pink classes
+            className="data-[state=checked]:bg-pink data-[state=checked]:text-pink-foreground data-[state=checked]:border-pink" 
           />
           <Label htmlFor="agree-terms" className="text-sm text-muted-foreground">
             I agree to the{' '}

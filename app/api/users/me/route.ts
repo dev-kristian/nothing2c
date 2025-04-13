@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
-import { UserData, UserProfile } from '@/types'; 
+import {  UserProfile } from '@/types'; 
 import { FieldValue, CollectionReference } from 'firebase-admin/firestore'; 
 import { checkUsernameAvailability } from '@/app/actions/userActions';
 

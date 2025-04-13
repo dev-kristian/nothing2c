@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, } from 'react';
-import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check} from 'lucide-react';
 import { addMonths, subMonths, isSameDay, isBefore, startOfDay, isToday } from 'date-fns'; 
 import { DatePopularity, DateTimeSelection, UserDate } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -345,7 +345,7 @@ export default function MovieNightCalendar({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full border border-pink dark:border-pink-dark" />
-            <span>Others' selections</span>
+            <span>Others&apos; selections</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-blue/20" />

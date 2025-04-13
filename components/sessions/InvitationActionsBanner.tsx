@@ -77,7 +77,7 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
             >
               {isLoadingDecline ? (
                 <>
-                  <SpinningLoader size={14} className="mr-2" />
+                  <span className="mr-2"><SpinningLoader size={14} /></span>
                   <span>Declining...</span>
                 </>
               ) : (
@@ -96,7 +96,7 @@ const InvitationActionsBanner: React.FC<InvitationActionsBannerProps> = ({ sessi
             >
               {isLoadingAccept ? (
                 <>
-                  <SpinningLoader size={14} className="mr-2" />
+                  <span className="mr-2"><SpinningLoader size={14} /></span>
                   <span>Accepting...</span>
                 </>
               ) : (

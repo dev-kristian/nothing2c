@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { LucideIcon } from 'lucide-react'; // Import LucideIcon type
+import { LucideIcon } from 'lucide-react'; 
 
 interface NavItem {
   href: string;
-  icon: LucideIcon; // Use LucideIcon type for the icon
+  icon: LucideIcon; 
   label: string;
 }
 

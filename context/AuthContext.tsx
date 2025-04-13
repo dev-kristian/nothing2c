@@ -10,7 +10,6 @@ import {
   signOut as firebaseSignOut,
   setPersistence,
   browserLocalPersistence,
-  Auth, 
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase'; 
 import { handleAuthError } from '@/lib/utils';

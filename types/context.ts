@@ -1,8 +1,8 @@
 
-import { Media, UserData, Friend, FriendRequest, DateTimeSelection, Session, SearchResult } from './';
+import { Media, UserData, Friend, FriendRequest, DateTimeSelection, Session, SearchResult, MediaPollItem } from './'; // Added MediaPollItem
 import { KeyedMutator } from 'swr';
 
-export type TopWatchlistItem = FirestoreWatchlistItem;
+export type TopWatchlistItem = FirestoreWatchlistItem; // Assuming this is defined elsewhere or should be FirestoreWatchlistItem
 
 export interface UserDataContextType {
     userData: UserData | null;
@@ -61,12 +61,13 @@ export interface FirestoreWatchlistItem {
 }
 
 export interface SessionContextType {
-  createSession: (dates: DateTimeSelection[], selectedFriends: Friend[]) => Promise<string>;
-  createPoll: (sessionId: string, movieTitles: string[]) => Promise<void>;
+  // Updated createSession signature to accept optional mediaItems
+  createSession: (dates: DateTimeSelection[], selectedFriends: Friend[], mediaItems?: MediaPollItem[]) => Promise<string>;
+  // Removed createPoll as it's now handled during session creation
   updateUserDates: (sessionId: string, dates: DateTimeSelection[]) => Promise<void>;
-  toggleVote: (sessionId: string, movieTitle: string) => Promise<void>;
-  addMovieToPoll: (sessionId: string, movieTitle: string) => Promise<void>;
-  removeMovieFromPoll: (sessionId: string, movieTitle: string) => Promise<void>;
+  toggleVote: (sessionId: string, mediaId: number) => Promise<void>; // Changed to mediaId
+  addMovieToPoll: (sessionId: string, mediaItem: MediaPollItem) => Promise<void>; // Changed to mediaItem
+  removeMovieFromPoll: (sessionId: string, mediaId: number) => Promise<void>; // Changed to mediaId
   updateParticipantStatus: (sessionId: string, status: 'accepted' | 'declined') => Promise<void>;
   sessions: Session[];
   isLoading: boolean;

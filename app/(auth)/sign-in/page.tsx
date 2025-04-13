@@ -1,7 +1,7 @@
-// app/(auth)/signin/page.tsx
+
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react'; // Import Suspense
+import React, { useState, useEffect, Suspense } from 'react'; 
 import Link from 'next/link';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -10,28 +10,28 @@ import AuthForm from '@/components/auth/AuthForm';
 import { toast } from "@/hooks/use-toast";
 import { handleAuthError } from '@/lib/utils';
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton for fallback
-import { useAuthContext } from '@/context/AuthContext'; // Restore useAuthContext import
+import { Skeleton } from '@/components/ui/skeleton'; 
+import { useAuthContext } from '@/context/AuthContext'; 
 
 interface SignInData {
   email: string;
   password: string;
 }
 
-// Extracted content component that uses useSearchParams
+
 function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [redirectPath, setRedirectPath] = useState('/'); // Changed default redirect to root
-  const { markSessionVerified } = useAuthContext(); // Restore markSessionVerified
+  const [redirectPath, setRedirectPath] = useState('/'); 
+  const { markSessionVerified } = useAuthContext(); 
 
   useEffect(() => {
     const redirectedFrom = searchParams.get('redirectedFrom');
     if (redirectedFrom) {
       setRedirectPath(redirectedFrom);
     }
-    // Intentionally run only once on mount or when searchParams changes
+    
   }, [searchParams]);
 
   const handleSubmit = async (data: SignInData) => {
@@ -51,7 +51,7 @@ function SignInContent() {
         return;
       }
 
-      // Get token and call session login API *before* showing success toast
+      
       const idToken = await user.getIdToken();
 
       const response = await fetch('/api/auth/session-login', {
@@ -67,20 +67,20 @@ function SignInContent() {
          return;
         }
 
-        markSessionVerified(true); // Restore marking session as verified
+        markSessionVerified(true); 
 
-        // Show success toast just before navigation
+        
         toast({
           title: "Sign In Successful",
           description: "Welcome back!",
           variant: "default",
         });
 
-        // Use router.push for client-side navigation
+        
         router.push(redirectPath);
  
       } catch (error: unknown) {
-      // Avoid duplicate error handling if session login already handled it
+      
       if (!(error instanceof Error && error.message === "Session login failed")) {
          handleAuthError(error);
       }
@@ -124,7 +124,7 @@ function SignInContent() {
   );
 }
 
-// Main page component wrapping SignInContent with Suspense
+
 export default function SignInPage() {
   return (
     <Suspense fallback={<SignInFallback />}>
@@ -133,7 +133,7 @@ export default function SignInPage() {
   );
 }
 
-// Simple fallback component
+
 function SignInFallback() {
   return (
     <>

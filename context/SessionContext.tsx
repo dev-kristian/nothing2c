@@ -21,23 +21,24 @@ export const useSession = () => {
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const createSession = useCreateSession();
   const updateUserDates = useUpdateUserDates();
-  const { createPoll, addMovieToPoll, removeMovieFromPoll, toggleVote } = usePollActions();
+  // Removed createPoll from destructuring
+  const { addMovieToPoll, removeMovieFromPoll, toggleVote } = usePollActions();
   const updateParticipantStatus = useParticipantActions();
-  const { sessions, initialLoadComplete } = useSessionSubscription(); 
-  
+  const { sessions, initialLoadComplete } = useSessionSubscription();
+
   const contextValue = useMemo(() => ({
     createSession,
-    createPoll,
+    // Removed createPoll from context value
     updateUserDates,
     toggleVote,
     addMovieToPoll,
     removeMovieFromPoll,
     updateParticipantStatus,
     sessions: sessions || [], 
-    isLoading: !initialLoadComplete 
+    isLoading: !initialLoadComplete
   }), [
     createSession,
-    createPoll,
+    // Removed createPoll from dependency array
     updateUserDates,
     toggleVote,
     addMovieToPoll,

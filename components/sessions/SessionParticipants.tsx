@@ -47,7 +47,7 @@ const SessionParticipantsComponent: React.FC<SessionParticipantsProps> = ({ sess
   const isCreator = useMemo(() => userData?.uid === session.createdByUid, [userData?.uid, session.createdByUid]);
 
   
-  const { acceptedCategorized, pending, declined } = useMemo(() => {
+  const { acceptedCategorized, pending } = useMemo(() => {
     const accepted = participants.filter(p => p.status === 'accepted');
     const pending = participants.filter(p => p.status === 'invited');
     const declined = participants.filter(p => p.status === 'declined');

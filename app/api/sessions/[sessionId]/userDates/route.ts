@@ -14,10 +14,10 @@ const isValidEpochDatesInput = (data: unknown): data is { dates: UserDate[] } =>
     (data as { dates: unknown[] }).dates.every((d: unknown) =>
       typeof d === 'object' && d !== null && 
       'dateEpoch' in d && typeof (d as { dateEpoch: unknown }).dateEpoch === 'number' &&
-      'hoursEpoch' in d && 
-      ((d as { hoursEpoch: unknown }).hoursEpoch === 'all' ||
-        (Array.isArray((d as { hoursEpoch: unknown }).hoursEpoch) && 
-         (d as { hoursEpoch: unknown[] }).hoursEpoch.every((h: unknown) => typeof h === 'number'))) 
+      'hoursEpoch' in d &&
+      // Ensure hoursEpoch is an array of numbers
+      (Array.isArray((d as { hoursEpoch: unknown }).hoursEpoch) &&
+       (d as { hoursEpoch: unknown[] }).hoursEpoch.every((h: unknown) => typeof h === 'number'))
     )
   );
 };

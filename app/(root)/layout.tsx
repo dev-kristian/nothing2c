@@ -1,4 +1,4 @@
-// app/(root)/layout.tsx 
+
 import React, { Suspense } from 'react';
 import SpinningLoader from '@/components/SpinningLoader';
 

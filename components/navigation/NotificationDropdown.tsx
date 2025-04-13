@@ -165,11 +165,11 @@ export default function NotificationDropdown({
                 {sessions
                   .filter(session => user && session.participants?.[user.uid]?.status === 'invited') // Added user && check
                   .map((session, index) => {
-                    const participantIds = Object.keys(session.participants || {});
-                    const otherInviteesCount = participantIds.filter(uid => uid !== user?.uid && uid !== session.createdByUid).length; // Note: user?.uid here is okay as it's a different context
-                    const movieTitles = session.poll?.movieTitles;
+                      const participantIds = Object.keys(session.participants || {});
+                      const otherInviteesCount = participantIds.filter(uid => uid !== user?.uid && uid !== session.createdByUid).length; // Note: user?.uid here is okay as it's a different context
+                      const movieTitles = session.poll?.mediaItems?.map(item => item.title);
 
-                    let secondaryText = '';
+                      let secondaryText = '';
                     if (movieTitles && movieTitles.length > 0) {
                       secondaryText = ` for '${movieTitles[0]}'`;
                       if (movieTitles.length > 1) {

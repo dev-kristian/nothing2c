@@ -33,8 +33,8 @@ interface NotificationPayload {
   badge?: string; // Optional monochrome badge icon
   tag?: string; // Optional tag for grouping/replacing notifications
   actions?: NotificationAction[]; // Optional action buttons
-  // Allow other custom data fields for webpush.notification
-  [key: string]: any;
+  // Allow other custom data fields for webpush.notification, typically strings for data payload
+  [key: string]: string | NotificationAction[] | undefined; // Use string, allow existing types
 }
 
 interface SendNotificationResult {

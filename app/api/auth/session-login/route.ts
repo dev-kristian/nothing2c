@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
           uid: uid,
           email: email || null,
           username: username,
-          photoURL: decodedToken.picture || null, // Add photoURL from token or null
+          photoURL: decodedToken.picture || null, 
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         };

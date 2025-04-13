@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 
 import MovieNightCalendar from '@/components/home/MovieNightCalendar';
 import MediaSuggestions from '@/components/sessions/MediaSuggestions';
-import { DateTimeSelection, UserDate, Session } from "@/types"; 
+import { DateTimeSelection, UserDate } from "@/types"; 
 import { useParams, useRouter } from "next/navigation";
 import { utcEpochToLocalSelections } from "@/lib/dateTimeUtils"; 
 import SessionHeader from "@/components/sessions/SessionHeader";
@@ -160,7 +160,7 @@ const SessionPage = () => {
           <h2 className="text-xl font-semibold text-label dark:text-label-dark">Select Your Availability</h2>
         </div>
         <p className="text-label-secondary dark:text-label-secondary-dark mb-4 text-sm">
-          Click on dates to select when you're available. You can select multiple dates and specific hours.
+          Click on dates to select when you&apos;re available. You can select multiple dates and specific hours.
         </p>
 
           <MovieNightCalendar
@@ -168,7 +168,7 @@ const SessionPage = () => {
             onDatesSelected={handleCalendarUpdate}
             datePopularity={datePopularity}
             activeUserId={userData.uid}
-            userDates={session.userDates as any}
+            userDates={session.userDates as Record<string, UserDate[]>}
             participants={session.participants}
             isReadOnly={isReadOnly}
            />
