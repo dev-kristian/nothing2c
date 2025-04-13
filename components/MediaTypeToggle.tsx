@@ -10,7 +10,6 @@ interface MediaTypeToggleProps {
   mediaType: DiscoverMediaType;
   onMediaTypeChange: (type: DiscoverMediaType) => void;
   size?: 'default' | 'sm';
-  compact?: boolean;
   showUpcoming?: boolean;
 }
 
@@ -18,41 +17,35 @@ export default function MediaTypeToggle({
   mediaType,
   onMediaTypeChange,
   size = 'default',
-  compact = false,
   showUpcoming = false
 }: MediaTypeToggleProps) {
-  const isSmall = size === 'sm' || compact;
+  const isSmall = size === 'sm' 
 
   return (
     <div
       className={`
         frosted-panel  rounded-full flex items-center
         text-xs sm:text-sm
-        ${compact ? 'min-w-0' : ''}
       `}
     >
       <ToggleButton
         active={mediaType === 'movie'}
         onClick={() => onMediaTypeChange('movie')}
         size={size}
-        compact={compact}
         isSmall={isSmall}
       >
-        <Film className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} ${compact ? 'mr-1' : 'mr-1.5'}`} />
-        <span className={compact ? 'hidden xs:inline' : ''}>Movies</span>
-        {compact && <span className="inline xs:hidden">M</span>}
+        <Film className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'}  'mr-1' `} />
+        <span className='pl-1'>Movies</span>
       </ToggleButton>
 
       <ToggleButton
         active={mediaType === 'tv'}
         onClick={() => onMediaTypeChange('tv')}
         size={size}
-        compact={compact}
         isSmall={isSmall}
       >
-        <Tv className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} ${compact ? 'mr-1' : 'mr-1.5'}`} />
-        <span className={compact ? 'hidden xs:inline' : ''}>TV Shows</span>
-        {compact && <span className="inline xs:hidden">TV</span>}
+        <Tv className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} 'mr-1'`} />
+        <span className='pl-1'>TV Shows</span>
       </ToggleButton>
 
       {showUpcoming && (
@@ -60,12 +53,10 @@ export default function MediaTypeToggle({
           active={mediaType === 'upcoming'}
           onClick={() => onMediaTypeChange('upcoming')}
           size={size}
-          compact={compact}
           isSmall={isSmall}
         >
-          <Calendar className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4'} ${compact ? 'mr-1' : 'mr-1.5'}`} />
-          <span className={compact ? 'hidden xs:inline' : ''}>Upcoming</span>
-          {compact && <span className="inline xs:hidden">Up</span>}
+          <Calendar className={`${isSmall ? 'h-3 w-3' : 'h-4 w-4' }  `} />
+          <span className='pl-1'>Upcoming</span>
         </ToggleButton>
       )}
     </div>
