@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -5,7 +6,7 @@ import { Inter } from "next/font/google";
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-// Removed Toaster import
+
 
 const inter = Inter({ subsets: ["latin"] });
 

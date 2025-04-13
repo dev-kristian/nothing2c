@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
-import { adminDb } from '@/lib/firebase-admin';
-import { Session } from '@/types';
+import { adminDb } from '@/lib/firebase-admin'; // Import admin for FieldValue
+import { Session, Poll } from '@/types'; // Import Poll type
 import { FieldValue } from 'firebase-admin/firestore';
 
-const isValidMovieTitleInput = (data: unknown): data is { movieTitle: string } => {
+// New validation function for mediaId input
+const isValidMediaIdInput = (data: unknown): data is { mediaId: number } => {
   return (
     typeof data === 'object' &&
-    data !== null && 
-    'movieTitle' in data &&
-    typeof (data as { movieTitle: unknown }).movieTitle === 'string' && 
-    (data as { movieTitle: string }).movieTitle.trim() !== ''
+    data !== null &&
+    'mediaId' in data &&
+    typeof (data as { mediaId: unknown }).mediaId === 'number'
   );
 };
 
@@ -55,34 +55,40 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     }
 
     if (!sessionData?.poll) { 
-        return NextResponse.json({ error: 'Poll does not exist for this session' }, { status: 404 });
+      return NextResponse.json({ error: 'Poll does not exist or has no items for this session' }, { status: 404 });
     }
 
-    let body;
+    let mediaId: number;
     try {
-      body = await request.json();
+      const body = await request.json();
+      if (!isValidMediaIdInput(body)) {
+        return NextResponse.json({ error: 'Invalid input data: mediaId must be a number.' }, { status: 400 });
+      }
+      mediaId = body.mediaId;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (!isValidMovieTitleInput(body)) {
-      return NextResponse.json({ error: 'Invalid input data: movieTitle must be a non-empty string.' }, { status: 400 });
-    }
-    const { movieTitle }: { movieTitle: string } = body;
+    // Check if the mediaId exists in the poll's mediaItems
+    const pollData = sessionData.poll as Poll; // Cast to updated Poll type
+    const itemExists = pollData.mediaItems.some(item => item.id === mediaId);
 
-    if (!sessionData.poll.movieTitles.includes(movieTitle)) {
-        return NextResponse.json({ error: 'Movie title not found in the poll' }, { status: 404 });
+    if (!itemExists) {
+        return NextResponse.json({ error: 'Media item not found in the poll' }, { status: 404 });
     }
 
     // Use userId as the key for poll votes
     const userVotesPath = `poll.votes.${userId}`;
-    const currentUserVotes: string[] = sessionData.poll.votes?.[userId] || [];
+    // Votes are now arrays of numbers (media IDs)
+    const currentUserVotes: number[] = pollData.votes?.[userId] || [];
 
     let updateOperation;
-    if (currentUserVotes.includes(movieTitle)) {
-      updateOperation = FieldValue.arrayRemove(movieTitle);
+    if (currentUserVotes.includes(mediaId)) {
+      // User has voted for this item, remove the vote
+      updateOperation = FieldValue.arrayRemove(mediaId);
     } else {
-      updateOperation = FieldValue.arrayUnion(movieTitle);
+      // User has not voted for this item, add the vote
+      updateOperation = FieldValue.arrayUnion(mediaId);
     }
 
     await sessionRef.update({

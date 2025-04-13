@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
+import { MediaPollItem } from '@/types'; // Import the new type
 
-const callPollApi = async (url: string, method: string, body?: Record<string, unknown>) => {
+const callPollApi = async (url: string, method: string, body?: Record<string, unknown> | MediaPollItem) => { // Allow MediaPollItem in body type
   const response = await fetch(url, {
     method: method,
     headers: {
@@ -20,42 +21,38 @@ const callPollApi = async (url: string, method: string, body?: Record<string, un
 
 
 export const usePollActions = () => {
-  const { user } = useAuthContext(); 
+  const { user } = useAuthContext();
 
-  const createPoll = useCallback(async (sessionId: string, movieTitles: string[]) => {
-    if (!user) throw new Error('User must be logged in to create a poll');
+  // Removed createPoll function
+
+  // Updated to accept MediaPollItem
+  const addMovieToPoll = useCallback(async (sessionId: string, mediaItem: MediaPollItem) => {
+    if (!user) throw new Error('User must be logged in to add a media item');
     try {
-      await callPollApi(`/api/sessions/${sessionId}/poll`, 'POST', { movieTitles });
+      // Send the entire mediaItem object
+      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'POST', mediaItem);
     } catch (error) {
-      console.error("Error creating poll via API: ", error);
+      console.error("Error adding media item to poll via API: ", error);
       throw error;
     }
   }, [user]);
 
-  const addMovieToPoll = useCallback(async (sessionId: string, movieTitle: string) => {
-    if (!user) throw new Error('User must be logged in to add a movie');
+  // Updated to use mediaId
+  const removeMovieFromPoll = useCallback(async (sessionId: string, mediaId: number) => {
+    if (!user) throw new Error('User must be logged in to remove a media item');
     try {
-      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'POST', { movieTitle });
+      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'DELETE', { mediaId });
     } catch (error) {
-      console.error("Error adding movie to poll via API: ", error);
+      console.error("Error removing media item from poll via API: ", error);
       throw error;
     }
   }, [user]);
 
-  const removeMovieFromPoll = useCallback(async (sessionId: string, movieTitle: string) => {
-    if (!user) throw new Error('User must be logged in to remove a movie');
-    try {
-      await callPollApi(`/api/sessions/${sessionId}/poll/movies`, 'DELETE', { movieTitle });
-    } catch (error) {
-      console.error("Error removing movie from poll via API: ", error);
-      throw error;
-    }
-  }, [user]);
-
-  const toggleVote = useCallback(async (sessionId: string, movieTitle: string) => {
+  // Updated to use mediaId - NOTE: Backend API /api/sessions/[sessionId]/poll/vote needs update too!
+  const toggleVote = useCallback(async (sessionId: string, mediaId: number) => {
     if (!user) throw new Error('User must be logged in to vote');
     try {
-      await callPollApi(`/api/sessions/${sessionId}/poll/vote`, 'PUT', { movieTitle });
+      await callPollApi(`/api/sessions/${sessionId}/poll/vote`, 'PUT', { mediaId });
     } catch (error) {
       console.error("Error toggling vote via API: ", error);
       throw error;
@@ -63,7 +60,7 @@ export const usePollActions = () => {
   }, [user]);
 
   return {
-    createPoll,
+    // Removed createPoll from returned object
     addMovieToPoll,
     removeMovieFromPoll,
     toggleVote

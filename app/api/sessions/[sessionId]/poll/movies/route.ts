@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils';
-import { adminDb } from '@/lib/firebase-admin';
-import { Session } from '@/types';
+import { adminDb } from '@/lib/firebase-admin'; // Import admin for FieldValue
+import { Session, MediaPollItem } from '@/types'; // Import MediaPollItem and Poll
 import { FieldValue } from 'firebase-admin/firestore';
 
-const isValidMovieTitleInput = (data: unknown): data is { movieTitle: string } => {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
+// New validation function for the MediaPollItem structure
+const isValidMediaPollItemInput = (data: unknown): data is MediaPollItem => {
+  if (typeof data !== 'object' || data === null) return false;
+  const item = data as Partial<MediaPollItem>; // Use Partial for type checking
   return (
-    'movieTitle' in data &&
-    typeof (data as { movieTitle: unknown }).movieTitle === 'string' &&
-    (data as { movieTitle: string }).movieTitle.trim() !== ''
+    typeof item.id === 'number' &&
+    (item.type === 'movie' || item.type === 'tv') &&
+    typeof item.title === 'string' && item.title.trim() !== '' &&
+    (item.poster_path === null || typeof item.poster_path === 'string') &&
+    (item.release_date === null || typeof item.release_date === 'string') && // Allow null or string
+    (item.vote_average === null || typeof item.vote_average === 'number') // Allow null or number
+  );
+};
+
+// Validation for DELETE request body
+const isValidDeleteInput = (data: unknown): data is { mediaId: number } => {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'mediaId' in data &&
+    typeof (data as { mediaId: unknown }).mediaId === 'number'
   );
 };
 
@@ -54,40 +67,77 @@ export async function POST(request: NextRequest, { params }: { params: { session
       return NextResponse.json({ error: 'Forbidden: User must accept the invitation before suggesting movies.' }, { status: 403 });
     }
 
-    // Poll existence check removed here, will handle creation/update below
-
-    let body;
+    let mediaItem: MediaPollItem;
     try {
-      body = await request.json();
+      const body = await request.json();
+      if (!isValidMediaPollItemInput(body)) {
+        console.error("Invalid media item input:", body);
+        return NextResponse.json({ error: 'Invalid input data: requires id, type, title, poster_path, release_date, vote_average.' }, { status: 400 });
+      }
+      mediaItem = body;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (!isValidMovieTitleInput(body)) {
-      return NextResponse.json({ error: 'Invalid input data: movieTitle must be a non-empty string.' }, { status: 400 });
-    }
-    const { movieTitle }: { movieTitle: string } = body;
-
-    // Check if poll exists and initialize if not, otherwise add movie
-    if (!sessionData?.poll) {
-      // Poll doesn't exist, create it with the first movie
-      await sessionRef.update({
-        poll: {
-          movieTitles: [movieTitle],
-          votes: {} // Initialize votes map
-        }
-      });
-    } else {
-      // Poll exists, add movie if it's not already there
-      if (sessionData.poll.movieTitles.includes(movieTitle)) {
-          return NextResponse.json({ error: 'Movie title already exists in the poll' }, { status: 409 });
+    // Use a transaction to handle poll creation/update atomically
+    await adminDb.runTransaction(async (transaction) => {
+      const freshSessionDoc = await transaction.get(sessionRef);
+      if (!freshSessionDoc.exists) {
+        throw new Error("Session not found during transaction"); // Should not happen based on earlier check, but good practice
       }
-      await sessionRef.update({
-        'poll.movieTitles': FieldValue.arrayUnion(movieTitle)
-      });
+      const freshSessionData = freshSessionDoc.data() as Session | undefined;
+
+      if (!freshSessionData?.poll) {
+        // Poll doesn't exist, create it with the first media item
+        transaction.update(sessionRef, {
+          poll: {
+            mediaItems: [mediaItem], // Use mediaItems array
+            votes: {} // Initialize votes map
+          }
+        });
+      } else {
+        // Poll exists, add media item if its ID is not already present
+        const existingIds = freshSessionData.poll.mediaItems.map(item => item.id);
+        if (existingIds.includes(mediaItem.id)) {
+          // Item already exists, return conflict status but don't throw error in transaction
+          // We'll handle the response outside the transaction based on a flag or similar
+          // For now, just log and don't update
+          console.log(`Media item with ID ${mediaItem.id} already exists in poll for session ${sessionId}.`);
+          // To signal conflict, we could set a variable checked outside transaction
+          // Or simply let the transaction succeed without changes if item exists
+        } else {
+          transaction.update(sessionRef, {
+            'poll.mediaItems': FieldValue.arrayUnion(mediaItem) // Add the whole object
+          });
+        }
+      }
+    });
+
+    // Re-fetch session data after transaction to check if item was actually added (or existed before)
+    const updatedSessionDoc = await sessionRef.get();
+    const updatedSessionData = updatedSessionDoc.data() as Session | undefined;
+    const itemExists = updatedSessionData?.poll?.mediaItems.some(item => item.id === mediaItem.id);
+
+    if (!itemExists) {
+        // This case should ideally not happen if transaction logic is correct
+        console.error(`[${sessionId}] Failed to add/verify media item ${mediaItem.id} after transaction.`);
+        return NextResponse.json({ error: 'Failed to add media item, possibly due to concurrent update.' }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Movie added to poll successfully' }, { status: 200 });
+    // Check if the item was newly added or already existed
+    // This requires comparing lengths or checking existence before transaction, which adds complexity.
+    // Let's assume success means it's now present. If it existed before, it's still a "success" in idempotency terms.
+    // A 409 Conflict might be more appropriate if it already existed. Let's refine this:
+
+    // --- Refined Logic for Conflict ---
+    const sessionBeforeUpdate = sessionDoc.data() as Session | undefined;
+    const alreadyExisted = sessionBeforeUpdate?.poll?.mediaItems.some(item => item.id === mediaItem.id) ?? false;
+
+    if (alreadyExisted) {
+         return NextResponse.json({ message: 'Media item already exists in the poll' }, { status: 200 }); // Or 409 if preferred
+    } else {
+         return NextResponse.json({ message: 'Media item added to poll successfully' }, { status: 200 }); // Or 201 Created
+    }
 
   } catch (error: unknown) {
     console.error(`Error adding movie to poll for session ${params.sessionId} via API:`, error);
@@ -122,9 +172,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
 
     const sessionData = sessionDoc.data() as Session | undefined;
 
-    // Check if Session is Completed
-    if (sessionData?.status === 'completed') {
-      return NextResponse.json({ error: 'Cannot remove movies from a completed session poll' }, { status: 403 }); // Forbidden
+    // Check if Session is Completed or Active
+    if (sessionData?.status !== 'active') {
+       return NextResponse.json({ error: `Cannot modify poll for session with status: ${sessionData?.status}` }, { status: 403 });
     }
 
     const participantInfo = sessionData?.participants?.[userId];
@@ -139,34 +189,68 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
       return NextResponse.json({ error: 'Forbidden: User must accept the invitation before removing movies.' }, { status: 403 });
     }
 
-    if (!sessionData?.poll) {
-        return NextResponse.json({ error: 'Poll does not exist for this session' }, { status: 404 });
+    const pollData = sessionData?.poll; // Use the updated Poll type
+
+    if (!pollData || !pollData.mediaItems || pollData.mediaItems.length === 0) {
+        return NextResponse.json({ error: 'Poll does not exist or is empty for this session' }, { status: 404 });
     }
 
-    let body;
+    let mediaIdToRemove: number;
     try {
-      body = await request.json();
+      const body = await request.json();
+      if (!isValidDeleteInput(body)) {
+        return NextResponse.json({ error: 'Invalid input data: mediaId must be a number.' }, { status: 400 });
+      }
+      mediaIdToRemove = body.mediaId;
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (!isValidMovieTitleInput(body)) { 
-      return NextResponse.json({ error: 'Invalid input data: movieTitle must be a non-empty string.' }, { status: 400 });
-    }
-    const { movieTitle }: { movieTitle: string } = body;
+    const itemToRemove = pollData.mediaItems.find(item => item.id === mediaIdToRemove);
 
-    if (!sessionData.poll.movieTitles.includes(movieTitle)) {
-        return NextResponse.json({ error: 'Movie title not found in the poll' }, { status: 404 });
+    if (!itemToRemove) {
+        return NextResponse.json({ error: 'Media item not found in the poll' }, { status: 404 });
     }
 
-    const votePath = `poll.votes.${movieTitle.replace(/\./g, '_')}`; // Firestore map keys cannot contain '.' - need to handle this if titles can have periods. Assuming simple titles for now. If titles have '.', a different approach for votes might be needed (e.g., encoding the title or using a subcollection). Let's assume simple titles.
+    // Use transaction to remove item and update votes
+    await adminDb.runTransaction(async (transaction) => {
+        const freshSessionDoc = await transaction.get(sessionRef);
+        const freshSessionData = freshSessionDoc.data() as Session | undefined;
+        const freshPollData = freshSessionData?.poll;
 
-    await sessionRef.update({
-      'poll.movieTitles': FieldValue.arrayRemove(movieTitle),
-      [votePath]: FieldValue.delete() 
+        if (!freshPollData || !freshPollData.mediaItems) {
+            // Poll or items disappeared, maybe log this?
+            console.warn(`[${sessionId}] Poll or media items disappeared during DELETE transaction for item ${mediaIdToRemove}.`);
+            return; // Exit transaction
+        }
+
+        const currentItemToRemove = freshPollData.mediaItems.find(item => item.id === mediaIdToRemove);
+        if (!currentItemToRemove) {
+            console.warn(`[${sessionId}] Media item ${mediaIdToRemove} was already removed before DELETE transaction completed.`);
+            return; // Item already gone
+        }
+
+        // Prepare updates
+        const updates: { [key: string]: FieldValue } = {
+            'poll.mediaItems': FieldValue.arrayRemove(currentItemToRemove) // Remove the specific object
+        };
+
+        // Remove votes for this mediaId from all users
+        if (freshPollData.votes) {
+            for (const voterId in freshPollData.votes) {
+                const userVotes = freshPollData.votes[voterId];
+                if (userVotes.includes(mediaIdToRemove)) {
+                    // Use FieldValue.arrayRemove to remove the ID from the user's vote array
+                    updates[`poll.votes.${voterId}`] = FieldValue.arrayRemove(mediaIdToRemove);
+                }
+            }
+        }
+
+        transaction.update(sessionRef, updates);
     });
 
-    return NextResponse.json({ message: 'Movie removed from poll successfully' }, { status: 200 });
+
+    return NextResponse.json({ message: 'Media item removed from poll successfully' }, { status: 200 });
 
   } catch (error: unknown) {
     console.error(`Error removing movie from poll for session ${params.sessionId} via API:`, error);

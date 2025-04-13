@@ -7,7 +7,7 @@ interface ValidationResult {
   message: string;
 }
 
-// Restoring this function as it's needed for username updates in profile settings
+
 export const checkUsernameAvailability = async (username: string): Promise<ValidationResult> => {
   const trimmedUsername = username.trim().toLowerCase();
 
@@ -25,7 +25,7 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  // Update max length check to 20
+  
   if (trimmedUsername.length > 20) { 
     return {
       isValid: false,
@@ -33,7 +33,7 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
     };
   }
 
-  // Allow letters, numbers, and underscores, but not starting with a number
+  
   if (!/^[a-z_][a-z0-9_]*$/.test(trimmedUsername)) {
      if (/^[0-9]/.test(trimmedUsername)) {
        return {
@@ -50,7 +50,7 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
 
   try {
     const usersRef = adminDb.collection('users');
-    // Check against the lowercase username stored in Firestore
+    
     const querySnapshot = await usersRef.where('username', '==', trimmedUsername).limit(1).get();
 
     if (!querySnapshot.empty) {
@@ -73,4 +73,4 @@ export const checkUsernameAvailability = async (username: string): Promise<Valid
   }
 };
 
-// Note: setUsernameAndClaim remains removed as it was part of the welcome flow.
+

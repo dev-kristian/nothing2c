@@ -88,7 +88,7 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   };
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground pt-6">
+    <div className="relative min-h-screen bg-background text-foreground py-6">
       <div className="absolute inset-0 ">
         <Image
           src={`https://image.tmdb.org/t/p/original${details.backdrop_path}`}

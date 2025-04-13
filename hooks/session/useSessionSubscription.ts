@@ -7,10 +7,11 @@ import {
   where,
   orderBy,
   onSnapshot,
-  doc // Import doc
+  doc
 } from 'firebase/firestore';
-import { Session, UserDate, DatePopularity } from '@/types'; // Import DatePopularity
-import isEqual from 'lodash/isEqual'; // Import isEqual
+// Import Poll and MediaPollItem as well
+import { Session, UserDate, DatePopularity, MediaPollItem } from '@/types';
+import isEqual from 'lodash/isEqual';
 
 export const useSessionSubscription = () => {
   const { user } = useAuthContext();
@@ -85,13 +86,15 @@ export const useSessionSubscription = () => {
           userDates: Object.fromEntries(processedUserDates),
           participants,
           participantIds,
-          poll: data.poll ? { // Keep poll processing
-            id: data.poll.id || sessionId, // Use sessionId if poll id missing?
-            movieTitles: data.poll.movieTitles || [],
-            votes: data.poll.votes || {}
+          // Updated poll processing to use mediaItems and expect votes as number[]
+          poll: data.poll ? {
+            mediaItems: Array.isArray(data.poll.mediaItems) ? data.poll.mediaItems as MediaPollItem[] : [], // Ensure it's an array
+            votes: typeof data.poll.votes === 'object' ? data.poll.votes as { [userId: string]: number[] } : {} // Ensure votes are objects mapping to number arrays
           } : undefined,
           status: data.status || 'active',
-          // aggregatedAvailability will be added by the sub-listener
+          // aggregatedAvailability will be added by the sub-listener, finalChoice might also be present
+          finalChoice: data.finalChoice || undefined,
+          completedAtEpoch: data.completedAtEpoch || undefined,
         };
 
         // --- Set up or reuse sub-listener ---
@@ -185,11 +188,15 @@ export const useSessionSubscription = () => {
   
     isSubscribed.current = true;
 
+    // Capture the ref's current value for the cleanup function
+    const currentUnsubscribes = subUnsubscribes.current;
+
     // Cleanup function for the main effect
     return () => {
       unsubscribeMain();
-      subUnsubscribes.current.forEach(unsub => unsub()); // Unsubscribe all sub-listeners
-      subUnsubscribes.current.clear(); // Clear the map
+      // Use the captured value in the cleanup
+      currentUnsubscribes.forEach(unsub => unsub()); // Unsubscribe all sub-listeners
+      currentUnsubscribes.clear(); // Clear the map using the captured value
       isSubscribed.current = false;
     };
   }, [user, initialLoadComplete]);

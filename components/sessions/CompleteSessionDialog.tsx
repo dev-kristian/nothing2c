@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import SpinningLoader from '@/components/SpinningLoader';
-import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import {
@@ -19,9 +18,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Poll, DatePopularity, Session } from "@/types";
+
+import { Poll, DatePopularity, Session, MediaPollItem } from "@/types";
 import { formatEpochToLocalTime } from "@/lib/dateTimeUtils";
 
+
+
+interface FinalizeSessionPayload {
+  sendNotification: boolean;
+  forceFinalize?: boolean;
+  finalDateEpoch?: number | null;
+  finalMovieTitle?: string | null;
+}
 
 interface TiedTimeOption {
   epoch: number;
@@ -37,7 +45,7 @@ const findWinningDate = (availabilityData: DatePopularity[]): { winner: TiedTime
   if (!topDate.hours || Object.keys(topDate.hours).length === 0) return result;
 
   let maxHourCount: number = -1;
-  let potentialWinningHours: { key: string; epoch: number }[] = [];
+  const potentialWinningHours: { key: string; epoch: number }[] = [];
 
   for (const hourData of Object.values(topDate.hours)) {
     if (hourData.count > maxHourCount) maxHourCount = hourData.count;
@@ -68,51 +76,70 @@ const findWinningDate = (availabilityData: DatePopularity[]): { winner: TiedTime
 };
 
 
-const findWinningMovie = (poll: Poll | undefined): { winner: string | null; ties: string[] } => {
-    const result: { winner: string | null; ties: string[] } = { winner: null, ties: [] };
-    if (!poll || !poll.movieTitles || poll.movieTitles.length === 0) return result;
+const findWinningMovie = (poll: Poll | undefined): { winner: MediaPollItem | null; ties: MediaPollItem[] } => {
+    const result: { winner: MediaPollItem | null; ties: MediaPollItem[] } = { winner: null, ties: [] };
+    
+    if (!poll || !poll.mediaItems || poll.mediaItems.length === 0) return result;
 
+    
     if (!poll.votes || Object.keys(poll.votes).length === 0) {
-        if (poll.movieTitles.length > 1) {
-            result.ties = poll.movieTitles;
+        if (poll.mediaItems.length > 1) {
+            result.ties = poll.mediaItems; 
         } else {
-            result.winner = poll.movieTitles[0];
+            result.winner = poll.mediaItems[0]; 
         }
         return result;
     }
 
-    const voteCounts: { [title: string]: number } = {};
-    poll.movieTitles.forEach(title => { voteCounts[title] = 0; });
+    
+    const voteCounts: { [mediaId: number]: number } = {};
+    poll.mediaItems.forEach(item => { voteCounts[item.id] = 0; });
 
-    Object.values(poll.votes || {}).forEach((userVoteArray: string[]) => {
-        userVoteArray.forEach(votedTitle => {
-        if (voteCounts.hasOwnProperty(votedTitle)) {
-            voteCounts[votedTitle]++;
-        }
+    
+    Object.values(poll.votes || {}).forEach((userVoteArray: number[]) => {
+        userVoteArray.forEach(votedId => {
+            if (voteCounts.hasOwnProperty(votedId)) {
+                voteCounts[votedId]++;
+            }
         });
     });
 
     let maxVotes: number = -1;
-    let potentialWinningMovies: string[] = [];
+    const potentialWinningIds: number[] = [];
 
     for (const count of Object.values(voteCounts)) {
         if (count > maxVotes) maxVotes = count;
     }
 
-    if (maxVotes >= 0) {
-        for (const [title, count] of Object.entries(voteCounts)) {
+    if (maxVotes >= 0) { 
+        for (const [idStr, count] of Object.entries(voteCounts)) {
             if (count === maxVotes) {
-                potentialWinningMovies.push(title);
+                potentialWinningIds.push(parseInt(idStr, 10));
             }
         }
     }
 
-    potentialWinningMovies.sort((a, b) => poll.movieTitles.indexOf(a) - poll.movieTitles.indexOf(b));
+    
+    const potentialWinningItems = poll.mediaItems.filter(item => potentialWinningIds.includes(item.id));
 
-    if (potentialWinningMovies.length === 1) {
-        result.winner = potentialWinningMovies[0];
-    } else if (potentialWinningMovies.length > 1) {
-        result.ties = potentialWinningMovies;
+    
+    potentialWinningItems.sort((a, b) => {
+        const indexA = poll.mediaItems.findIndex(item => item.id === a.id);
+        const indexB = poll.mediaItems.findIndex(item => item.id === b.id);
+        return indexA - indexB;
+    });
+
+
+    if (potentialWinningItems.length === 1) {
+        result.winner = potentialWinningItems[0];
+    } else if (potentialWinningItems.length > 1) {
+        result.ties = potentialWinningItems;
+    } else if (potentialWinningItems.length === 0 && poll.mediaItems.length === 1) {
+        
+        result.winner = poll.mediaItems[0];
+    } else if (potentialWinningItems.length === 0 && poll.mediaItems.length > 1) {
+         
+         result.ties = poll.mediaItems;
     }
 
     return result;
@@ -121,12 +148,14 @@ const findWinningMovie = (poll: Poll | undefined): { winner: string | null; ties
 
 const getParticipantNames = (
     session: Session | undefined | null,
-    filterFn: (uid: string, participant: { username: string; status: string }) => boolean
+    
+    filterFn: (uid: string, participant: { username: string; status: 'invited' | 'accepted' | 'declined' }) => boolean
 ): string[] => {
     if (!session?.participants) return [];
+    
     return Object.entries(session.participants)
-        .filter(([uid, data]) => filterFn(uid, data as any))
-        .map(([uid, data]) => (data as any).username)
+        .filter(([uid, data]) => filterFn(uid, data as { username: string; status: 'invited' | 'accepted' | 'declined' }))
+        .map(([, data]) => (data as { username: string }).username) 
         .sort();
 };
 
@@ -148,13 +177,16 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
 
   
   const [tiedDates, setTiedDates] = useState<TiedTimeOption[]>([]);
-  const [tiedMovies, setTiedMovies] = useState<string[]>([]);
-  const [selectedFinalDateEpoch, setSelectedFinalDateEpoch] = useState<number | null>(null);
-  const [selectedFinalMovieTitle, setSelectedFinalMovieTitle] = useState<string | null>(null);
-  const [determinedWinningDate, setDeterminedWinningDate] = useState<TiedTimeOption | null>(null);
-  const [determinedWinningMovie, setDeterminedWinningMovie] = useState<string | null>(null);
-
   
+  const [tiedMovies, setTiedMovies] = useState<MediaPollItem[]>([]);
+  const [selectedFinalDateEpoch, setSelectedFinalDateEpoch] = useState<number | null>(null);
+  
+  const [selectedFinalMovieId, setSelectedFinalMovieId] = useState<number | null>(null);
+  const [determinedWinningDate, setDeterminedWinningDate] = useState<TiedTimeOption | null>(null);
+  
+  const [determinedWinningMovie, setDeterminedWinningMovie] = useState<MediaPollItem | null>(null);
+
+
   const [pendingInviteNames, setPendingInviteNames] = useState<string[]>([]);
   const [awaitingAvailabilityNames, setAwaitingAvailabilityNames] = useState<string[]>([]);
   const [awaitingVoteNames, setAwaitingVoteNames] = useState<string[]>([]);
@@ -167,18 +199,20 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
 
           setDeterminedWinningDate(dateWinner);
           setTiedDates(dateTies);
-          setDeterminedWinningMovie(movieWinner);
-          setTiedMovies(movieTies);
+          setDeterminedWinningMovie(movieWinner); 
+          setTiedMovies(movieTies); 
 
+          
           setSelectedFinalDateEpoch(dateTies.length > 0 ? dateTies[0].epoch : (dateWinner ? dateWinner.epoch : null));
-          setSelectedFinalMovieTitle(movieTies.length > 0 ? movieTies[0] : (movieWinner || null));
+          setSelectedFinalMovieId(movieTies.length > 0 ? movieTies[0].id : (movieWinner ? movieWinner.id : null));
 
-          setPendingInviteNames(getParticipantNames(session, (uid, p) => p.status === 'invited'));
-          setAwaitingAvailabilityNames(getParticipantNames(session, (uid, p) =>
+          
+          setPendingInviteNames(getParticipantNames(session, (_uid, p) => p.status === 'invited')); 
+          setAwaitingAvailabilityNames(getParticipantNames(session, (uid, p) => 
               p.status === 'accepted' && (!session.userDates?.[uid] || session.userDates[uid].length === 0)
           ));
-          setAwaitingVoteNames(getParticipantNames(session, (uid, p) => {
-              if (p.status !== 'accepted' || !session.poll) return false;
+          setAwaitingVoteNames(getParticipantNames(session, (uid, p) => { 
+              if (p.status !== 'accepted' || !session.poll || !session.poll.mediaItems || session.poll.mediaItems.length === 0) return false;
               const userVotes = session.poll.votes?.[uid];
               return !userVotes || userVotes.length === 0;
           }));
@@ -191,11 +225,19 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
   const hasAnyTies = useMemo(() => hasDateTies || hasMovieTies, [hasDateTies, hasMovieTies]);
   const hasWarnings = useMemo(() => pendingInviteNames.length > 0 || awaitingAvailabilityNames.length > 0 || awaitingVoteNames.length > 0, [pendingInviteNames, awaitingAvailabilityNames, awaitingVoteNames]);
 
-  
-  const finalDateDisplay = hasDateTies ? tiedDates.find(d => d.epoch === selectedFinalDateEpoch)?.formatted : (determinedWinningDate?.formatted || null);
-  const finalMovieDisplay = hasMovieTies ? selectedFinalMovieTitle : (determinedWinningMovie || null);
 
   
+  const finalMovieDisplay = useMemo(() => {
+      if (hasMovieTies) {
+          return tiedMovies.find(m => m.id === selectedFinalMovieId)?.title;
+      }
+      return determinedWinningMovie?.title;
+  }, [hasMovieTies, tiedMovies, selectedFinalMovieId, determinedWinningMovie]);
+
+  const finalDateDisplay = hasDateTies ? tiedDates.find(d => d.epoch === selectedFinalDateEpoch)?.formatted : (determinedWinningDate?.formatted || null);
+  
+
+
   const handleDialogConfirmAction = useCallback(async () => {
     if (!session?.id || isCompletingSession) return;
 
@@ -204,21 +246,33 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
       toast({ title: "Selection Required", description: "Please select the final date and time.", variant: "destructive" });
       return;
     }
-    if (hasMovieTies && selectedFinalMovieTitle === null) {
+    
+    if (hasMovieTies && selectedFinalMovieId === null) {
       toast({ title: "Selection Required", description: "Please select the final movie or show.", variant: "destructive" });
       return;
     }
 
     setIsCompletingSession(true);
-    let payload: any = {
+    
+    const payload: FinalizeSessionPayload = {
         sendNotification: sendCompletionNotification,
     };
+
+    
+    
+    const finalMovieTitleToSend = hasMovieTies
+        ? tiedMovies.find(m => m.id === selectedFinalMovieId)?.title ?? null
+        : determinedWinningMovie?.title ?? null;
 
     if (hasAnyTies) {
         payload.forceFinalize = true;
         payload.finalDateEpoch = selectedFinalDateEpoch;
-        payload.finalMovieTitle = selectedFinalMovieTitle;
+        
+        payload.finalMovieTitle = finalMovieTitleToSend;
     }
+    
+    
+    
 
     try {
       const response = await fetch(`/api/sessions/${session.id}`, {
@@ -258,14 +312,15 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
       session?.id,
       isCompletingSession,
       sendCompletionNotification,
-      tiedDates,
-      tiedMovies,
+      
+      tiedMovies, 
       selectedFinalDateEpoch,
-      selectedFinalMovieTitle,
-      hasAnyTies, 
-      hasDateTies, 
-      hasMovieTies, 
-      onOpenChange 
+      selectedFinalMovieId, 
+      hasAnyTies,
+      hasDateTies,
+      hasMovieTies,
+      determinedWinningMovie, 
+      onOpenChange
   ]);
 
   return (
@@ -330,23 +385,22 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
                     className="space-y-2"
                   >
                     {tiedDates.map((dateOption) => (
-                      <div 
-                        key={dateOption.epoch} 
-                        className="flex items-center space-x-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      
+                      <Label
+                        key={dateOption.epoch}
+                        htmlFor={`date-${dateOption.epoch}`}
+                        className="flex items-center space-x-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                       >
-                        <RadioGroupItem 
-                          value={dateOption.epoch.toString()} 
-                          id={`date-${dateOption.epoch}`} 
+                        <RadioGroupItem
+                          value={dateOption.epoch.toString()}
+                          id={`date-${dateOption.epoch}`}
                           disabled={isCompletingSession}
                           className="text-pink dark:text-pink border-zinc-300 dark:border-zinc-600"
                         />
-                        <Label 
-                          htmlFor={`date-${dateOption.epoch}`} 
-                          className="font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer w-full"
-                        >
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200 w-full"> {/* Use span instead of Label */}
                           {dateOption.formatted}
-                        </Label>
-                      </div>
+                        </span>
+                      </Label> 
                     ))}
                   </RadioGroup>
                 </div>
@@ -355,29 +409,31 @@ export const CompleteSessionDialog: React.FC<CompleteSessionDialogProps> = ({
               {hasMovieTies && (
                 <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
                   <Label className="font-medium text-pink dark:text-pink mb-3 block text-sm">Select Final Movie/Show</Label>
-                  <RadioGroup 
-                    value={selectedFinalMovieTitle ?? undefined} 
-                    onValueChange={setSelectedFinalMovieTitle} 
+                  <RadioGroup
+                    
+                    value={selectedFinalMovieId?.toString()}
+                    
+                    onValueChange={(value) => setSelectedFinalMovieId(Number(value))}
                     className="space-y-2"
                   >
-                    {tiedMovies.map((movieTitle) => (
-                      <div 
-                        key={movieTitle} 
-                        className="flex items-center space-x-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    {/* Map over tiedMovies (array of objects) */}
+                    {tiedMovies.map((movieItem) => (
+                      
+                      <Label
+                        key={movieItem.id} 
+                        htmlFor={`movie-${movieItem.id}`} 
+                        className="flex items-center space-x-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                       >
-                        <RadioGroupItem 
-                          value={movieTitle} 
-                          id={`movie-${movieTitle}`} 
+                        <RadioGroupItem
+                          value={movieItem.id.toString()} 
+                          id={`movie-${movieItem.id}`} 
                           disabled={isCompletingSession}
                           className="text-pink dark:text-pink border-zinc-300 dark:border-zinc-600"
                         />
-                        <Label 
-                          htmlFor={`movie-${movieTitle}`} 
-                          className="font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer w-full"
-                        >
-                          {movieTitle}
-                        </Label>
-                      </div>
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200 w-full"> {/* Use span instead of Label */}
+                          {movieItem.title} {/* Display title */}
+                        </span>
+                      </Label>
                     ))}
                   </RadioGroup>
                 </div>

@@ -16,13 +16,13 @@ import {
 import MovieNightInvitation from '@/components/home/MovieNightInvitation';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
+import { useAuthUser } from '@/context/AuthUserContext'; 
 import { countParticipantsByStatus } from '@/utils/sessionUtils';
 import { formatEpochToLocalDate } from '@/lib/dateTimeUtils';
 
 const SessionsPage = () => {
   const { sessions, isLoading } = useSession();
-  const { userData } = useAuthUser(); // Use new hook
+  const { userData } = useAuthUser(); 
   const searchParams = useSearchParams();
   const router = useRouter();
   const showNewSession = searchParams.get('new') === 'true';
@@ -173,11 +173,12 @@ const SessionsPage = () => {
                             {formatEpochToLocalDate(session.aggregatedAvailability[0].dateEpoch)}
                           </div>
                         )}
-                        
-                        {session.poll && session.poll.movieTitles.length > 0 && (
+
+                        {/* Updated to check mediaItems length */}
+                        {session.poll && session.poll.mediaItems && session.poll.mediaItems.length > 0 && (
                           <div className="flex items-center">
                             <Film className="w-3.5 h-3.5 mr-1" />
-                            {session.poll.movieTitles.length} options
+                            {session.poll.mediaItems.length} options
                           </div>
                         )}
                       </div>

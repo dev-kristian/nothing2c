@@ -217,11 +217,11 @@ const InviteFriendsDialog: React.FC<InviteFriendsDialogProps> = ({ isOpen, onClo
             px-4 sm:px-6 py-2 overflow-y-auto
             ${filteredFriends.length <= 3 ? 'max-h-full sm:max-h-full' : `h-${mobileRowHeight * 3} sm:h-${desktopRowHeight * 5}`}
           `}
+          // Cast the whole style object to handle custom CSS properties
           style={{ 
             height: filteredFriends.length <= 3 ? 'auto' : `${mobileRowHeight * 3}px`,
-            // Override height for desktop screens
-            ['--height-desktop' as any]: filteredFriends.length <= 5 ? 'auto' : `${desktopRowHeight * 5}px`
-          }}
+            '--height-desktop': filteredFriends.length <= 5 ? 'auto' : `${desktopRowHeight * 5}px` 
+          } as React.CSSProperties}
         >
           <div className="space-y-1">
             {renderFriendList()}

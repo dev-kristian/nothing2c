@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserProfile } from "@/lib/server-auth-utils";
-import { adminDb, admin } from "@/lib/firebase-admin"; 
-import { DateTimeSelection, UserDate, DatePopularity } from "@/types"; 
+import { adminDb, admin } from "@/lib/firebase-admin";
+// Added MediaPollItem and Poll types
+import { DateTimeSelection, UserDate, DatePopularity, MediaPollItem, Poll } from "@/types"; // Import Poll
 import { Friend } from "@/types/user";
-import { localSelectionsToUTCEpoch } from "@/lib/dateTimeUtils"; 
+import { localSelectionsToUTCEpoch } from "@/lib/dateTimeUtils";
 
+// Validation for MediaPollItem (can be reused or imported if defined elsewhere)
+const isValidMediaPollItem = (item: unknown): item is MediaPollItem => {
+  if (typeof item !== 'object' || item === null) return false;
+  const pollItem = item as Partial<MediaPollItem>;
+  return (
+    typeof pollItem.id === 'number' &&
+    (pollItem.type === 'movie' || pollItem.type === 'tv') &&
+    typeof pollItem.title === 'string' && pollItem.title.trim() !== '' &&
+    (pollItem.poster_path === null || typeof pollItem.poster_path === 'string') &&
+    (pollItem.release_date === null || typeof pollItem.release_date === 'string') &&
+    (pollItem.vote_average === null || typeof pollItem.vote_average === 'number')
+  );
+};
 
+// Updated validation to include optional mediaItems
 const isValidInput = (
   data: unknown
-): data is { dates: DateTimeSelection[]; selectedFriends: Friend[] } => {
+): data is { dates: DateTimeSelection[]; selectedFriends: Friend[]; mediaItems?: MediaPollItem[] } => {
   return (
     typeof data === 'object' && 
     data !== null &&
@@ -18,19 +33,35 @@ const isValidInput = (
     Array.isArray((data as { selectedFriends: unknown }).selectedFriends) && 
     (data as { dates: unknown[] }).dates.every((d: unknown) =>
       typeof d === 'object' && d !== null && 'date' in d && 'hours' in d && 
-      typeof (d as { date: unknown }).date === 'string' && 
-      ((d as { hours: unknown }).hours === 'all' || 
-        (Array.isArray((d as { hours: unknown }).hours) && 
-         (d as { hours: unknown[] }).hours.every((h: unknown) => typeof h === 'number')))
+      typeof (d as { date: unknown }).date === 'string' &&
+      // Ensure hours is an array of numbers
+      (Array.isArray((d as { hours: unknown }).hours) &&
+       (d as { hours: unknown[] }).hours.every((h: unknown) => typeof h === 'number'))
     ) &&
     (data as { selectedFriends: unknown[] }).selectedFriends.every((f: unknown) => 
       typeof f === 'object' && f !== null && 'uid' in f && 'username' in f && 
       typeof (f as { uid: unknown }).uid === 'string' &&
       typeof (f as { username: unknown }).username === 'string'
-    )
-  ); 
-}; 
+    ) &&
+    // Optional check for mediaItems array
+    (!('mediaItems' in data) || data.mediaItems === undefined || (
+      Array.isArray((data as { mediaItems: unknown }).mediaItems) &&
+      (data as { mediaItems: unknown[] }).mediaItems.every(isValidMediaPollItem)
+    ))
+  );
+};
 
+// Interface for the data structure being added to Firestore
+interface NewSessionPayload {
+  createdAtEpoch: number;
+  createdBy: string;
+  createdByUid: string;
+  userDates: { [userId: string]: UserDate[] };
+  participants: { [uid: string]: { username: string; status: 'invited' | 'accepted' | 'declined'; } };
+  participantIds: string[];
+  status: 'active';
+  poll?: Poll; // Use the imported Poll type
+}
 
 const getHourKeyFromEpoch = (epoch: number): string => {
   
@@ -151,9 +182,14 @@ export async function POST(request: NextRequest) {
     if (!isValidInput(body)) {
       return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
     }
-    const { dates: dateSelectionsWithString, selectedFriends }: { dates: DateTimeSelection[]; selectedFriends: Friend[] } = body;
+    // Destructure including optional mediaItems
+    const { dates: dateSelectionsWithString, selectedFriends, mediaItems }: {
+       dates: DateTimeSelection[];
+       selectedFriends: Friend[];
+       mediaItems?: MediaPollItem[]
+    } = body;
 
-    
+
     const dateSelectionsWithDateObjects: DateTimeSelection[] = dateSelectionsWithString
       .map(selection => {
         if (typeof selection.date !== 'string') {
@@ -224,8 +260,9 @@ export async function POST(request: NextRequest) {
       [creatorUid]: creatorEpochDates,
     };
 
-    const newSessionData = {
-      createdAtEpoch: Date.now(), 
+    // Prepare base session data
+    const newSessionDataBase: NewSessionPayload = {
+      createdAtEpoch: Date.now(),
       createdBy: creatorUsername,
       createdByUid: creatorUid,
       userDates: initialUserDates, 
@@ -234,7 +271,16 @@ export async function POST(request: NextRequest) {
       status: "active",
     };
 
-    const newSessionRef = await adminDb.collection("sessions").add(newSessionData);
+    // Conditionally add the poll object if mediaItems are provided
+    if (mediaItems && mediaItems.length > 0) {
+      newSessionDataBase.poll = {
+        mediaItems: mediaItems,
+        votes: {} // Initialize with empty votes
+      };
+    }
+
+    // Add the complete session data to Firestore
+    const newSessionRef = await adminDb.collection("sessions").add(newSessionDataBase);
     const newSessionId = newSessionRef.id;
 
     try {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAuthContext } from '@/context/AuthContext';
-import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
-import { DateTimeSelection, Friend } from '@/types';
+import { useAuthUser } from '@/context/AuthUserContext';
+import { DateTimeSelection, Friend, MediaPollItem } from '@/types'; // Added MediaPollItem
 
 interface CreateSessionResponse {
   sessionId: string;
@@ -13,9 +13,10 @@ export const useCreateSession = () => {
 
   return useCallback(async (
     dates: DateTimeSelection[],
-    selectedFriends: Friend[]
-  ): Promise<string> => { 
-    if (!user || !userData) { 
+    selectedFriends: Friend[],
+    mediaItems?: MediaPollItem[] // Added optional mediaItems parameter
+  ): Promise<string> => {
+    if (!user || !userData) {
       throw new Error('User must be logged in to create a session');
     }
 
@@ -26,8 +27,9 @@ export const useCreateSession = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dates: dates.map(d => ({ ...d, date: d.date.toISOString() })), 
-          selectedFriends
+          dates: dates.map(d => ({ ...d, date: d.date.toISOString() })),
+          selectedFriends,
+          mediaItems // Include mediaItems in the request body
         }),
       });
 
