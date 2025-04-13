@@ -132,11 +132,22 @@ export const sendNotificationToRecipients = async (
 
   const sendPromises = recipients.map(uid => {
     const topic = `user_${uid}`;
-    // Construct the final message for FCM - DATA-ONLY message
+    // Construct the final message for FCM - DATA-ONLY message with specific APNS config
     const message: admin.messaging.Message = {
-        // NO 'notification' field - prevents automatic display by FCM SDK
-        webpush: webpushConfig, // Keep for potential platform-specific enhancements? Test removal if needed.
+        // NO 'notification' field
         data: dataPayload,      // All info needed by SW is here
+        webpush: webpushConfig, // Webpush specific config
+        apns: { // APNS specific config
+            payload: {
+                aps: {
+                    // 'content-available': 1 // Use this for silent background updates if needed
+                    // DO NOT include 'alert' field here to prevent default iOS notification
+                    // Include other APNS specific fields if necessary (e.g., badge, sound)
+                    // badge: 1, // Example: set badge number
+                    // sound: 'default', // Example: play default sound
+                }
+            }
+        },
         topic: topic,
     };
 
