@@ -237,7 +237,6 @@ export function WatchlistSection() {
           <MediaTypeToggle 
             mediaType={mediaType} 
             onMediaTypeChange={handleMediaTypeChange}
-            compact={true} 
           />
         </div>
       </div>

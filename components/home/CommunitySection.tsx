@@ -202,7 +202,6 @@ export function CommunitySection() {
               }
               
             }}
-            compact={true}
           />
         </div>
       </div>
