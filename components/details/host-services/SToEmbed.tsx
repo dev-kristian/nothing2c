@@ -26,10 +26,14 @@ const SToEmbed: React.FC<HostServiceProps> = ({
 
   const constructSToUrl = useCallback(() => {
     if (!title) return null;
+    
+    // --- THIS IS THE FIX ---
     const slug = title
       .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]+/g, '');
+      .normalize("NFD") // Decompose characters: 'ü' -> 'u' + '¨'
+      .replace(/[\u0300-\u036f]/g, "") // Remove the accent marks (diacritics)
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/[^\w-]+/g, ''); // Remove any remaining non-word characters
 
     if (isTvShow) {
       if (currentSeason === undefined || currentEpisode === undefined) return null;
@@ -87,7 +91,7 @@ const SToEmbed: React.FC<HostServiceProps> = ({
       setIsSToLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [constructSToUrl, onUrlChange, onErrorChange]); // Removed onLoadingChange from dependencies
+  }, [constructSToUrl, onUrlChange, onErrorChange]); 
 
   // Fetch links when component mounts or relevant props change
   useEffect(() => {
