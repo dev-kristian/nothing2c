@@ -44,13 +44,15 @@ export async function GET(request: NextRequest) {
 
   const baseUrl = 'https://s.to';
 
-
   try {
     const response = await fetch(targetUrl, {
+      cache: 'no-store',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7', 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Accept-Language': 'de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cookie': 'ssto_cookie_settings=s%3Atrue.j%3A%7B%22necessary%22%3Atrue%2C%22statistics%22%3Atrue%2C%22marketing%22%3Atrue%7D'
       },
        signal: AbortSignal.timeout(10000)
     });
@@ -63,8 +65,11 @@ export async function GET(request: NextRequest) {
     const html = await response.text();
     const $ = cheerio.load(html);
 
+    // --- NEW SCRAPING LOGIC ---
+    // Instead of looking for an iframe, we directly find the hoster links on the main page.
     const hosterLinks: { hoster: string; redirectPath: string }[] = [];
-    $('div.hosterSiteVideo ul li[data-lang-key="1"]').each((index, element) => {
+    
+    $('ul.row li[data-link-id]').each((index, element) => {
       const linkElement = $(element).find('a.watchEpisode');
       const redirectPath = linkElement.attr('href');
       const hosterName = $(element).find('h4').text().trim();
@@ -73,13 +78,16 @@ export async function GET(request: NextRequest) {
         hosterLinks.push({ hoster: hosterName, redirectPath: redirectPath });
       }
     });
+    // --- END OF NEW LOGIC ---
 
     if (hosterLinks.length === 0) {
       console.warn(`No German hoster links found on ${targetUrl}`);
+      // This might still happen if the page returns no results or a CAPTCHA.
       return NextResponse.json({ links: [] });
     }
 
     const resolvedLinksPromises = hosterLinks.map(async (link) => {
+      // The redirect path already includes the leading slash
       const finalUrl = await resolveRedirect(baseUrl + link.redirectPath, targetUrl);
       return finalUrl ? { hoster: link.hoster, url: finalUrl } : null;
     });
