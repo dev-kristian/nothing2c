@@ -175,9 +175,7 @@ export const useSessionSubscription = () => {
           }
         });
 
-        if (!initialLoadComplete) {
-          setInitialLoadComplete(true);
-        }
+        setInitialLoadComplete(true);
       }); // Close .then() from Promise.all
     }, (error) => { // Error handler for main onSnapshot
       console.error("Error fetching sessions:", error);
@@ -199,7 +197,7 @@ export const useSessionSubscription = () => {
       currentUnsubscribes.clear(); // Clear the map using the captured value
       isSubscribed.current = false;
     };
-  }, [user, initialLoadComplete]);
+  }, [user]);
 
   return { sessions, initialLoadComplete };
 };

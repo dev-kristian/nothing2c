@@ -1,19 +1,4 @@
-import admin from 'firebase-admin';
-
-if (!admin.apps.length) {
-  try {
-    console.warn("Attempting to initialize Firebase Admin SDK from notificationUtils.ts - should be initialized earlier.");
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.NEXT_PRIVATE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.NEXT_PRIVATE_FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.NEXT_PRIVATE_FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (initError) {
-     console.error("Firebase Admin Init Error in notificationUtils.ts:", initError);
-  }
-}
+import { admin } from '@/lib/firebase-admin';
 
 interface NotificationAction {
     action: string; 

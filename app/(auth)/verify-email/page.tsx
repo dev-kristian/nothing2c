@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
-export default function VerifyEmail(): JSX.Element {
+export default function VerifyEmail() {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
   const [resendLoading, setResendLoading] = useState<boolean>(false);

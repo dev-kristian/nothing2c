@@ -6,7 +6,6 @@ import { Users, Plus, Crown, Calendar } from 'lucide-react';
 import InviteFriendsDialog from './InviteFriendsDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'; 
-import Image from 'next/image'; 
 import { cn } from '@/lib/utils';
 import { Check, Clock } from 'lucide-react'; 
 
@@ -103,7 +102,7 @@ const SessionParticipantsComponent: React.FC<SessionParticipantsProps> = ({ sess
       <div key={person.uid} className="flex items-center space-x-1.5 bg-white dark:bg-system-background-secondary-dark px-2 py-1 rounded-full border border-gray-200 dark:border-system-background-tertiary-dark">
         <Avatar className="h-6 w-6">
           {showImage ? (
-            <Image src={photoUrl!} alt={person.username} width={24} height={24} className="object-cover rounded-full" />
+            <img src={photoUrl!} alt={person.username} width={24} height={24} className="object-cover rounded-full" loading="lazy" />
           ) : (
             <AvatarFallback className={cn(
               "text-xs font-medium",
@@ -197,7 +196,7 @@ const SessionParticipantsComponent: React.FC<SessionParticipantsProps> = ({ sess
                   <div key={person.uid} className="flex items-center space-x-1.5 bg-white/60 dark:bg-system-background-secondary-dark/60 px-2 py-1 rounded-full border border-gray-200 dark:border-system-background-tertiary-dark opacity-70">
                     <Avatar className="h-6 w-6">
                       {photoUrl ? (
-                        <Image src={photoUrl} alt={person.username} width={24} height={24} className="object-cover rounded-full" />
+                        <img src={photoUrl} alt={person.username} width={24} height={24} className="object-cover rounded-full" loading="lazy" />
                       ) : (
                         <AvatarFallback className="text-xs font-medium">
                           {person.username.substring(0, 1).toUpperCase()}

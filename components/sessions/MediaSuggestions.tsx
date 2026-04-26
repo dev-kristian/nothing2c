@@ -6,7 +6,6 @@ import { Film, Star, Calendar, ThumbsUp, Plus, X, Loader2, Search } from 'lucide
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFriendsWatchlist } from '@/context/FriendsWatchlistContext';
-import Image from 'next/image';
 import { useOutsideClickHandler } from '@/utils/movieNightInvitationUtils'; // Keep this one
 import { useSession } from '@/context/SessionContext';
 import { FriendsWatchlistItem, Session, Poll, MediaPollItem, SearchResult } from '@/types';
@@ -50,12 +49,13 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({ item, onSelect, getRele
         onClick={() => onSelect(item)}
       >
         {item.poster_path ? (
-          <Image
+          <img
             src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
             alt={title}
             width={30}
             height={45}
             className="object-cover rounded-md mr-3 flex-shrink-0"
+            loading="lazy"
           />
         ) : (
           <div className="w-[30px] h-[45px] bg-gray-4 dark:bg-gray-4-dark rounded-md mr-3 flex items-center justify-center flex-shrink-0">
@@ -351,12 +351,13 @@ const MediaSuggestions: React.FC<MediaSuggestionsProps> = ({ session, poll, isRe
                 <div className="flex items-center">
                   <div className="flex-shrink-0 mr-4">
                     {mediaItem.poster_path ? (
-                      <Image
+                      <img
                         src={`https://image.tmdb.org/t/p/w92${mediaItem.poster_path}`}
                         alt={mediaItem.title}
                         width={50}
                         height={75}
                         className="object-cover rounded-md shadow-sm"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-[50px] h-[75px] bg-gray-5 dark:bg-gray-5-dark rounded-md flex items-center justify-center shadow-sm">

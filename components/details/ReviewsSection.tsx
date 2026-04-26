@@ -1,7 +1,6 @@
 'use client'
 import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { Review } from '@/types';
-import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronDown, User, MessageSquare, Plus } from 'lucide-react';
@@ -236,7 +235,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, index }) => {
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-5 dark:bg-gray-5-dark flex-shrink-0  flex items-center justify-center shadow-apple-sm">
               {avatarUrl ? (
-                <Image src={avatarUrl} alt={authorName} fill className="object-cover" sizes="48px" unoptimized />
+                <img src={avatarUrl} alt={authorName} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
               ) : (
                 <User className="w-6 h-6 text-muted-foreground" />
               )}

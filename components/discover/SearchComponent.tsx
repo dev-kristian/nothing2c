@@ -1,9 +1,10 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Filter, ChevronDown } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, Loader2, Film, Tv, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GENRES_BY_TYPE, Genre } from '@/constants/genres';
+import { SearchResult } from '@/types';
 
 interface SearchComponentProps {
   className?: string;
@@ -15,8 +16,14 @@ interface SearchComponentProps {
   hideTitleSection?: boolean;
 }
 
+interface SearchApiResponse {
+  results: SearchResult[];
+}
+
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
+const AUTOCOMPLETE_MIN_QUERY_LENGTH = 2;
+const AUTOCOMPLETE_MAX_RESULTS = 6;
 
 const SearchComponent: React.FC<SearchComponentProps> = ({ 
   className,
@@ -38,17 +45,57 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
   const [includeAdult, setIncludeAdult] = useState(initialIncludeAdult);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+  const [autocompleteResults, setAutocompleteResults] = useState<SearchResult[]>([]);
+  const [isAutocompleteLoading, setIsAutocompleteLoading] = useState(false);
+  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
+  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
 
   const currentGenreList: Genre[] = (selectedType === 'movie' || selectedType === 'tv') ? GENRES_BY_TYPE[selectedType] : [];
   const selectedGenreName = currentGenreList.find(g => g.id === selectedGenre)?.name;
 
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchShellRef = useRef<HTMLDivElement>(null);
   const advancedSearchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  const shouldShowAutocomplete =
+    isAutocompleteOpen &&
+    searchQuery.trim().length >= AUTOCOMPLETE_MIN_QUERY_LENGTH &&
+    (isAutocompleteLoading || autocompleteResults.length > 0);
+
+  const getSuggestionLabel = (result: SearchResult) => result.title || result.name || 'Untitled';
+
+  const getSuggestionHref = (result: SearchResult) => {
+    if (result.media_type === 'movie' || result.media_type === 'tv' || result.media_type === 'person') {
+      return `/details/${result.media_type}/${result.id}`;
+    }
+    
+    return `/search/${encodeURIComponent(getSuggestionLabel(result))}`;
+  };
+
+  const getSuggestionMeta = (result: SearchResult) => {
+    const releaseDate = result.release_date || result.first_air_date;
+    const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : null;
+
+    if (result.media_type === 'person') {
+      return 'Person';
+    }
+
+    const mediaLabel = result.media_type === 'tv' ? 'TV' : 'Movie';
+    return releaseYear ? `${mediaLabel} • ${releaseYear}` : mediaLabel;
+  };
+
+  const handleSuggestionSelect = (result: SearchResult) => {
+    setIsAutocompleteOpen(false);
+    setHighlightedSuggestionIndex(-1);
+    router.push(getSuggestionHref(result));
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsAutocompleteOpen(false);
+    setHighlightedSuggestionIndex(-1);
 
     if (!searchQuery.trim() && selectedType === 'person') return;
 
@@ -104,6 +151,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    setAutocompleteResults([]);
+    setIsAutocompleteOpen(false);
+    setHighlightedSuggestionIndex(-1);
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -117,6 +167,65 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
   };
 
   useEffect(() => {
+    const trimmedQuery = searchQuery.trim();
+
+    if (trimmedQuery.length < AUTOCOMPLETE_MIN_QUERY_LENGTH) {
+      setAutocompleteResults([]);
+      setIsAutocompleteLoading(false);
+      setIsAutocompleteOpen(false);
+      setHighlightedSuggestionIndex(-1);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setIsAutocompleteLoading(true);
+
+      try {
+        const params = new URLSearchParams({
+          query: trimmedQuery,
+          type: selectedType === 'multi' ? 'multi' : selectedType,
+          include_adult: includeAdult.toString(),
+          page: '1',
+        });
+
+        const response = await fetch(`/api/search?${params.toString()}`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Autocomplete failed with status: ${response.status}`);
+        }
+
+        const data: SearchApiResponse = await response.json();
+        const nextResults = (data.results || [])
+          .filter((result) => ['movie', 'tv', 'person'].includes(result.media_type || ''))
+          .slice(0, AUTOCOMPLETE_MAX_RESULTS);
+
+        setAutocompleteResults(nextResults);
+        setIsAutocompleteOpen(true);
+        setHighlightedSuggestionIndex(nextResults.length > 0 ? 0 : -1);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Autocomplete error:', error);
+          setAutocompleteResults([]);
+          setIsAutocompleteOpen(false);
+          setHighlightedSuggestionIndex(-1);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsAutocompleteLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [searchQuery, selectedType, includeAdult]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -127,6 +236,14 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
     };
 
     const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchShellRef.current &&
+        !searchShellRef.current.contains(event.target as Node)
+      ) {
+        setIsAutocompleteOpen(false);
+        setHighlightedSuggestionIndex(-1);
+      }
+
       if (
         advancedSearchRef.current && 
         !advancedSearchRef.current.contains(event.target as Node) &&
@@ -174,6 +291,7 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
         )}
   
         <motion.div
+          ref={searchShellRef}
           className="relative w-full max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -206,12 +324,52 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
                 onChange={(e) => {
                   const newQuery = e.target.value;
                   setSearchQuery(newQuery);
+                  setIsAutocompleteOpen(newQuery.trim().length >= AUTOCOMPLETE_MIN_QUERY_LENGTH);
+                  setHighlightedSuggestionIndex(-1);
                   if (selectedType === 'multi' && !newQuery.trim()) {
                     setSelectedYear(null);
                   }
                 }}
-                onFocus={() => setIsFocused(true)}
+                onFocus={() => {
+                  setIsFocused(true);
+                  if (searchQuery.trim().length >= AUTOCOMPLETE_MIN_QUERY_LENGTH) {
+                    setIsAutocompleteOpen(true);
+                  }
+                }}
                 onBlur={() => setIsFocused(false)}
+                onKeyDown={(e) => {
+                  if (!shouldShowAutocomplete) {
+                    return;
+                  }
+
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setHighlightedSuggestionIndex((prev) =>
+                      autocompleteResults.length === 0 ? -1 : (prev + 1) % autocompleteResults.length
+                    );
+                  }
+
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setHighlightedSuggestionIndex((prev) =>
+                      autocompleteResults.length === 0
+                        ? -1
+                        : prev <= 0
+                          ? autocompleteResults.length - 1
+                          : prev - 1
+                    );
+                  }
+
+                  if (e.key === 'Enter' && highlightedSuggestionIndex >= 0) {
+                    e.preventDefault();
+                    handleSuggestionSelect(autocompleteResults[highlightedSuggestionIndex]);
+                  }
+
+                  if (e.key === 'Escape') {
+                    setIsAutocompleteOpen(false);
+                    setHighlightedSuggestionIndex(-1);
+                  }
+                }}
                 placeholder="Search movies, TV shows..."
                 aria-label="Search for movies, TV shows, or people"
                 className="flex-grow bg-transparent text-foreground placeholder-foreground/50 border-none 
@@ -279,6 +437,68 @@ const SearchComponent: React.FC<SearchComponentProps> = ({
               </motion.button>
             </div>
           </div>
+          <AnimatePresence>
+            {shouldShowAutocomplete && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+                className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-background/95 shadow-2xl backdrop-blur-xl"
+              >
+                {isAutocompleteLoading ? (
+                  <div className="flex items-center justify-center gap-2 px-4 py-5 text-sm text-foreground/60">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Searching...</span>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {autocompleteResults.map((result, index) => {
+                      const label = getSuggestionLabel(result);
+                      const meta = getSuggestionMeta(result);
+                      const imagePath = result.poster_path || result.profile_path;
+                      const isActive = index === highlightedSuggestionIndex;
+
+                      return (
+                        <button
+                          key={`${result.media_type}-${result.id}`}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSuggestionSelect(result);
+                          }}
+                          onMouseEnter={() => setHighlightedSuggestionIndex(index)}
+                          className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                            isActive ? 'bg-pink/10' : 'hover:bg-foreground/5'
+                          }`}
+                        >
+                          <div className="flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                            {imagePath ? (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w154${imagePath}`}
+                                alt={label}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : result.media_type === 'movie' ? (
+                              <Film className="h-4 w-4 text-foreground/50" />
+                            ) : result.media_type === 'tv' ? (
+                              <Tv className="h-4 w-4 text-foreground/50" />
+                            ) : (
+                              <User className="h-4 w-4 text-foreground/50" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium text-foreground">{label}</div>
+                            <div className="truncate text-xs text-foreground/55">{meta}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         <AnimatePresence>
           {showAdvanced && (
             <motion.div

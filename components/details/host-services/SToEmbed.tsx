@@ -90,7 +90,6 @@ const SToEmbed: React.FC<HostServiceProps> = ({
     } finally {
       setIsSToLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [constructSToUrl, onUrlChange, onErrorChange]); 
 
   // Fetch links when component mounts or relevant props change

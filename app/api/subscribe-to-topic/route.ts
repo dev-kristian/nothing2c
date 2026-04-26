@@ -1,23 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
+import { admin } from '@/lib/firebase-admin';
 import { getAuthenticatedUserProfile } from '@/lib/server-auth-utils'; 
-
-
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.NEXT_PRIVATE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.NEXT_PRIVATE_FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.NEXT_PRIVATE_FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (initError) {
-     
-     console.error("Firebase Admin Init Error at top level (subscribe-to-topic):", initError);
-  }
-}
 
 export async function POST(request: Request) {
   try {

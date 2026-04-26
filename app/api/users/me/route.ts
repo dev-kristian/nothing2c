@@ -143,7 +143,7 @@ export async function DELETE() {
 
     await adminAuth.deleteUser(uid);
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete('__session'); 
 
     return new NextResponse(null, { status: 204 });

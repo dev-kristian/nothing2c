@@ -7,6 +7,7 @@ import { adjectives, nouns } from '@/constants/usernameParts';
 const expiresIn = 60 * 60 * 24 * 5 * 1000;
 const MAX_USERNAME_GENERATION_ATTEMPTS = 10;
 const MAX_USERNAME_LENGTH = 20;
+const RECENT_SIGN_IN_WINDOW_SECONDS = 5 * 60;
 
 async function isUsernameAvailable(username: string): Promise<boolean> {
   const usersRef = adminDb.collection('users');
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     const email = decodedToken.email;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+
+    if (!decodedToken.auth_time || nowInSeconds - decodedToken.auth_time > RECENT_SIGN_IN_WINDOW_SECONDS) {
+      return NextResponse.json(
+        { error: 'Recent sign-in required before creating a session.' },
+        { status: 401 }
+      );
+    }
 
     try {
       const userDocRef = adminDb.collection('users').doc(uid);

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from 'lucide-react'; // Import Loader2
 // Removed SpinningLoader import
 
-const ForgotPasswordPage = (): JSX.Element => {
+const ForgotPasswordPage = () => {
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 

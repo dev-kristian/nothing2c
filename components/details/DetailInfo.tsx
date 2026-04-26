@@ -1,6 +1,9 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Globe, Calendar, TrendingUp, Coins, BarChart3, Play, Tv } from 'lucide-react';
+import { Clock, Globe, Calendar, TrendingUp, Coins, BarChart3, Play, Tv, MapPinned, BadgeCheck } from 'lucide-react';
+import { ContentRatingsResponse, ReleaseDatesResponse } from '@/types';
 
 interface DetailInfoProps {
   title: string;
@@ -19,7 +22,33 @@ interface DetailInfoProps {
   budget?: number;
   revenue?: number;
   status: string;
+  contentRating?: string | null;
+  releaseDates?: ReleaseDatesResponse;
+  contentRatings?: ContentRatingsResponse;
+  defaultRegion?: string;
 }
+
+const REGION_LABELS: Record<string, string> = {
+  US: 'United States',
+  GB: 'United Kingdom',
+  DE: 'Germany',
+  HU: 'Hungary',
+  CA: 'Canada',
+  AU: 'Australia',
+  FR: 'France',
+  ES: 'Spain',
+  IT: 'Italy',
+  JP: 'Japan',
+  KR: 'South Korea',
+  IN: 'India',
+  BR: 'Brazil',
+  MX: 'Mexico',
+  NL: 'Netherlands',
+  SE: 'Sweden',
+  NO: 'Norway',
+  DK: 'Denmark',
+  PL: 'Poland',
+};
 
 const DetailInfo: React.FC<DetailInfoProps> = ({
   title,
@@ -37,15 +66,95 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
   budget,
   revenue,
   status,
+  contentRating,
+  releaseDates,
+  contentRatings,
+  defaultRegion = 'US',
 }) => {
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
+    const absValue = Math.abs(value);
+    const compactValue =
+      absValue >= 1_000_000_000
+        ? { amount: value / 1_000_000_000, suffix: 'B' }
+        : absValue >= 1_000_000
+          ? { amount: value / 1_000_000, suffix: 'M' }
+          : absValue >= 1_000
+            ? { amount: value / 1_000, suffix: 'K' }
+            : null;
+
+    if (!compactValue) {
+      return `$${value.toLocaleString('en-US')}`;
+    }
+
+    const roundedAmount = Number(compactValue.amount.toFixed(1));
+    return `$${roundedAmount}${compactValue.suffix}`;
   };
+
+  const formatInteger = (value: number) => value.toLocaleString('en-US');
+  const [selectedRegion, setSelectedRegion] = useState(defaultRegion);
+
+  const availableRegions = useMemo(() => {
+    const nextRegions = new Set<string>();
+
+    releaseDates?.results?.forEach((result) => nextRegions.add(result.iso_3166_1));
+    contentRatings?.results?.forEach((result) => nextRegions.add(result.iso_3166_1));
+
+    if (defaultRegion) {
+      nextRegions.add(defaultRegion);
+    }
+
+    if (nextRegions.size === 0) {
+      nextRegions.add('US');
+    }
+
+    return Array.from(nextRegions).sort((a, b) => {
+      if (a === defaultRegion) return -1;
+      if (b === defaultRegion) return 1;
+      return a.localeCompare(b);
+    });
+  }, [contentRatings?.results, defaultRegion, releaseDates?.results]);
+
+  useEffect(() => {
+    if (!availableRegions.includes(selectedRegion)) {
+      setSelectedRegion(availableRegions[0] || 'US');
+    }
+  }, [availableRegions, selectedRegion]);
+
+  const regionalReleaseInfo = useMemo(() => {
+    const regionRelease = releaseDates?.results?.find((result) => result.iso_3166_1 === selectedRegion);
+
+    if (!regionRelease) {
+      return null;
+    }
+
+    const preferredEntry =
+      regionRelease.release_dates.find((entry) => entry.type === 3 || entry.type === 2) ||
+      regionRelease.release_dates.find((entry) => Boolean(entry.certification)) ||
+      regionRelease.release_dates[0];
+
+    if (!preferredEntry) {
+      return null;
+    }
+
+    const releaseDate = new Date(preferredEntry.release_date);
+    const formattedDate = Number.isNaN(releaseDate.getTime())
+      ? 'N/A'
+      : new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(releaseDate);
+
+    return {
+      certification: preferredEntry.certification || contentRating || 'N/A',
+      date: formattedDate,
+    };
+  }, [contentRating, releaseDates?.results, selectedRegion]);
+
+  const regionalTvRating = useMemo(() => {
+    const regionRating = contentRatings?.results?.find((entry) => entry.iso_3166_1 === selectedRegion);
+    return regionRating?.rating || contentRating || 'N/A';
+  }, [contentRating, contentRatings?.results, selectedRegion]);
 
   const getRatingClass = (rating: number | undefined) => {
     if (!rating) return 'text-muted-foreground';
@@ -86,7 +195,7 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
                 <span className="text-muted-foreground text-lg sm:text-2xl ml-2">/ 10</span>
               </div>
               <div className="text-sm text-muted-foreground">
-                {voteCount.toLocaleString()} ratings
+                {formatInteger(voteCount)} ratings
               </div>
             </div>
           </div>
@@ -122,7 +231,7 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
             <div>
               <h3 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">Genres</h3>
               <div className="flex flex-wrap gap-2">
-                {genres.split(', ').map(genre => (
+                {genres.split(', ').filter(Boolean).map(genre => (
                   <motion.span
                     key={genre}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -196,6 +305,43 @@ const DetailInfo: React.FC<DetailInfoProps> = ({
               <span className="text-sm text-muted-foreground  tracking-wider uppercase">Status</span>
               <span className="text-sm font-medium text-foreground">{status}</span> 
             </div>
+
+            <div className="rounded-2xl overflow-hidden bg-card backdrop-blur-xl">
+              <div className="flex items-center justify-between border-b border-border bg-secondary px-4 py-4">
+                <div>
+                  <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Region Support</h3>
+                </div>
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none"
+                >
+                  {availableRegions.map((region) => (
+                    <option key={region} value={region}>
+                      {REGION_LABELS[region] || region}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="divide-y divide-border">
+                <StatRow
+                  icon={MapPinned}
+                  label="Selected Region"
+                  value={`${REGION_LABELS[selectedRegion] || selectedRegion} (${selectedRegion})`}
+                />
+                <StatRow
+                  icon={Calendar}
+                  label="Regional Release"
+                  value={regionalReleaseInfo?.date || releaseDate}
+                />
+                <StatRow
+                  icon={BadgeCheck}
+                  label="Certification"
+                  value={isMovie ? (regionalReleaseInfo?.certification || contentRating || 'N/A') : regionalTvRating}
+                />
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -234,15 +380,15 @@ const StatRow: React.FC<{
   value,
   highlight
 }) => (
-  <div className="px-4 py-2 flex items-center  bg-secondary backdrop-blur-sm justify-between ">
+  <div className="px-4 py-2 flex items-center bg-secondary backdrop-blur-sm justify-between ">
     <div className="flex items-center">
-      <div className="w-8 h-8 rounded-full   flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full flex items-center justify-center">
         <Icon size={16} className="text-secondary-foreground" />
       </div>
-      <span className="text-sm font-medium text-foreground/80 ">{label}</span>
+      <span className="text-sm text-foreground/80 ">{label}</span>
     </div>
     <div className="flex items-center gap-2">
-      <span className={`text-base font-medium ${highlight ? 'text-emerald-400' : 'text-foreground/90'}`}>
+      <span className={`text-base text-sm ${highlight ? 'text-emerald-400' : 'text-foreground/90'}`}>
         {value}
       </span>
     </div>

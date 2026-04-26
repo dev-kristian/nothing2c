@@ -2,7 +2,6 @@
 'use client'
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
@@ -169,13 +168,12 @@ export default function Navigation() {
                 transition={{ type: "spring", stiffness: 450, damping: 15 }}
                 className="relative z-10"
               >
-                <Image
+                <img
                   src="/icons/popcorn.png"
                   alt=""
                   width={46}
                   height={46}
                   className="drop-shadow-lg filter"
-                  priority
                 />
               </motion.div>
             </div>

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 
 export async function POST() {
   try {
+    const cookieStore = await cookies();
     const options = {
       name: '__session',
       value: '', 
@@ -13,7 +14,7 @@ export async function POST() {
       sameSite: 'lax' as const,
     };
 
-    cookies().set(options);
+    cookieStore.set(options);
 
     return NextResponse.json({ status: 'success' }, { status: 200 });
 

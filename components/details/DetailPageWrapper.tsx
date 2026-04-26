@@ -1,6 +1,5 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { DetailsData, VideoData, Media } from '@/types';
 import { format } from 'date-fns';
 import { useAuthContext } from '@/context/AuthContext';
@@ -90,13 +89,11 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
   return (
     <div className="relative min-h-screen bg-background text-foreground py-6">
       <div className="absolute inset-0 ">
-        <Image
+        <img
           src={`https://image.tmdb.org/t/p/original${details.backdrop_path}`}
           alt={title || 'Backdrop'}
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
+          className="absolute inset-0 w-full h-full object-cover"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background/90 dark:hidden" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/70 dark:hidden" />
@@ -115,13 +112,11 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl 
                             bg-card backdrop-blur-sm">
                 {details.poster_path ? (
-                  <Image
+                  <img
                     src={`https://image.tmdb.org/t/p/w500${details.poster_path}`}
                     alt={title || 'Poster'}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    priority
+                    className="absolute inset-0 w-full h-full object-cover"
+                    fetchPriority="high"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -221,6 +216,14 @@ const DetailPageWrapper: React.FC<DetailPageWrapperProps> = ({ details, videos }
                   budget={isMovie ? details.budget : undefined}
                   revenue={isMovie ? details.revenue : undefined}
                   status={details.status}
+                  contentRating={details.contentRating}
+                  releaseDates={details.release_dates}
+                  contentRatings={details.content_ratings}
+                  defaultRegion={
+                    details.production_countries?.[0]?.iso_3166_1 ||
+                    details.origin_country?.[0] ||
+                    'US'
+                  }
                 />
               ) : (
                 <HostEmbed

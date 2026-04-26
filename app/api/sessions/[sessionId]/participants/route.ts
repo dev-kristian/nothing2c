@@ -24,9 +24,9 @@ const isValidInput = (data: unknown): data is { friendsToInvite: Friend[] } => {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const { sessionId } = params;
+  const { sessionId } = await params;
 
   if (!sessionId) {
     return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });

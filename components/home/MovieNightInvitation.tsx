@@ -12,7 +12,6 @@ import MovieNightCalendar from './MovieNightCalendar';
 import { DateTimeSelection, FriendsWatchlistItem, Friend, MediaPollItem, SearchResult } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFriendsWatchlist } from '@/context/FriendsWatchlistContext';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Calendar, Film, Users, X, Send, Check, Search, Tv, Loader2 } from 'lucide-react'; // Added Loader2, Search
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -49,7 +48,7 @@ const SuggestionItem = React.memo(({ item, onClick }: {
     >
       {item.poster_path ? (
         <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm flex-shrink-0">
-          <Image
+          <img
             src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
             alt={title}
             width={32}
@@ -92,7 +91,7 @@ const SelectedMediaItem = React.memo(({ item, onRemove }: {
     <div className="flex items-center overflow-hidden">
       {item.poster_path ? (
         <div className="w-8 h-12 rounded-md overflow-hidden mr-3 shadow-sm flex-shrink-0">
-          <Image
+          <img
             src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
             alt={item.title || ''}
             width={32}

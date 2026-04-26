@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
 import { ChevronDown, LogOut, Settings, User as UserIcon } from 'lucide-react';
@@ -40,12 +39,13 @@ export default function UserProfileDropdown({ user, onSignOut, isSigningOut }: U
           aria-label="User menu"
         >
           {user.photoURL ? (
-            <Image
+            <img
               src={user.photoURL}
               alt="User avatar"
               width={28}
               height={28}
               className="rounded-full" 
+              loading="lazy"
             />
           ) : (
             <div className="h-7 w-7 rounded-full bg-transparent flex items-center justify-center">

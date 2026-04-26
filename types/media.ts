@@ -15,6 +15,7 @@ export interface Media {
   watchlist_count?: number;
   addedAt?: string;
   genre_ids?: number[];
+  popularity?: number;
 }
 
 export interface SearchResult extends Media {
@@ -56,12 +57,71 @@ export interface DetailsData extends Media {
   homepage: string;
   spoken_languages: Array<{ english_name: string }>;
   vote_count: number;
-  production_countries: Array<{ name: string }>;
+  production_countries: ProductionCountry[];
   seasons?: Season[];
   external_ids?: {
     imdb_id?: string;
   };
   production_companies: ProductionCompany[];
+  videos?: VideoResults;
+  reviews?: ReviewResults;
+  recommendations?: MediaResults;
+  similar?: MediaResults;
+  release_dates?: ReleaseDatesResponse;
+  content_ratings?: ContentRatingsResponse;
+  'watch/providers'?: WatchProvidersResponse;
+  origin_country?: string[];
+}
+
+export interface PersonDetails extends Media {
+  adult?: boolean;
+  also_known_as: string[];
+  biography: string;
+  birthday?: string | null;
+  deathday?: string | null;
+  gender?: number;
+  homepage?: string | null;
+  imdb_id?: string | null;
+  known_for_department?: string;
+  place_of_birth?: string | null;
+  profile_path?: string | null;
+  images?: {
+    profiles: ImageAsset[];
+  };
+  external_ids?: PersonExternalIds;
+  combined_credits?: PersonCombinedCredits;
+}
+
+export interface PersonExternalIds {
+  facebook_id?: string | null;
+  instagram_id?: string | null;
+  tiktok_id?: string | null;
+  twitter_id?: string | null;
+  wikidata_id?: string | null;
+  youtube_id?: string | null;
+  imdb_id?: string | null;
+}
+
+export interface ImageAsset {
+  aspect_ratio?: number;
+  file_path: string;
+  height?: number;
+  width?: number;
+  vote_average?: number;
+  vote_count?: number;
+}
+
+export interface MediaCredit extends Media {
+  adult?: boolean;
+  backdrop_path?: string | null;
+  character?: string;
+  job?: string;
+  episode_count?: number;
+}
+
+export interface PersonCombinedCredits {
+  cast: MediaCredit[];
+  crew: MediaCredit[];
 }
 
 export interface Season {
@@ -117,6 +177,66 @@ export interface VideoData {
   type: string;
 }
 
+export interface VideoResults {
+  results: VideoData[];
+}
+
+export interface MediaResults {
+  results: Media[];
+}
+
+export interface ReviewResults {
+  results: Review[];
+}
+
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+  display_priority?: number;
+}
+
+export interface WatchProviderRegion {
+  link?: string;
+  flatrate?: WatchProvider[];
+  rent?: WatchProvider[];
+  buy?: WatchProvider[];
+  ads?: WatchProvider[];
+  free?: WatchProvider[];
+}
+
+export interface WatchProvidersResponse {
+  results: Record<string, WatchProviderRegion>;
+}
+
+export interface ReleaseDateEntry {
+  certification: string;
+  descriptors?: string[];
+  iso_639_1?: string;
+  note?: string;
+  release_date: string;
+  type: number;
+}
+
+export interface ReleaseDateRegion {
+  iso_3166_1: string;
+  release_dates: ReleaseDateEntry[];
+}
+
+export interface ReleaseDatesResponse {
+  results: ReleaseDateRegion[];
+}
+
+export interface ContentRatingEntry {
+  iso_3166_1: string;
+  rating: string;
+  descriptors?: string[];
+}
+
+export interface ContentRatingsResponse {
+  results: ContentRatingEntry[];
+}
+
 export interface FriendsWatchlistItem extends Media{
   weighted_score: number;
 }
@@ -153,4 +273,9 @@ export interface BestMatch {
     logo_path: string | null;
     name: string;
     origin_country: string;
+  }
+
+  export interface ProductionCountry {
+    iso_3166_1: string;
+    name: string;
   }

@@ -1,5 +1,6 @@
 // app/api/search/route.ts
 import { NextResponse } from 'next/server'
+import { buildTmdbUrl } from '@/lib/tmdb';
 
 interface MediaItem {
   id: number;
@@ -44,6 +45,38 @@ const TMDB_API_KEY = process.env.NEXT_PRIVATE_TMDB_API_KEY
 
 export const runtime = 'edge'
 
+function getTmdbHeaders() {
+  if (!TMDB_API_KEY) {
+    throw new Error('TMDB bearer token is not configured.');
+  }
+
+  return {
+    Authorization: `Bearer ${TMDB_API_KEY}`,
+    accept: 'application/json',
+  };
+}
+
+async function tmdbRequest<T extends TmdbResultItem>(path: string, params: Record<string, string | number | boolean | undefined>) {
+  const response = await fetch(buildTmdbUrl(path, params), {
+    headers: getTmdbHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorDetails = await response.text();
+    throw new Error(`TMDB request failed (${path}): ${response.status} ${errorDetails}`);
+  }
+
+  return response.json() as Promise<TmdbApiResponse<T>>;
+}
+
+function attachMediaType(results: MediaItem[], mediaType: 'movie' | 'tv'): SearchResultItem[] {
+  return results.map((item) => ({ ...item, media_type: mediaType }));
+}
+
+function attachPersonType(results: PersonItem[]): SearchResultItem[] {
+  return results.map((item) => ({ ...item, media_type: 'person' }));
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query')
@@ -54,56 +87,33 @@ export async function GET(request: Request) {
   const includeAdult = searchParams.get('include_adult') === 'true'
   const page = searchParams.get('page') || '1'
 
-  let url: string | undefined; 
-
-  if (query || type !== 'multi') {
-    if (query) {
-      url = `https://api.themoviedb.org/3/search/${type}?query=${encodeURIComponent(query)}&include_adult=${includeAdult}&language=en-US&page=${page}`
-
-      if (year && type !== 'person' && (type === 'movie' || type === 'tv')) {
-        const yearParam = type === 'movie' ? 'primary_release_year' : 'first_air_date_year'
-        url += `&${yearParam}=${year}`
-      }
-    } else {
-      const discoverType = type; 
-      url = `https://api.themoviedb.org/3/discover/${discoverType}?include_adult=${includeAdult}&language=en-US&page=${page}&sort_by=${sortBy}`
-
-      if (year && type !== 'person') {
-        const yearParam = type === 'tv' ? 'first_air_date_year' : 'primary_release_year'
-        url += `&${yearParam}=${year}`
-      }
-
-      if (genre && type !== 'person') {
-        url += `&with_genres=${genre}`
-      }
-    }
-  }
-
   try {
     let finalData: FinalApiResponse;
 
     if (!query && type === 'multi') {
-
-      const movieDiscoverUrl = `https://api.themoviedb.org/3/discover/movie?include_adult=${includeAdult}&language=en-US&page=${page}&sort_by=${sortBy}${year ? `&primary_release_year=${year}` : ''}${genre ? `&with_genres=${genre}` : ''}`;
-      const tvDiscoverUrl = `https://api.themoviedb.org/3/discover/tv?include_adult=${includeAdult}&language=en-US&page=${page}&sort_by=${sortBy}${year ? `&first_air_date_year=${year}` : ''}${genre ? `&with_genres=${genre}` : ''}`;
-
-      const [movieResponse, tvResponse] = await Promise.all([
-        fetch(movieDiscoverUrl, { headers: { 'Authorization': `Bearer ${TMDB_API_KEY}`, 'accept': 'application/json' } }),
-        fetch(tvDiscoverUrl, { headers: { 'Authorization': `Bearer ${TMDB_API_KEY}`, 'accept': 'application/json' } })
+      const [movieData, tvData] = await Promise.all([
+        tmdbRequest<MediaItem>('/discover/movie', {
+          include_adult: includeAdult,
+          language: 'en-US',
+          page,
+          sort_by: sortBy,
+          primary_release_year: year || undefined,
+          with_genres: genre || undefined,
+        }),
+        tmdbRequest<MediaItem>('/discover/tv', {
+          include_adult: includeAdult,
+          language: 'en-US',
+          page,
+          sort_by: sortBy,
+          first_air_date_year: year || undefined,
+          with_genres: genre || undefined,
+        }),
       ]);
 
-      if (!movieResponse.ok && !tvResponse.ok) {
-        console.error(`TMDB Multi-Discover Error: Movie=${movieResponse.status}, TV=${tvResponse.status}`);
-        throw new Error(`Failed to fetch multi-discover data from TMDB (Movie: ${movieResponse.status}, TV: ${tvResponse.status})`);
-      }
-
-      const movieData: TmdbApiResponse<MediaItem> = movieResponse.ok ? await movieResponse.json() : { page: 1, results: [], total_pages: 0, total_results: 0 };
-      const tvData: TmdbApiResponse<MediaItem> = tvResponse.ok ? await tvResponse.json() : { page: 1, results: [], total_pages: 0, total_results: 0 };
-
-      const movieResults: SearchResultItem[] = movieData.results.map((item: MediaItem) => ({ ...item, media_type: 'movie' }));
-      const tvResults: SearchResultItem[] = tvData.results.map((item: MediaItem) => ({ ...item, media_type: 'tv' }));
-
-      const combinedResults: SearchResultItem[] = [...movieResults, ...tvResults];
+      const combinedResults: SearchResultItem[] = [
+        ...attachMediaType(movieData.results, 'movie'),
+        ...attachMediaType(tvData.results, 'tv'),
+      ];
 
       combinedResults.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
@@ -115,23 +125,20 @@ export async function GET(request: Request) {
       };
 
     } else {
-      if (!url) {
-        throw new Error("Internal error: URL not constructed for single fetch.");
-      }
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${TMDB_API_KEY}`,
-          'accept': 'application/json'
-        }
+      const isSearchRequest = Boolean(query);
+      const path = isSearchRequest ? `/search/${type}` : `/discover/${type}`;
+      const fetchedData = await tmdbRequest<TmdbResultItem>(path, {
+        query: query || undefined,
+        include_adult: includeAdult,
+        language: 'en-US',
+        page,
+        sort_by: isSearchRequest ? undefined : sortBy,
+        primary_release_year: !isSearchRequest && type === 'movie' ? year || undefined : undefined,
+        first_air_date_year: !isSearchRequest && type === 'tv' ? year || undefined : undefined,
+        with_genres: !isSearchRequest && type !== 'person' ? genre || undefined : undefined,
+        ...(isSearchRequest && type === 'movie' && year ? { primary_release_year: year } : {}),
+        ...(isSearchRequest && type === 'tv' && year ? { first_air_date_year: year } : {}),
       });
-
-      if (!response.ok) {
-        const errorDetails = await response.text();
-        console.error(`TMDB API Error (${url}): ${response.status} - ${errorDetails}`);
-        throw new Error(`Failed to fetch data from TMDB: ${response.status} - ${response.statusText}`);
-      }
-
-      const fetchedData = await response.json();
 
       finalData = {
         page: fetchedData.page,
@@ -142,11 +149,11 @@ export async function GET(request: Request) {
 
       if (fetchedData.results) {
         if (type === 'person') {
-          finalData.results = fetchedData.results.map((item: PersonItem): SearchResultItem => ({ ...item, media_type: 'person' }));
+          finalData.results = attachPersonType(fetchedData.results as PersonItem[]);
         } else if (type === 'movie' || type === 'tv') {
-          finalData.results = fetchedData.results.map((item: MediaItem): SearchResultItem => ({ ...item, media_type: type as 'movie' | 'tv' }));
+          finalData.results = attachMediaType(fetchedData.results as MediaItem[], type);
         } else {
-           finalData.results = fetchedData.results;
+          finalData.results = fetchedData.results as SearchResultItem[];
         }
       }
     }

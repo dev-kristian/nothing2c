@@ -57,7 +57,7 @@ export default function Home() {
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => {
-  const iconComponents: Record<'bookmark' | 'users', JSX.Element> = { 
+  const iconComponents: Record<'bookmark' | 'users', React.ReactElement> = {
     bookmark: <Bookmark size={16} />,
     users: <Users size={16} />,
   };

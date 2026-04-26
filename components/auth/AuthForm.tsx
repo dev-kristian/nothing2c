@@ -7,7 +7,6 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
-import Image from 'next/image';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { toast } from "@/hooks/use-toast";
@@ -294,7 +293,7 @@ import { useAuthContext } from '@/context/AuthContext';
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <div className="flex items-center justify-center">
-            <Image
+            <img
               src="/icons/google.svg"
               alt="Google"
               width={20}

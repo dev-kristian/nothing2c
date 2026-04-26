@@ -7,9 +7,9 @@ const isValidStatus = (status: unknown): status is 'accepted' | 'declined' => {
   return status === 'accepted' || status === 'declined';
 };
 
-export async function PUT(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     return NextResponse.json({ message: `Participant status updated successfully (${status})` }, { status: 200 });
 
   } catch (error: unknown) {
-    console.error(`Error updating participant status for session ${params.sessionId} via API:`, error);
+    console.error(`Error updating participant status for session ${sessionId} via API:`, error);
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {

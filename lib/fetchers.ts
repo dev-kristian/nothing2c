@@ -8,6 +8,27 @@ export interface ApiResponse {
   page?: number;
 }
 
+function resolveApiUrl(path: string) {
+  if (/^https?:\/\//.test(path)) {
+    return path;
+  }
+
+  if (typeof window !== 'undefined') {
+    return path;
+  }
+
+  const envBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL ||
+    'http://localhost:3000';
+
+  const normalizedBaseUrl = envBaseUrl.startsWith('http')
+    ? envBaseUrl
+    : `https://${envBaseUrl}`;
+
+  return new URL(path, normalizedBaseUrl).toString();
+}
+
 export const fetcher = async (url: string, mediaType: DiscoverMediaType, page: number): Promise<ApiResponse> => {
   const endpoint = mediaType === 'upcoming' ? '/api/upcoming' : '/api/trending';
   
@@ -29,9 +50,7 @@ export const fetcher = async (url: string, mediaType: DiscoverMediaType, page: n
     finalUrl = endpoint;
   }
 
-  const absoluteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${finalUrl}`;
-
-  const response = await fetch(absoluteUrl, requestOptions);
+  const response = await fetch(resolveApiUrl(finalUrl), requestOptions);
 
   if (!response.ok) {
     const errorData = await response.text();

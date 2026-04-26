@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { User } from 'firebase/auth';
 import { Bell, Share2, TvMinimalPlay, User as UserIcon } from 'lucide-react';
@@ -130,12 +129,13 @@ export default function NotificationDropdown({
                     >
                       <div className="flex items-center space-x-2">
                         {request.fromPhotoURL ? (
-                          <Image
+                          <img
                             src={request.fromPhotoURL}
                             alt={`${request.fromUsername}'s avatar`}
                             width={28}
                             height={28}
                             className="rounded-full flex-shrink-0"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0">

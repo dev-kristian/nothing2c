@@ -9,9 +9,16 @@ import SectionHeader from './SectionHeader';
 interface SimilarContentProps {
   similar: Media[];
   mediaType: 'movie' | 'tv';
+  title?: string;
+  subtitle?: string;
 }
 
-const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) => {
+const SimilarContent: React.FC<SimilarContentProps> = ({
+  similar,
+  mediaType,
+  title = 'You May Also Like',
+  subtitle,
+}) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
@@ -55,18 +62,18 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
 
   return (
     <motion.section 
-      className="py-4"
+      className="min-w-0 max-w-full overflow-hidden py-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <SectionHeader 
-          title="You May Also Like" 
-          subtitle={`Similar ${mediaType === 'movie' ? 'movies' : 'shows'} you might enjoy`} 
+          title={title}
+          subtitle={subtitle || `Similar ${mediaType === 'movie' ? 'movies' : 'shows'} you might enjoy`} 
         />
         
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button
             onClick={() => scrollTo('left')}
             disabled={!canScrollLeft}
@@ -94,15 +101,15 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
         </div>
       </div>
       
-      <div className="relative">
+      <div className="relative min-w-0">
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto no-scrollbar py-4 gap-5 pb-8"
+          className="flex min-w-0 gap-4 overflow-x-auto py-4 pb-8 no-scrollbar"
           onScroll={handleScroll}
         >
           {similar.map((item, index) => (
             <motion.div
-              key={item.id}
+              key={`${item.media_type || mediaType}-${item.id}`}
               className="flex-none w-48"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -113,7 +120,7 @@ const SimilarContent: React.FC<SimilarContentProps> = ({ similar, mediaType }) =
               }}
             >
               <MediaPoster 
-                media={{ ...item, media_type: mediaType }}
+                media={{ ...item, media_type: item.media_type || mediaType }}
                 variant="default"
               />
             </motion.div>

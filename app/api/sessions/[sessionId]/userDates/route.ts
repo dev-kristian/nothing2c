@@ -22,10 +22,10 @@ const isValidEpochDatesInput = (data: unknown): data is { dates: UserDate[] } =>
   );
 };
 
-export async function PUT(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   let body; 
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       console.error("Missing sessionId in PUT request");
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     return NextResponse.json({ message: 'User dates updated successfully' }, { status: 200 });
 
     } catch (error: unknown) { 
-    console.error(`Error processing PUT /api/sessions/${params.sessionId}/userDates:`, error);
+    console.error(`Error processing PUT /api/sessions/${sessionId}/userDates:`, error);
     console.error("Request body was:", JSON.stringify(body, null, 2)); 
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);

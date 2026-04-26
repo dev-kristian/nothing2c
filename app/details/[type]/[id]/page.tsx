@@ -1,196 +1,150 @@
-// app/(root)/details/[type]/[id]/page.tsx
 import React from 'react';
 import { notFound } from 'next/navigation';
 import CrewCarousel from '@/components/details/CrewCarousel';
-import { DetailsData, VideoData, Review, Media } from '@/types';
+import {
+  DetailsData,
+  PersonDetails,
+  Review,
+  SeasonDetails,
+} from '@/types';
 import DetailPageWrapper from '@/components/details/DetailPageWrapper';
+import PersonDetailPage from '@/components/details/PersonDetailPage';
 import SeasonCarousel from '@/components/details/SeasonCarousel';
-import ReviewsSection from '@/components/details/ReviewsSection'; 
+import ReviewsSection from '@/components/details/ReviewsSection';
 import SimilarContent from '@/components/details/SimilarContent';
+import { tmdbFetch } from '@/lib/tmdb';
 
 interface DetailPageProps {
-  params: {
+  params: Promise<{
     type: string;
     id: string;
+  }>;
+}
+
+function getMovieCertification(details: DetailsData) {
+  const usRelease = details.release_dates?.results?.find((result) => result.iso_3166_1 === 'US');
+  const certificationWithValue = usRelease?.release_dates?.find((entry) => Boolean(entry.certification));
+  return certificationWithValue?.certification || null;
+}
+
+function getTvCertification(details: DetailsData) {
+  const usRating = details.content_ratings?.results?.find((entry) => entry.iso_3166_1 === 'US');
+  return usRating?.rating || null;
+}
+
+async function getMediaDetails(type: 'movie' | 'tv', id: string): Promise<DetailsData> {
+  const appendToResponse = [
+    'credits',
+    'external_ids',
+    'videos',
+    'reviews',
+    'recommendations',
+    'similar',
+    'watch/providers',
+    type === 'movie' ? 'release_dates' : 'content_ratings',
+  ].join(',');
+
+  const details = await tmdbFetch<DetailsData>(`/${type}/${id}`, {
+    params: {
+      language: 'en-US',
+      append_to_response: appendToResponse,
+    },
+  });
+
+  return {
+    ...details,
+    contentRating: type === 'movie' ? getMovieCertification(details) : getTvCertification(details),
   };
 }
 
-async function getDetails(type: string, id: string): Promise<DetailsData> {
-  const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
-  const detailsUrl = `https://api.themoviedb.org/3/${type}/${id}?language=en-US&append_to_response=external_ids`;
-  const contentRatingsUrl = `https://api.themoviedb.org/3/${type}/${id}/content_ratings`;
-  const creditsUrl = `https://api.themoviedb.org/3/${type}/${id}/credits`;
-
-  const [detailsResponse, contentRatingsResponse, creditsResponse] = await Promise.all([
-    fetch(detailsUrl, {
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'accept': 'application/json'
-      },
-      next: { revalidate: 3600 }
-    }),
-    type === 'tv' ? fetch(contentRatingsUrl, {
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'accept': 'application/json'
-      },
-      next: { revalidate: 3600 }
-    }) : null,
-    fetch(creditsUrl, {
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'accept': 'application/json'
-      },
-      next: { revalidate: 3600 }
-    })
-  ]);
-
-  if (!detailsResponse.ok || !creditsResponse.ok) {
-    throw new Error(`Failed to fetch details: ${detailsResponse.status}`);
-  }
-
-  const detailsData = await detailsResponse.json();
-  const creditsData = await creditsResponse.json();
-  let contentRating = null;
-
-  if (contentRatingsResponse) {
-    const contentRatingsData = await contentRatingsResponse.json();
-    const usRating = contentRatingsData.results.find((rating: { iso_3166_1: string }) => rating.iso_3166_1 === 'US');
-    contentRating = usRating ? usRating.rating : null;
-  }
-
-  return { ...detailsData, contentRating, credits: creditsData };
-}
-
-async function getVideos(type: string, id: string): Promise<VideoData[]> {
-  const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
-  const videosUrl = `https://api.themoviedb.org/3/${type}/${id}/videos`;
-
-  const response = await fetch(videosUrl, {
-    headers: {
-      'Authorization': `Bearer ${bearerToken}`,
-      'accept': 'application/json'
+async function getPersonDetails(id: string): Promise<PersonDetails> {
+  return tmdbFetch<PersonDetails>(`/person/${id}`, {
+    params: {
+      language: 'en-US',
+      append_to_response: 'combined_credits,images,external_ids',
+      include_image_language: 'en,null',
     },
-    next: { revalidate: 3600 }
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch videos: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.results;
 }
 
-async function getSeasonDetails(type: string, id: string, seasonNumber: number) {
-  const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
-  const url = `https://api.themoviedb.org/3/${type}/${id}/season/${seasonNumber}?language=en-US`;
-
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${bearerToken}`,
-      'accept': 'application/json'
+async function getSeasonDetails(id: string, seasonNumber: number): Promise<SeasonDetails> {
+  return tmdbFetch<SeasonDetails>(`/tv/${id}/season/${seasonNumber}`, {
+    params: {
+      language: 'en-US',
     },
-    next: { revalidate: 3600 }
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch season details: ${response.status}`);
-  }
-
-  return await response.json();
-}
-
-async function getReviews(type: string, id: string): Promise<Review[]> {
-    const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
-    const reviewsUrl = `https://api.themoviedb.org/3/${type}/${id}/reviews`;
-
-    const response = await fetch(reviewsUrl, {
-        headers: {
-            'Authorization': `Bearer ${bearerToken}`,
-            'accept': 'application/json'
-        },
-        next: { revalidate: 3600 }
-    });
-
-    if (!response.ok) {
-        console.error(`Failed to fetch reviews: ${response.status}`);
-        return [];
-    }
-
-    const data = await response.json();
-    return data.results || []; 
-}
-
-async function getSimilar(type: string, id: string): Promise<Media[]> {
-  const bearerToken = process.env.NEXT_PRIVATE_TMDB_API_KEY;
-  const url = `https://api.themoviedb.org/3/${type}/${id}/similar`;
-
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${bearerToken}`,
-      'accept': 'application/json'
-    },
-    next: { revalidate: 3600 }
-  });
-
-  if (!response.ok) {
-    return [];
-  }
-
-  const data = await response.json();
-  return data.results || [];
 }
 
 export default async function DetailPage({ params }: DetailPageProps) {
-  let details: DetailsData;
-  let videos: VideoData[];
-  let reviews: Review[];
-  let similar: Media[];
+  const { type, id } = await params;
 
-  try {
-    [details, videos, reviews, similar] = await Promise.all([
-      getDetails(params.type, params.id),
-      getVideos(params.type, params.id),
-      getReviews(params.type, params.id),
-      getSimilar(params.type, params.id)
-    ]);
-  } catch (error) {
-    console.error('Error fetching details:', error);
+  if (type === 'person') {
+    let person: PersonDetails;
+
+    try {
+      person = await getPersonDetails(id);
+    } catch (error) {
+      console.error('Error fetching person details:', error);
+      notFound();
+    }
+
+    return <PersonDetailPage person={person} />;
+  }
+
+  if (type !== 'movie' && type !== 'tv') {
     notFound();
   }
 
- 
+  let details: DetailsData;
+
+  try {
+    details = await getMediaDetails(type, id);
+  } catch (error) {
+    console.error('Error fetching media details:', error);
+    notFound();
+  }
+
   async function fetchSeasonDetails(formData: FormData) {
-    'use server'
+    'use server';
+
     const seasonNumber = Number(formData.get('seasonNumber'));
+
     try {
-      return await getSeasonDetails(params.type, params.id, seasonNumber);
+      return await getSeasonDetails(id, seasonNumber);
     } catch (error) {
       console.error('Error fetching season details:', error);
       return null;
     }
   }
 
+  const reviews: Review[] = details.reviews?.results || [];
+  const recommendations = details.recommendations?.results || [];
+  const videos = details.videos?.results || [];
+
   return (
     <div>
       <DetailPageWrapper details={details} videos={videos} />
       <div className="pt-4 w-full px-2 md:px-8">
-        {params.type === 'tv' && details.seasons && (
-          <SeasonCarousel 
-            seasons={details.seasons} 
+        {type === 'tv' && details.seasons && (
+          <SeasonCarousel
+            seasons={details.seasons}
             tmdbId={details.id}
             fetchSeasonDetails={fetchSeasonDetails}
           />
         )}
-        <CrewCarousel 
-          cast={details.credits.cast} 
+        <CrewCarousel
+          cast={details.credits.cast}
           crew={details.credits.crew}
-          isLoading={false} 
-          error={null} 
+          isLoading={false}
+          error={null}
         />
         <ReviewsSection reviews={reviews} />
-        <SimilarContent similar={similar} mediaType={params.type as 'movie' | 'tv'} />
+        <SimilarContent
+          similar={recommendations}
+          mediaType={type}
+          title="Recommended For You"
+          subtitle={`TMDB recommendations based on this ${type === 'movie' ? 'movie' : 'series'}`}
+        />
       </div>
     </div>
   );

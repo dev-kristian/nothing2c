@@ -3,7 +3,6 @@
 
 import React from 'react';
 import { Inter } from "next/font/google";
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -32,13 +31,12 @@ export default function AuthLayout({
                     transition={{ type: "spring", stiffness: 450, damping: 15 }}
                     className="relative z-10"
                   >
-                    <Image
+                    <img
                       src="/icons/popcorn.png"
                       alt=""
                       width={46}
                       height={46}
                       className="drop-shadow-lg filter"
-                      priority
                     />
                   </motion.div>
                 </div>

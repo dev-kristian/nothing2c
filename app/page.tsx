@@ -5,17 +5,22 @@ import { fetcher, ApiResponse } from '@/lib/fetchers';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface HomePageProps {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   let initialTrendingData: ApiResponse | null = null;
   let fetchError: string | null = null;
+  const resolvedSearchParams = await searchParams;
+  const mediaTypeParam = resolvedSearchParams?.type;
+  const normalizedMediaType = Array.isArray(mediaTypeParam)
+    ? mediaTypeParam[0]
+    : mediaTypeParam;
 
   const initialMediaType =
-    searchParams?.type === 'tv' || searchParams?.type === 'upcoming'
-    ? searchParams.type
-    : 'movie';
+    normalizedMediaType === 'tv' || normalizedMediaType === 'upcoming'
+      ? normalizedMediaType
+      : 'movie';
 
   try {
     initialTrendingData = await fetcher(

@@ -1,7 +1,6 @@
 // components/SeasonCarousel.tsx
 'use client'
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Season, SeasonDetails } from '@/types';
 import SectionHeader from './SectionHeader';
@@ -64,17 +63,14 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
             >
               <div className="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-apple dark:shadow-apple-dark">
                 {season.poster_path ? (
-                  <Image
+                  <img
                     src={`https://image.tmdb.org/t/p/w300${season.poster_path}`}
                     alt={season.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className={`object-cover transition-all duration-300 ${
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 ${
                       selectedSeason !== null && selectedSeason !== season.season_number 
                         ? 'opacity-60 dark:opacity-40 saturate-50' 
                         : 'opacity-100 saturate-100'
                     }`}
-                    priority
                   />
                 ) : (
                   <div className={`w-full h-full bg-muted flex items-center justify-center transition-all duration-300 ${
@@ -169,12 +165,10 @@ const SeasonCarousel: React.FC<SeasonCarouselProps> = ({
                 <div className="flex h-24 md:h-28">
                   <div className="relative w-40 md:w-48 overflow-hidden rounded-l-xl">
                     {episode.still_path ? (
-                      <Image
+                      <img
                         src={`https://image.tmdb.org/t/p/w300${episode.still_path}`}
                         alt={episode.name || `Episode ${episode.episode_number}`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                     ) : (

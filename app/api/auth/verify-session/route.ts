@@ -4,7 +4,8 @@ import { adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 export async function GET() {
-  const sessionCookie = cookies().get('__session')?.value;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('__session')?.value;
 
   if (!sessionCookie) {
     return NextResponse.json({ isAuthenticated: false }, { status: 401 });

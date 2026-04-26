@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
 import { useAuthContext } from '@/context/AuthContext';
 import { Media } from '@/types';
 import { addUserWatchlistItem, removeUserWatchlistItem } from '@/utils/watchlistUtils';
-import { Star, Film, Tv } from 'lucide-react';
+import { Star, Film, Tv, User } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { shimmer, toBase64 } from '@/lib/image-shimmer';
 import { CiBookmarkPlus, CiBookmarkMinus } from "react-icons/ci";
 import { Badge } from '@/components/ui/badge';
 import { SignInCTA_Modal } from '@/components/auth/SignInCTA_Modal';
@@ -105,15 +103,11 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
         <div className="relative aspect-[2/3]">
           {imagePath && !imageError ? (
             <>
-              <Image
+              <img
                 src={`https://image.tmdb.org/t/p/w200${imagePath}`}
                 alt={title}
-                fill
-                sizes="150px"
-                priority
-                className="object-cover"
-                placeholder="blur"
-                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(200, 300))}`}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
                 onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent">
@@ -127,10 +121,12 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-black/30 flex items-center justify-center">
-              {internalMediaType === 'movie' ? ( 
+              {internalMediaType === 'movie' ? (
                 <Film className="w-8 h-8 text-white/40" />
-              ) : (
+              ) : internalMediaType === 'tv' ? (
                 <Tv className="w-8 h-8 text-white/40" />
+              ) : (
+                <User className="w-8 h-8 text-white/40" />
               )}
               <div className="absolute bottom-2 left-2 right-2">
                 <h3 className="text-xs font-semibold text-white line-clamp-1">{title}</h3>
@@ -168,15 +164,11 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
         <div className="relative aspect-[2/3]">
           {imagePath && !imageError ? (
             <>
-              <Image
+              <img
                 src={`https://image.tmdb.org/t/p/w500${imagePath}`}
                 alt={title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                priority
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                placeholder="blur"
-                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(500, 750))}`}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
                 onError={handleImageError}
               />
               
@@ -191,10 +183,12 @@ const MediaPoster: React.FC<MediaPosterProps> = ({
             </>
           ) : (
             <div className="w-full h-full bg-gradient-to-b from-neutral-800 to-neutral-900 flex flex-col items-center justify-center p-4">
-              {internalMediaType === 'movie' ? ( 
+              {internalMediaType === 'movie' ? (
                 <Film className="w-10 h-10 text-white/40 mb-2" />
-              ) : (
+              ) : internalMediaType === 'tv' ? (
                 <Tv className="w-10 h-10 text-white/40 mb-2" />
+              ) : (
+                <User className="w-10 h-10 text-white/40 mb-2" />
               )}
               <span className="text-white/60 text-xs text-center line-clamp-2">{title}</span>
               {releaseYear && (

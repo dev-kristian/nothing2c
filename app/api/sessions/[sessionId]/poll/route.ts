@@ -16,9 +16,9 @@ const isValidMovieTitlesInput = (data: unknown): data is { movieTitles: string[]
   );
 };
 
-export async function POST(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: { session
     return NextResponse.json({ message: 'Poll created successfully', pollId: pollId }, { status: 201 });
 
   } catch (error: unknown) { 
-    console.error(`Error creating poll for session ${params.sessionId} via API:`, error);
+    console.error(`Error creating poll for session ${sessionId} via API:`, error);
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {

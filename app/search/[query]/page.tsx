@@ -153,7 +153,7 @@ export default function SearchResultsPage() {
   const hasMore = !isReachingEnd && !error;
   const errorMessage = error ? `An error occurred: ${error.message}` : null;
 
-  const observer = useRef<IntersectionObserver>();
+  const observer = useRef<IntersectionObserver | null>(null);
   const lastItemRef = useRef<HTMLDivElement>(null);
 
   

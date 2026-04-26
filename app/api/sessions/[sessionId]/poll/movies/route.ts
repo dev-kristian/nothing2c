@@ -28,9 +28,9 @@ const isValidDeleteInput = (data: unknown): data is { mediaId: number } => {
   );
 };
 
-export async function POST(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest, { params }: { params: { session
     }
 
   } catch (error: unknown) {
-    console.error(`Error adding movie to poll for session ${params.sessionId} via API:`, error);
+    console.error(`Error adding movie to poll for session ${sessionId} via API:`, error);
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {
@@ -150,9 +150,9 @@ export async function POST(request: NextRequest, { params }: { params: { session
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
@@ -253,7 +253,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { sessi
     return NextResponse.json({ message: 'Media item removed from poll successfully' }, { status: 200 });
 
   } catch (error: unknown) {
-    console.error(`Error removing movie from poll for session ${params.sessionId} via API:`, error);
+    console.error(`Error removing movie from poll for session ${sessionId} via API:`, error);
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {

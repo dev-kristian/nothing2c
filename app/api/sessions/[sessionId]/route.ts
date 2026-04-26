@@ -20,16 +20,15 @@ interface TiedTimeOption {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  const { sessionId } = await params;
   try {
     const userProfile = await getAuthenticatedUserProfile();
     if (!userProfile) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = userProfile.uid;
-    const sessionId = params.sessionId;
-
     if (!sessionId) {
       return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
@@ -295,7 +294,7 @@ export async function PATCH(
     return NextResponse.json({ message: "Session completed successfully" }, { status: 200 });
 
   } catch (error: unknown) {
-    console.error(`Error completing session ${params.sessionId}:`, error);
+    console.error(`Error completing session ${sessionId}:`, error);
     if (typeof error === "object" && error !== null && "code" in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {

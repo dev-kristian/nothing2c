@@ -78,13 +78,13 @@ export function handleSuggestionClick(
   }
 
 export function useOutsideClickHandler(
-  inputContainerRef: RefObject<HTMLDivElement>,
-  setSuggestions: React.Dispatch<React.SetStateAction<FriendsWatchlistItem[]>>
+  inputContainerRef: RefObject<HTMLDivElement | null>,
+  onOutsideClick: () => void
 ) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (inputContainerRef.current && !inputContainerRef.current.contains(event.target as Node)) {
-        setSuggestions([]);
+        onOutsideClick();
       }
     }
 
@@ -92,5 +92,5 @@ export function useOutsideClickHandler(
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [inputContainerRef, setSuggestions]);
+  }, [inputContainerRef, onOutsideClick]);
 }

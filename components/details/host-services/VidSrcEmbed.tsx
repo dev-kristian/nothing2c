@@ -5,10 +5,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { HostServiceProps } from './types';
 
 export const VIDSRC_DOMAINS = [
-  'vidsrc.in',
-  'vidsrc.pm',
-  'vidsrc.xyz',
-  'vidsrc.net'
+  'vidsrcme.ru',
+  'vidsrcme.su',
+  'vidsrc-me.ru',
+  'vidsrc-me.su',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vsrc.su'
 ];
 
 const VidSrcEmbed: React.FC<HostServiceProps> = ({

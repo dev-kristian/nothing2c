@@ -14,9 +14,9 @@ const isValidMediaIdInput = (data: unknown): data is { mediaId: number } => {
   );
 };
 
-export async function PUT(request: NextRequest, { params }: { params: { sessionId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = await params;
   try {
-    const sessionId = params.sessionId;
     if (!sessionId) {
       return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: { params: { sessionI
     return NextResponse.json({ message: 'Vote toggled successfully' }, { status: 200 });
 
   } catch (error: unknown) { 
-    console.error(`Error toggling vote for session ${params.sessionId} via API:`, error);
+    console.error(`Error toggling vote for session ${sessionId} via API:`, error);
     if (typeof error === 'object' && error !== null && 'code' in error) {
       console.error(`Firestore Error Code: ${(error as { code: string }).code}`);
     } else if (error instanceof Error) {

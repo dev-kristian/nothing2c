@@ -1,7 +1,6 @@
 "use client"
 
 import { useAuthUser } from '@/context/AuthUserContext'; // Updated import
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -154,13 +153,11 @@ const PosterImage = ({ path, title, rating, showRating = false }: PosterImagePro
     
   return (
     <div className="relative w-full h-full">
-      <Image 
+      <img
         src={imagePath} 
         alt={title} 
-        fill 
-        sizes="(max-width: 768px) 0px, (max-width: 1024px) 6rem, 8rem"
-        className="object-cover"
-        priority
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
       />
       
       {showRating && rating && (
