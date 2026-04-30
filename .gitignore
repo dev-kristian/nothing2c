@@ -31,6 +31,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# generated
+public/firebaseConfig.js
+repomix-output.xml
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

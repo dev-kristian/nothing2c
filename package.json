@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "generate:firebase-config": "node scripts/generate-firebase-config.mjs",
+    "predev": "npm run generate:firebase-config",
     "dev": "next dev",
+    "prebuild": "npm run generate:firebase-config",
     "build": "next build",
+    "prebuild:full": "npm run generate:firebase-config",
     "build:full": "npm --prefix functions run build && next build",
     "start": "next start",
     "lint": "eslint ."

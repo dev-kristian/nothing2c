@@ -33,7 +33,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "public/firebaseConfig.js",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
