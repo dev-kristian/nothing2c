@@ -1,184 +1,134 @@
-# Nothing <sup>2C</sup>
+# Nothing<sup>2C</sup>
 
-### A Movie & TV Show Watchlist and Recommendation Platform
+A full-stack movie and TV discovery app for building watchlists, planning movie nights with friends, and voting on what to watch together.
 
-**Nothing <sup>2C</sup>** is an interactive movie and TV show platform that lets users explore, manage curated watchlists, vote on Movie Night polls, and create shared experiences with friends! Built with modern web development tools, it leverages Firebase for authentication, Firestore for real-time data management, and TMDb API for media information.
+[Live Demo](https://nothing2c.vercel.app) | [Screenshot](./public/nothing2c-live-screenshot.png)
 
-## Screenshots
-### Explore Movies Section
-![Media Explore Section](./public/screenshot.png)
+![Nothing2C app screenshot](./public/nothing2c-live-screenshot.png)
+
+## Overview
+
+Nothing<sup>2C</sup> is a social watchlist platform built with Next.js, TypeScript, Firebase, and the TMDb API. Users can discover trending movies and TV shows, save titles to a personal library, connect with friends, create shared movie-night sessions, compare availability, and vote on poll options in real time.
+
+The app combines media discovery with lightweight social planning so a group can move from browsing options to choosing a shared watch time and title.
 
 ## Features
 
-1. **Explore & Search**
-   - Browse trending movies and TV shows.
-   - Search for specific titles or actors.
-   - Use filters to find top-rated and popular media.
-  
-2. **Top Watchlists**
-   - View the top-rated movies and TV shows in the community based on a weighted ranking system (`vote_average` and `watchlist_count`).
-   - Explore watchlists specifically for movies or TV shows.
-
-3. **Personal Watchlist**
-   - Add or remove items from your personal watchlist.
-   - Movies or TV shows added to the watchlist are updated both locally and in the global Firestore collection.
-
-4. **Movie Night Sessions**
-   - Create or join movie night sessions with friends.
-   - Set up voting polls to decide what to watch.
-   - View ongoing sessions, track votes, and see the best-timed availability of friends.
-   
-5. **Google Authentication & Account Management**
-   - Sign in with Google or create an account with a username & password.
-   - Store personal preferences and watchlist data securely in Firebase.
-
-6. **Real-time Synchronization**
-   - Real-time updates of sessions including voting and watchlist changes using Firestore listeners.
-   - Receive push notifications for important updates like movie poll results.
-
-7. **User Notifications & Subscription Management**
-   - Enable push notifications for live updates for new sessions or trending releases.
+- Browse trending, upcoming, popular, and top-rated movies and TV shows with TMDb-powered data.
+- Search across movies, series, and people with filters for type, year, genre, and sorting.
+- View rich media detail pages with posters, metadata, cast, videos, recommendations, similar titles, providers, and reviews.
+- Create and manage a personal watchlist synced with Firestore.
+- Sign up, sign in, verify email, reset passwords, and maintain authenticated sessions with Firebase Auth.
+- Send, accept, reject, and remove friend requests.
+- Create watch-together sessions with selected friends, candidate dates, time slots, and optional movie or TV poll choices.
+- Aggregate participant availability so the best date and time are easy to spot.
+- Vote on session poll options and complete sessions when the group has decided.
+- Manage account, privacy, appearance, and notification preferences.
+- Support push-notification flows through Firebase Cloud Messaging.
 
 ## Tech Stack
 
-**Frontend:**
-- **Next.js**: React framework with server-side rendering, dynamic routing, and file-based routing.
-- **React**: Core UI framework.
-- **Tailwind CSS**: Utility-first CSS framework for styling.
-- **Framer Motion**: Animation library for UI interactions.
-- **Radix UI**: Accessible and customizable React components for UI elements like tabs, tooltips, dialogs, etc.
-  
-**Backend**
-- **Firebase**: Firebase Authentication, Firestore (NoSQL database), Firebase Cloud Messaging.
-- **TMDb API**: Fetch movie & TV show data for displaying details, posters, and ratings.
+| Area | Tools |
+| --- | --- |
+| Framework | Next.js App Router, React, TypeScript |
+| Styling | Tailwind CSS, Radix UI, Framer Motion, Lucide React |
+| Backend | Next.js Route Handlers, Firebase Admin SDK, Firebase Cloud Functions |
+| Database | Cloud Firestore |
+| Authentication | Firebase Authentication, session cookies |
+| APIs | TMDb API, Firebase Cloud Messaging |
+| Deployment | Vercel, Vercel Cron, Vercel Analytics |
 
-## Installation & Setup
+## Architecture Notes
 
-### Prerequisites:
+- `app/api/*` contains server routes for authentication, search, media details, users, friends, sessions, polls, notifications, and scheduled maintenance.
+- `context/*` centralizes client-side state for auth, user data, watchlists, sessions, and notifications.
+- `components/*` is split by product area, including discovery, media details, session planning, settings, navigation, and shared UI primitives.
+- `lib/*` holds Firebase, Firebase Admin, TMDb, server-auth, and date/time helpers.
+- `functions/*` contains Firebase Cloud Functions support code.
+- `vercel.json` schedules a daily cron route for session maintenance.
 
-- **Node.js** (v16.x.x or higher)
-- **Firebase Project** with Firestore Database set up
-- **TMDb API Key**: You will need to [register and create an API Key](https://www.themoviedb.org/signup) on TMDb to fetch movie and TV data.
+## Getting Started
 
-1. Clone the repository:
+### Prerequisites
 
-   ```bash
-   git clone https://github.com/your-username/kinonchill.git
-   cd kinonchill
-   ```
+- Node.js 20 or newer
+- npm
+- Firebase project with Authentication and Firestore enabled
+- TMDb bearer token
+- Optional: Firebase Cloud Messaging VAPID key for push notifications
 
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-
-   Create a new file `.env.local` at the root of the project or use the `.env.local.example` and just remove `.example`. Add the following environment variables, replacing the placeholders with your actual keys and settings:
-
-   ```bash
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-
-   NEXT_PRIVATE_FIREBASE_PROJECT_ID=your_firebase_project_id
-   NEXT_PRIVATE_FIREBASE_CLIENT_EMAIL=your_client_email
-   NEXT_PRIVATE_FIREBASE_PRIVATE_KEY=your_firebase_private_key
-   NEXT_PRIVATE_TMDB_API_KEY=your_tmdb_api_key
-   NEXT_PUBLIC_FIREBASE_VAPID_KEY=your_firebase_cloud_messaging_vapid_key
-   CRON_SECRET=cron_secret_for_vercel_cron_jobs
-   # Ensure characters like "\n" in private keys are correctly formatted
-   ```
-
-4. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The app will be available at [http://localhost:3000](http://localhost:3000).
-
-5. (Optional) Build for production:
-
-   ```bash
-   npm run build
-   ```
-
-
-## Firebase Setup
-
-1. Set up Firebase by following the [Firebase Setup Documentation](https://firebase.google.com/docs/web/setup).
-2. Add Firestore and Authentication (Google Sign-In and Email-Pass setup).
-3. Make sure Firestore rules allow reads/writes for authenticated users.
-
-### Firestore Structure Example
-
-Here’s an example of the Firestore database structure for `watchlist` and `sessions` collections:
-
-```
-Firestore Database structure:
-
-users (Collection)
-│
-├── userId (Document)
-    ├── username: string
-    ├── email: string
-    └── watchlist (SubDocument)
-          ├── movie: { <id>: true, <id2>: true, ... }
-          └── tv: { <id>: true, <id2>: true, ... }
-
-sessions (Collection)
-│
-├── sessionId (Document)
-    ├── createdAt: timestamp
-    ├── createdBy: string
-    ├── userDates: { <username>: [{date: Timestamp, hours: [...]}], ... }
-    ├── poll: { id: string, movieTitles: [...], votes: { <username>: [...] } }
-    └── status: 'active' | 'closed'
-```
-
-Ensure the proper security rules are set for Firestore, allowing users to only modify their own watchlist or session data.
-
-## Testing & Linting
-
-For linting, you can run:
+### Installation
 
 ```bash
-npx eslint .
+git clone https://github.com/dev-kristian/afkcinema.git
+cd afkcinema
+npm install
 ```
 
-Tests can be added with Jest or other testing libraries for better coverage.
+Create a local environment file:
 
-## Contributing
+```bash
+cp .env.local.example .env.local
+```
 
-We welcome contributions! To contribute:
+Add your Firebase and TMDb credentials:
 
-1. Fork this repository.
-2. Create a branch: `git checkout -b feature/my-feature`.
-3. Make your changes and commit: `git commit -m 'Add my feature'`.
-4. Push to your branch: `git push origin feature/my-feature`.
-5. Open a pull request for review.
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 
-Please adhere to the pre-established code style and conventions where possible.
+NEXT_PRIVATE_TMDB_API_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-## 🌟 Made with ❤️
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=
 
-**Nothing <sup>2C</sup>** was crafted with care and passion by dev-kristian who loves both movies and great user experiences. 🎬🍿
+NEXT_PRIVATE_FIREBASE_PROJECT_ID=
+NEXT_PRIVATE_FIREBASE_CLIENT_EMAIL=
+NEXT_PRIVATE_FIREBASE_PRIVATE_KEY=
 
-I believe in the power of cinema and bringing people together for shared moments, whether it's exploring new films, hosting movie nights, or building a community of cinephiles! If you enjoyed using this platform or have ideas on how to make it even better, please feel free to contribute, suggest, or simply say hi! 😄
+CRON_SECRET=
+```
 
-Let's make every movie night unforgettable! 🌙🎥
+Run the development server:
 
----
+```bash
+npm run dev
+```
 
-If you enjoyed this project, feel free to give it a ⭐ on GitHub! Thank you for your support!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## License
+## Available Scripts
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more information.
+```bash
+npm run dev        # Start the local Next.js development server
+npm run build      # Create a production build
+npm run build:full # Build Firebase functions, then build the Next.js app
+npm run start      # Start the production server
+npm run lint       # Run ESLint
+```
 
----
+Firebase functions scripts are available inside the `functions` directory:
 
-Feel free to open an issue or discuss new ideas to improve Nothing <sup>2C</sup>!
+```bash
+npm --prefix functions run build
+npm --prefix functions run serve
+npm --prefix functions run deploy
+```
+
+## Highlights
+
+- Next.js App Router application with typed server routes and reusable client components.
+- Firebase Auth and secure session-cookie handling for authenticated pages and API routes.
+- Firestore collections for users, friends, watchlists, invitations, sessions, participant availability, and poll voting.
+- TMDb integration through server-side API helpers for search, discovery, media details, and recommendations.
+- Realtime collaboration flows for watch-together sessions and shared decision-making.
+- Responsive, theme-aware interface built with Tailwind CSS, Radix UI, and Framer Motion.
+- Vercel deployment with analytics and scheduled background maintenance.
+
+## Project Status
+
+The core discovery, watchlist, authentication, friendship, and watch-together flows are implemented. Planned improvements include broader automated test coverage, stricter Firestore security-rule documentation, richer notification templates, and deeper social recommendations.
